@@ -1,0 +1,339 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
+	"sort"
+	"strconv"
+	"time"
+)
+
+type LeagueResponse struct {
+	Version string `json:"version"`
+	League  struct {
+		CurrentWaiverType string `json:"currentWaiverType"`
+		PlayerLimitUnit   string `json:"playerLimitUnit"`
+		TaxiSquad         string `json:"taxiSquad"`
+		EndWeek           string `json:"endWeek"`
+		MaxWaiverRounds   string `json:"maxWaiverRounds"`
+		Lockout           string `json:"lockout"`
+		Franchises        struct {
+			Count     string `json:"count"`
+			Franchise []struct {
+				Icon                 string `json:"icon,omitempty"`
+				Name                 string `json:"name"`
+				WaiverSortOrder      string `json:"waiverSortOrder"`
+				LastVisit            string `json:"lastVisit"`
+				Logo                 string `json:"logo,omitempty"`
+				Email                string `json:"email"`
+				BbidAvailableBalance string `json:"bbidAvailableBalance"`
+				Id                   string `json:"id"`
+				OwnerName            string `json:"owner_name"`
+				Cell                 string `json:"cell,omitempty"`
+				Country              string `json:"country,omitempty"`
+				Phone                string `json:"phone,omitempty"`
+				State                string `json:"state,omitempty"`
+				Zip                  string `json:"zip,omitempty"`
+				City                 string `json:"city,omitempty"`
+				Address              string `json:"address,omitempty"`
+				TwitterUsername      string `json:"twitterUsername,omitempty"`
+				Abbrev               string `json:"abbrev,omitempty"`
+				Sound                string `json:"sound,omitempty"`
+				Url                  string `json:"url,omitempty"`
+				Stadium              string `json:"stadium,omitempty"`
+				PlayAudio            string `json:"play_audio,omitempty"`
+				MailEvent            string `json:"mail_event,omitempty"`
+				WirelessCarrier      string `json:"wireless_carrier,omitempty"`
+				Username             string `json:"username,omitempty"`
+				TimeZone             string `json:"time_zone,omitempty"`
+				UseAdvancedEditor    string `json:"use_advanced_editor,omitempty"`
+			} `json:"franchise"`
+		} `json:"franchises"`
+		StandingsSort string `json:"standingsSort"`
+		Id            string `json:"id"`
+		History       struct {
+			League []struct {
+				Url  string `json:"url"`
+				Year string `json:"year"`
+			} `json:"league"`
+		} `json:"history"`
+		RosterSize      string `json:"rosterSize"`
+		Name            string `json:"name"`
+		BbidSeasonLimit string `json:"bbidSeasonLimit"`
+		RosterLimits    struct {
+			Position []struct {
+				Name  string `json:"name"`
+				Limit string `json:"limit"`
+			} `json:"position"`
+		} `json:"rosterLimits"`
+		BbidIncrement string `json:"bbidIncrement"`
+		MobileAlerts  string `json:"mobileAlerts"`
+		Starters      struct {
+			Count    string `json:"count"`
+			Position []struct {
+				Name  string `json:"name"`
+				Limit string `json:"limit"`
+			} `json:"position"`
+		} `json:"starters"`
+		BestLineup            string `json:"bestLineup"`
+		Precision             string `json:"precision"`
+		LastRegularSeasonWeek string `json:"lastRegularSeasonWeek"`
+		SurvivorPool          string `json:"survivorPool"`
+		BbidTiebreaker        string `json:"bbidTiebreaker"`
+		UsesContractYear      string `json:"usesContractYear"`
+		MinKeepers            string `json:"minKeepers"`
+		InjuredReserve        string `json:"injuredReserve"`
+		BbidConditional       string `json:"bbidConditional"`
+		StartWeek             string `json:"startWeek"`
+		SurvivorPoolStartWeek string `json:"survivorPoolStartWeek"`
+		SurvivorPoolEndWeek   string `json:"survivorPoolEndWeek"`
+		RostersPerPlayer      string `json:"rostersPerPlayer"`
+		BbidFCFSCharge        string `json:"bbidFCFSCharge"`
+		LeagueLogo            string `json:"leagueLogo"`
+		H2H                   string `json:"h2h"`
+		UsesSalaries          string `json:"usesSalaries"`
+		MaxKeepers            string `json:"maxKeepers"`
+		BbidMinimum           string `json:"bbidMinimum"`
+		BaseURL               string `json:"baseURL"`
+		LoadRosters           string `json:"loadRosters"`
+	} `json:"league"`
+	Encoding string `json:"encoding"`
+}
+
+type LeagueStandingsResponse struct {
+	Version         string `json:"version"`
+	LeagueStandings struct {
+		Franchise []struct {
+			RecordLosses  string `json:"h2hl"`
+			PowerRank     string `json:"power_rank"`
+			Dp            string `json:"dp"`
+			PointsFor     string `json:"pf"`
+			StreakLen     string `json:"streak_len"`
+			PointsAgainst string `json:"pa"`
+			Maxpa         string `json:"maxpa"`
+			Id            string `json:"id"`
+			RecordTies    string `json:"h2ht"`
+			AllPlayL      string `json:"all_play_l"`
+			RecordWins    string `json:"h2hw"`
+			AllPlayW      string `json:"all_play_w"`
+			Vp            string `json:"vp"`
+			Altpwr        string `json:"altpwr"`
+			Pp            string `json:"pp"`
+			Pwr           string `json:"pwr"`
+			Minpa         string `json:"minpa"`
+			AllPlayT      string `json:"all_play_t"`
+			StreakType    string `json:"streak_type"`
+			Op            string `json:"op"`
+		} `json:"franchise"`
+	} `json:"leagueStandings"`
+	Encoding string `json:"encoding"`
+}
+
+type Franchise struct {
+	TeamID        string
+	TeamName      string
+	OwnerName     string
+	RecordWins    int
+	RecordLosses  int
+	RecordTies    int
+	PointsAgainst float64
+	PointsFor     float64
+	PointScore    float64
+	RecordMagic   float64
+	RecordScore   float64
+	TotalScore    float64
+}
+
+const (
+	LeagueApi          = "league"
+	LeagueStandingsApi = "leagueStandings"
+	MflUrl             = "https://www76.myfantasyleague.com/2021/export?TYPE=league&L=15781&JSON=1"
+	LeagueId           = "&L=15781"
+	ApiUrlTrailer      = "&JSON=1"
+)
+
+type Points float32
+
+func (p Points) String() string { return fmt.Sprintf("%fg", float64(p)) }
+
+type Franchises []Franchise
+
+func (f Franchises) Len() int      { return len(f) }
+func (f Franchises) Swap(i, j int) { f[i], f[j] = f[j], f[i] }
+
+type ByPointsFor struct{ Franchises }
+type ByRecordMagic struct{ Franchises }
+type ByTotalScore struct{ Franchises }
+
+func (f ByPointsFor) Less(i, j int) bool {
+	return f.Franchises[i].PointsFor > f.Franchises[j].PointsFor
+}
+
+func (f ByRecordMagic) Less(i, j int) bool {
+	return f.Franchises[i].RecordMagic > f.Franchises[j].RecordMagic
+}
+
+func (f ByTotalScore) Less(i, j int) bool {
+	return f.Franchises[i].TotalScore > f.Franchises[j].TotalScore
+}
+
+func main() {
+	apiUrl := buildApiUrl()
+	teamInfo := getTeamInfo(apiUrl)
+
+	sort.Sort(ByPointsFor{teamInfo})
+	calculatePointsScore(teamInfo)
+
+	calculateRecordMagic(teamInfo)
+	sort.Sort(ByRecordMagic{teamInfo})
+	calculateRecordScore(teamInfo)
+	calculateTotalScore(teamInfo)
+	sort.Sort(ByRecordMagic{teamInfo})
+	printTeam(teamInfo)
+}
+
+func printTeam(teams Franchises) {
+	fmt.Printf("\nTeam Name                    | Owner         | Record | FanPts | Points | Record | Total Points\n")
+	fmt.Println("-----------------------------------------------------------------------------------------------")
+	for _, o := range teams {
+		fmt.Printf("%-28s | %-13s | %d-%d-%d  | %6.1f | %6.1f | %6.1f | %8.1f \n", o.TeamName, o.OwnerName, o.RecordWins,
+			o.RecordLosses, o.RecordTies, o.PointsFor, o.PointScore, o.RecordScore, o.TotalScore)
+	}
+}
+
+func calculateTotalScore(franchises Franchises) Franchises {
+	for i := 0; i < len(franchises); i++ {
+		franchises[i].TotalScore = franchises[i].PointScore + franchises[i].RecordScore
+	}
+
+	return franchises
+}
+
+func calculatePointsScore(franchises Franchises) Franchises {
+	for i := 0; i < len(franchises); i++ {
+		franchises[i].PointScore = float64(len(franchises) - i)
+	}
+
+	return franchises
+}
+
+func calculateRecordMagic(franchises Franchises) Franchises {
+	for i := 0; i < len(franchises); i++ {
+		franchises[i].RecordMagic = float64(franchises[i].RecordWins*1) + (float64(franchises[i].RecordTies) * 0.5)
+	}
+	return franchises
+}
+
+func calculateRecordScore(franchises Franchises) Franchises {
+	for i := 0; i < len(franchises); {
+		currentMagicPoints := franchises[i].RecordMagic
+		var currentPointsForGrabs float64 = float64(len(franchises) - i)
+		var teamsTied float64 = 1
+		for j := i + 1; j < len(franchises); j++ {
+			if franchises[j].RecordMagic == currentMagicPoints {
+				currentPointsForGrabs = currentPointsForGrabs + float64(len(franchises)) - float64(i) - teamsTied
+				teamsTied++
+			} else {
+				break
+			}
+		}
+		var pointsPerTeam float64 = float64(currentPointsForGrabs / teamsTied)
+		for k := 0; k < int(teamsTied); k++ {
+			franchises[i+k].RecordScore = pointsPerTeam
+		}
+		i = i + int(teamsTied)
+	}
+
+	return franchises
+}
+
+func getTeamInfo(apiUrl string) []Franchise {
+	url := apiUrl + LeagueApi + LeagueId + ApiUrlTrailer + "&APIKEY=" + os.Getenv("MFL_API_KEY")
+	response, err := http.Get(url)
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(2)
+	}
+
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var leagueResponse LeagueResponse
+	err = json.Unmarshal(responseData, &leagueResponse)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	url = apiUrl + LeagueStandingsApi + LeagueId + ApiUrlTrailer + "&APIKEY=" + os.Getenv("MFL_API_KEY")
+	response, err = http.Get(url)
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(2)
+	}
+
+	responseData, err = ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var leagueStandingsResponse LeagueStandingsResponse
+	err = json.Unmarshal(responseData, &leagueStandingsResponse)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	numLFranchises := len(leagueResponse.League.Franchises.Franchise)
+	numLSFranchises := len(leagueStandingsResponse.LeagueStandings.Franchise)
+
+	if numLFranchises != numLSFranchises {
+		fmt.Printf("Responses don't have the same number of franchises:\n League API: %d\n LeagueStandings API: %d\n", numLFranchises, numLSFranchises)
+		os.Exit(3)
+	}
+
+	franchiseStore := make([]Franchise, numLFranchises)
+	for i := 0; i < numLFranchises; i++ {
+		franchiseStore[i].TeamID = leagueResponse.League.Franchises.Franchise[i].Id
+		franchiseStore[i].TeamName = leagueResponse.League.Franchises.Franchise[i].Name
+		franchiseStore[i].OwnerName = leagueResponse.League.Franchises.Franchise[i].OwnerName
+		for j := 0; j < numLSFranchises; j++ {
+			if franchiseStore[i].TeamID == leagueStandingsResponse.LeagueStandings.Franchise[j].Id {
+				franchiseStore[i].RecordWins, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordWins)
+				franchiseStore[i].RecordLosses, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordLosses)
+				franchiseStore[i].RecordTies, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordTies)
+				franchiseStore[i].PointsFor, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor, 64)
+				franchiseStore[i].PointsAgainst, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsAgainst, 64)
+			}
+		}
+	}
+
+	return franchiseStore
+}
+
+func buildApiUrl() string {
+	response, err := http.Get(MflUrl)
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(2)
+	}
+
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var responseObject map[string]interface{}
+	err = json.Unmarshal(responseData, &responseObject)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	league := responseObject["league"].(map[string]interface{})
+
+	return league["baseURL"].(string) + "/" + strconv.Itoa(time.Now().Year()) + "/export?TYPE="
+}
