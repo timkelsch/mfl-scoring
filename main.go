@@ -3,6 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/kelseyhightower/envconfig"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -148,6 +151,10 @@ type Franchise struct {
 	TotalScore    float64
 }
 
+type Config struct {
+	MflApiKey string `envconfig:"MFL_API_KEY" required:"true"`
+}
+
 const (
 	LeagueApi          = "league"
 	LeagueStandingsApi = "leagueStandings"
@@ -178,6 +185,10 @@ func (f ByTotalScore) Less(i, j int) bool {
 }
 
 func main() {
+	lambda.Start(handler)
+}
+
+func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	apiUrl := buildApiUrl()
 	teamInfo := getTeamInfo(apiUrl)
 
@@ -190,15 +201,23 @@ func main() {
 	calculateTotalScore(teamInfo)
 	sort.Sort(ByTotalScore{teamInfo})
 	printTeam(teamInfo)
+
+	return events.APIGatewayProxyResponse{
+		Body:       printTeam(teamInfo),
+		StatusCode: 200,
+	}, nil
 }
 
-func printTeam(teams Franchises) {
-	fmt.Printf("\nTeam Name                    | Owner         | Record | FanPts | Points | Record | Total Points\n")
-	fmt.Println("-----------------------------------------------------------------------------------------------")
+func printTeam(teams Franchises) string {
+	var output string
+	output += fmt.Sprintf("\nTeam Name                    | Owner         | Record | FanPts | Points | Record | Total Points\n")
+	output += fmt.Sprintln("-----------------------------------------------------------------------------------------------")
 	for _, o := range teams {
-		fmt.Printf("%-28s | %-13s | %d-%d-%d  | %6.1f | %6.1f | %6.1f | %8.1f \n", o.TeamName, o.OwnerName,
+		output += fmt.Sprintf("%-28s | %-13s | %d-%d-%d  | %6.1f | %6.1f | %6.1f | %8.1f \n", o.TeamName, o.OwnerName,
 			o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsFor, o.PointScore, o.RecordScore, o.TotalScore)
 	}
+
+	return output
 }
 
 func calculateTotalScore(franchises Franchises) Franchises {
@@ -248,7 +267,13 @@ func calculateRecordScore(franchises Franchises) Franchises {
 }
 
 func getTeamInfo(apiUrl string) []Franchise {
-	url := apiUrl + LeagueApi + LeagueId + ApiUrlTrailer + "&APIKEY=" + os.Getenv("MFL_API_KEY")
+
+	var cfg Config
+	if err := envconfig.Process("", &cfg); err != nil {
+		fmt.Print(err.Error())
+		os.Exit(3)
+	}
+	url := apiUrl + LeagueApi + LeagueId + ApiUrlTrailer + "&APIKEY=" + cfg.MflApiKey
 	response, err := http.Get(url)
 	if err != nil {
 		fmt.Print(err.Error())
@@ -270,7 +295,7 @@ func getTeamInfo(apiUrl string) []Franchise {
 	response, err = http.Get(url)
 	if err != nil {
 		fmt.Print(err.Error())
-		os.Exit(2)
+		os.Exit(1)
 	}
 
 	responseData, err = ioutil.ReadAll(response.Body)
