@@ -156,10 +156,6 @@ const (
 	ApiUrlTrailer      = "&JSON=1"
 )
 
-type Points float32
-
-func (p Points) String() string { return fmt.Sprintf("%fg", float64(p)) }
-
 type Franchises []Franchise
 
 func (f Franchises) Len() int      { return len(f) }
@@ -192,7 +188,7 @@ func main() {
 	sort.Sort(ByRecordMagic{teamInfo})
 	calculateRecordScore(teamInfo)
 	calculateTotalScore(teamInfo)
-	sort.Sort(ByRecordMagic{teamInfo})
+	sort.Sort(ByTotalScore{teamInfo})
 	printTeam(teamInfo)
 }
 
@@ -200,8 +196,8 @@ func printTeam(teams Franchises) {
 	fmt.Printf("\nTeam Name                    | Owner         | Record | FanPts | Points | Record | Total Points\n")
 	fmt.Println("-----------------------------------------------------------------------------------------------")
 	for _, o := range teams {
-		fmt.Printf("%-28s | %-13s | %d-%d-%d  | %6.1f | %6.1f | %6.1f | %8.1f \n", o.TeamName, o.OwnerName, o.RecordWins,
-			o.RecordLosses, o.RecordTies, o.PointsFor, o.PointScore, o.RecordScore, o.TotalScore)
+		fmt.Printf("%-28s | %-13s | %d-%d-%d  | %6.1f | %6.1f | %6.1f | %8.1f \n", o.TeamName, o.OwnerName,
+			o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsFor, o.PointScore, o.RecordScore, o.TotalScore)
 	}
 }
 
@@ -231,7 +227,7 @@ func calculateRecordMagic(franchises Franchises) Franchises {
 func calculateRecordScore(franchises Franchises) Franchises {
 	for i := 0; i < len(franchises); {
 		currentMagicPoints := franchises[i].RecordMagic
-		var currentPointsForGrabs float64 = float64(len(franchises) - i)
+		var currentPointsForGrabs = float64(len(franchises) - i)
 		var teamsTied float64 = 1
 		for j := i + 1; j < len(franchises); j++ {
 			if franchises[j].RecordMagic == currentMagicPoints {
@@ -241,7 +237,7 @@ func calculateRecordScore(franchises Franchises) Franchises {
 				break
 			}
 		}
-		var pointsPerTeam float64 = float64(currentPointsForGrabs / teamsTied)
+		var pointsPerTeam = currentPointsForGrabs / teamsTied
 		for k := 0; k < int(teamsTied); k++ {
 			franchises[i+k].RecordScore = pointsPerTeam
 		}
