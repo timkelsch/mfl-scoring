@@ -210,10 +210,10 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 func printTeam(teams Franchises) string {
 	var output string
-	output += fmt.Sprintf("\nTeam Name                    | Owner         | Record | FanPts | Points | Record | Total Points\n")
-	output += fmt.Sprintln("-----------------------------------------------------------------------------------------------")
+	output += fmt.Sprintf("\nTeam Name                         | Owner         | Record | FanPts | Points | Record | Total Points\n")
+	output += fmt.Sprintln("----------------------------------------------------------------------------------------------------")
 	for _, o := range teams {
-		output += fmt.Sprintf("%-28s | %-13s | %d-%d-%d  | %6.1f | %6.1f | %6.1f | %8.1f \n", o.TeamName, o.OwnerName,
+		output += fmt.Sprintf("%-33s | %-13s | %d-%d-%d  | %6.1f | %6.1f | %6.1f | %8.1f \n", o.TeamName, o.OwnerName,
 			o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsFor, o.PointScore, o.RecordScore, o.TotalScore)
 	}
 
