@@ -158,7 +158,7 @@ type Config struct {
 const (
 	LeagueApi          = "league"
 	LeagueStandingsApi = "leagueStandings"
-	MflUrl             = "https://www76.myfantasyleague.com/2021/export?TYPE=league&L=15781&JSON=1"
+	MflUrl             = "https://www76.myfantasyleague.com/2022/export?TYPE=league&L=15781&JSON=1"
 	LeagueId           = "&L=15781"
 	ApiUrlTrailer      = "&JSON=1"
 )
@@ -210,10 +210,10 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 func printTeam(teams Franchises) string {
 	var output string
-	output += fmt.Sprintf("\nTeam Name                         | Owner         | Record | FanPts | Points | Record | Total Points\n")
-	output += fmt.Sprintln("----------------------------------------------------------------------------------------------------")
+	output += fmt.Sprintf("\nTeam Name                               | Owner         | Record | FanPts | Points | Record | Total Points\n")
+	output += fmt.Sprintln("----------------------------------------------------------------------------------------------------------")
 	for _, o := range teams {
-		output += fmt.Sprintf("%-33s | %-13s | %d-%d-%d  | %6.1f | %6.1f | %6.1f | %8.1f \n", o.TeamName, o.OwnerName,
+		output += fmt.Sprintf("%-39s | %-13s | %d-%d-%d  | %6.1f | %6.1f | %6.1f | %8.1f \n", o.TeamName, o.OwnerName,
 			o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsFor, o.PointScore, o.RecordScore, o.TotalScore)
 	}
 
@@ -274,6 +274,7 @@ func getTeamInfo(apiUrl string) []Franchise {
 		os.Exit(3)
 	}
 	url := apiUrl + LeagueApi + LeagueId + ApiUrlTrailer + "&APIKEY=" + cfg.MflApiKey
+	fmt.Printf("LeagueApi URL: %s\n", url)
 	response, err := http.Get(url)
 	if err != nil {
 		fmt.Print(err.Error())
@@ -285,6 +286,7 @@ func getTeamInfo(apiUrl string) []Franchise {
 		log.Fatal(err)
 	}
 
+
 	var leagueResponse LeagueResponse
 	err = json.Unmarshal(responseData, &leagueResponse)
 	if err != nil {
@@ -292,6 +294,7 @@ func getTeamInfo(apiUrl string) []Franchise {
 	}
 
 	url = apiUrl + LeagueStandingsApi + LeagueId + ApiUrlTrailer + "&APIKEY=" + os.Getenv("MFL_API_KEY")
+	fmt.Printf("LeagueStandingsApi URL: %s\n", url)
 	response, err = http.Get(url)
 	if err != nil {
 		fmt.Print(err.Error())
