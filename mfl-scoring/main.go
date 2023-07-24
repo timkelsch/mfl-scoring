@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -200,7 +202,6 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	calculateRecordScore(teamInfo)
 	calculateTotalScore(teamInfo)
 	sort.Sort(ByTotalScore{teamInfo})
-	printTeam(teamInfo)
 
 	return events.APIGatewayProxyResponse{
 		Body:       printTeam(teamInfo),
@@ -209,15 +210,15 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 }
 
 func printTeam(teams Franchises) string {
-	var output string
-	output += fmt.Sprintf("\nTeam Name                         | Owner         | Record | FanPts | Points | Record | Total Points\n")
-	output += fmt.Sprintln("----------------------------------------------------------------------------------------------------")
+	t := table.NewWriter()
+	t.SetOutputMirror(&bytes.Buffer{})
+	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", "Fantasy Points", "Points", "Record", "Total Points"})
 	for _, o := range teams {
-		output += fmt.Sprintf("%-33s | %-13s | %d-%d-%d  | %6.1f | %6.1f | %6.1f | %8.1f \n", o.TeamName, o.OwnerName,
-			o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsFor, o.PointScore, o.RecordScore, o.TotalScore)
+		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsFor, o.PointScore, o.RecordScore, o.TotalScore})
 	}
 
-	return output
+	t.SetStyle(table.StyleLight)
+	return t.Render()
 }
 
 func calculateTotalScore(franchises Franchises) Franchises {
@@ -272,10 +273,8 @@ func getTeamInfo() []Franchise {
 		fmt.Print(err.Error())
 		os.Exit(3)
 	}
-	//url := apiUrl + LeagueApi + LeagueId + ApiOutputType + "&APIKEY=" + os.Getenv("MFL_API_KEY") //cfg.MflApiKey
-	// Current: https://www46.myfantasyleague.com/2022/export?league&L=15781&JSON=1&APIKEY=axNp2c6RvuWtx0WmOVzGaTMeHbox
-	// Previou: https://www46.myfantasyleague.com/2022/export?TYPE=league&L=15781&JSON=1&APIKEY=axNp2c6RvuWtx0WmOVzGaTMeHbox
-	LeagueApiURL := MflUrl + LeagueYear + "/export?" + LeagueApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + os.Getenv("MFL_API_KEY") //cfg.MflApiKey
+
+	LeagueApiURL := MflUrl + LeagueYear + "/export?" + LeagueApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + cfg.MflApiKey
 	fmt.Println("LeagueApiURL: " + LeagueApiURL)
 	response, err := http.Get(LeagueApiURL)
 	if err != nil {
@@ -294,8 +293,7 @@ func getTeamInfo() []Franchise {
 		log.Fatal(err)
 	}
 
-	//url = apiUrl + LeagueStandingsApi + LeagueId + ApiOutputType + "&APIKEY=" + os.Getenv("MFL_API_KEY")
-	LeagueStandingsApiURL := MflUrl + LeagueYear + "/export?" + LeagueStandingsApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + os.Getenv("MFL_API_KEY")
+	LeagueStandingsApiURL := MflUrl + LeagueYear + "/export?" + LeagueStandingsApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + cfg.MflApiKey //os.Getenv("MFL_API_KEY")
 	fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsApiURL)
 	response, err = http.Get(LeagueStandingsApiURL)
 	if err != nil {
