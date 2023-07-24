@@ -5,5 +5,5 @@
 [alias]
 	ca = !git add -A && git commit -av
 [user]
-	email = trkschool@gmail.com
-	name = Tim K.
+	email = timkelsch@gmail.com
+	name = Tim Kelsch

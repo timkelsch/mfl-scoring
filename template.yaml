@@ -21,15 +21,11 @@ Resources:
         - x86_64
       Events:
         CatchAll:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Type: Api
           Properties:
             Path: /mfl-scoring
             Method: GET
-          #Type: HttpApi
-          #Properties:
-          #  Path: /mfl-scoring
-          #  Method: GET
-      Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+      Environment: 
         Variables:
           MFL_API_KEY: "{{resolve:ssm:MFL_API_KEY:1}}"
 
