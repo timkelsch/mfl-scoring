@@ -192,14 +192,27 @@ func main() {
 }
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	teamInfo := getTeamInfo()
+	franchiseDetails := getFranchiseDetails()
+	leagueStandings := getLeagueStandings()
+	checkResponseParity(franchiseDetails, leagueStandings)
+
+	// Nullify points assigned on double matchup weeks.
+	nullifyDoubleMatchupFantasyPoints(leagueStandings)
+
+	teamInfo := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
 
 	sort.Sort(ByPointsFor{teamInfo})
+	// Assign points to teams based on fantasy points scored
 	calculatePointsScore(teamInfo)
 
+	// Assign imaginary points to teams based on their record (1 point per win, 0.5 point per tie) so we can get the tied teams next to each other
 	calculateRecordMagic(teamInfo)
 	sort.Sort(ByRecordMagic{teamInfo})
+
+	// Assign points to teams based on their record. Teams with identical records share the points they collectively earned,
+	// Ex: If there are two teams tied for the best record, both teams would receive 9.5 points (10 points for first place + 9 points for second place, divided by 2 teams)
 	calculateRecordScore(teamInfo)
+	// Add up points assigned for fantasy points and points assigned for record
 	calculateTotalScore(teamInfo)
 	sort.Sort(ByTotalScore{teamInfo})
 
@@ -217,7 +230,6 @@ func printTeam(teams Franchises) string {
 		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsFor, o.PointScore, o.RecordScore, o.TotalScore})
 	}
 
-	t.SetStyle(table.StyleLight)
 	return t.Render()
 }
 
@@ -267,7 +279,7 @@ func calculateRecordScore(franchises Franchises) Franchises {
 	return franchises
 }
 
-func getTeamInfo() []Franchise {
+func getFranchiseDetails() LeagueResponse {
 	var cfg Config
 	if err := envconfig.Process("", &cfg); err != nil {
 		fmt.Print(err.Error())
@@ -293,14 +305,27 @@ func getTeamInfo() []Franchise {
 		log.Fatal(err)
 	}
 
+	return leagueResponse
+}
+
+func getLeagueStandings() LeagueStandingsResponse {
+	var cfg Config
+	if err := envconfig.Process("", &cfg); err != nil {
+		fmt.Print(err.Error())
+		os.Exit(3)
+	}
+
 	LeagueStandingsApiURL := MflUrl + LeagueYear + "/export?" + LeagueStandingsApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + cfg.MflApiKey //os.Getenv("MFL_API_KEY")
 	fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsApiURL)
+	var response *http.Response
+	var err error
 	response, err = http.Get(LeagueStandingsApiURL)
 	if err != nil {
 		fmt.Print(err.Error())
 		os.Exit(1)
 	}
 
+	var responseData []byte
 	responseData, err = ioutil.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
@@ -312,19 +337,33 @@ func getTeamInfo() []Franchise {
 		log.Fatal(err)
 	}
 
-	numLFranchises := len(leagueResponse.League.Franchises.Franchise)
-	numLSFranchises := len(leagueStandingsResponse.LeagueStandings.Franchise)
+	return leagueStandingsResponse
+}
 
-	if numLFranchises != numLSFranchises {
-		fmt.Printf("Responses don't have the same number of franchises:\n League API: %d\n LeagueStandings API: %d\n", numLFranchises, numLSFranchises)
+func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse LeagueStandingsResponse) {
+	numLeagueFranchises := len(leagueResponse.League.Franchises.Franchise)
+	numLeagueStandingsFranchises := len(leagueStandingsResponse.LeagueStandings.Franchise)
+
+	if numLeagueFranchises != numLeagueStandingsFranchises {
+		fmt.Printf("Responses don't have the same number of franchises:\n League API: %d\n LeagueStandings API: %d\n", numLeagueFranchises, numLeagueStandingsFranchises)
 		os.Exit(3)
 	}
+}
+
+func nullifyDoubleMatchupFantasyPoints(leagueStandingsResponse LeagueStandingsResponse) LeagueStandingsResponse {
+	// Add logic on next commit
+	return leagueStandingsResponse
+}
+
+func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, leagueStandingsResponse LeagueStandingsResponse) []Franchise {
+	numLFranchises := len(franchiseDetailsResponse.League.Franchises.Franchise)
+	numLSFranchises := len(leagueStandingsResponse.LeagueStandings.Franchise)
 
 	franchiseStore := make([]Franchise, numLFranchises)
 	for i := 0; i < numLFranchises; i++ {
-		franchiseStore[i].TeamID = leagueResponse.League.Franchises.Franchise[i].Id
-		franchiseStore[i].TeamName = leagueResponse.League.Franchises.Franchise[i].Name
-		franchiseStore[i].OwnerName = leagueResponse.League.Franchises.Franchise[i].OwnerName
+		franchiseStore[i].TeamID = franchiseDetailsResponse.League.Franchises.Franchise[i].Id
+		franchiseStore[i].TeamName = franchiseDetailsResponse.League.Franchises.Franchise[i].Name
+		franchiseStore[i].OwnerName = franchiseDetailsResponse.League.Franchises.Franchise[i].OwnerName
 		for j := 0; j < numLSFranchises; j++ {
 			if franchiseStore[i].TeamID == leagueStandingsResponse.LeagueStandings.Franchise[j].Id {
 				franchiseStore[i].RecordWins, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordWins)
@@ -337,5 +376,6 @@ func getTeamInfo() []Franchise {
 	}
 	fmt.Println("Franchises:")
 	fmt.Println(franchiseStore)
+
 	return franchiseStore
 }
