@@ -14,7 +14,6 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/kelseyhightower/envconfig"
 )
 
 type LeagueResponse struct {
@@ -138,6 +137,24 @@ type LeagueStandingsResponse struct {
 	Encoding string `json:"encoding"`
 }
 
+type LeagueWeeklyResultsResponse struct {
+	Version  string `json:"version"`
+	Schedule struct {
+		WeeklySchedule []struct {
+			Week    string `json:"week"`
+			Matchup []struct {
+				Franchise []struct {
+					ID     string `json:"id"`
+					Result string `json:"result"`
+					IsHome string `json:"isHome"`
+					Score  string `json:"score"`
+				} `json:"franchise"`
+			} `json:"matchup"`
+		} `json:"weeklySchedule"`
+	} `json:"schedule"`
+	Encoding string `json:"encoding"`
+}
+
 type Franchise struct {
 	TeamID        string
 	TeamName      string
@@ -162,6 +179,7 @@ const (
 	LeagueYear         string = "2022"
 	LeagueApi          string = "TYPE=league"
 	LeagueStandingsApi string = "TYPE=leagueStandings"
+	LeagueScheduleApi  string = "TYPE=schedule"
 	LeagueId           string = "L=15781"
 	ApiOutputType      string = "JSON=1"
 )
@@ -197,9 +215,16 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	checkResponseParity(franchiseDetails, leagueStandings)
 
 	// Nullify points assigned on double matchup weeks.
-	nullifyDoubleMatchupFantasyPoints(leagueStandings)
+	// 1. Get a list of weekly result results
+	weeklyResults := getLeagueWeeklyResults()
+
+	// 2. Zero team fantasy points for double matchup weeks
+	nullifyDoubleMatchupFantasyPoints(weeklyResults)
 
 	teamInfo := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
+
+	// 3. Add point totals to []Franchise
+	tabulateFantasyPoints(teamInfo, weeklyResults)
 
 	sort.Sort(ByPointsFor{teamInfo})
 	// Assign points to teams based on fantasy points scored
@@ -212,6 +237,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	// Assign points to teams based on their record. Teams with identical records share the points they collectively earned,
 	// Ex: If there are two teams tied for the best record, both teams would receive 9.5 points (10 points for first place + 9 points for second place, divided by 2 teams)
 	calculateRecordScore(teamInfo)
+
 	// Add up points assigned for fantasy points and points assigned for record
 	calculateTotalScore(teamInfo)
 	sort.Sort(ByTotalScore{teamInfo})
@@ -280,13 +306,7 @@ func calculateRecordScore(franchises Franchises) Franchises {
 }
 
 func getFranchiseDetails() LeagueResponse {
-	var cfg Config
-	if err := envconfig.Process("", &cfg); err != nil {
-		fmt.Print(err.Error())
-		os.Exit(3)
-	}
-
-	LeagueApiURL := MflUrl + LeagueYear + "/export?" + LeagueApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + cfg.MflApiKey
+	LeagueApiURL := MflUrl + LeagueYear + "/export?" + LeagueApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + os.Getenv("MFL_API_KEY")
 	fmt.Println("LeagueApiURL: " + LeagueApiURL)
 	response, err := http.Get(LeagueApiURL)
 	if err != nil {
@@ -309,13 +329,7 @@ func getFranchiseDetails() LeagueResponse {
 }
 
 func getLeagueStandings() LeagueStandingsResponse {
-	var cfg Config
-	if err := envconfig.Process("", &cfg); err != nil {
-		fmt.Print(err.Error())
-		os.Exit(3)
-	}
-
-	LeagueStandingsApiURL := MflUrl + LeagueYear + "/export?" + LeagueStandingsApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + cfg.MflApiKey //os.Getenv("MFL_API_KEY")
+	LeagueStandingsApiURL := MflUrl + LeagueYear + "/export?" + LeagueStandingsApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + os.Getenv("MFL_API_KEY")
 	fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsApiURL)
 	var response *http.Response
 	var err error
@@ -340,6 +354,32 @@ func getLeagueStandings() LeagueStandingsResponse {
 	return leagueStandingsResponse
 }
 
+func getLeagueWeeklyResults() LeagueWeeklyResultsResponse {
+	LeagueWeeklyResultsApiURL := MflUrl + LeagueYear + "/export?" + LeagueScheduleApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + os.Getenv("MFL_API_KEY") //cfg.MflApiKey
+	fmt.Println("LeagueWeeklyResultsApiURL: " + LeagueWeeklyResultsApiURL)
+	var response *http.Response
+	var err error
+	response, err = http.Get(LeagueWeeklyResultsApiURL)
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+
+	var responseData []byte
+	responseData, err = ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var leagueWeeklyResultsResponse LeagueWeeklyResultsResponse
+	err = json.Unmarshal(responseData, &leagueWeeklyResultsResponse)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return leagueWeeklyResultsResponse
+}
+
 func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse LeagueStandingsResponse) {
 	numLeagueFranchises := len(leagueResponse.League.Franchises.Franchise)
 	numLeagueStandingsFranchises := len(leagueStandingsResponse.LeagueStandings.Franchise)
@@ -350,9 +390,23 @@ func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse 
 	}
 }
 
-func nullifyDoubleMatchupFantasyPoints(leagueStandingsResponse LeagueStandingsResponse) LeagueStandingsResponse {
-	// Add logic on next commit
-	return leagueStandingsResponse
+func nullifyDoubleMatchupFantasyPoints(leagueWeeklyResultsResponse LeagueWeeklyResultsResponse) LeagueWeeklyResultsResponse {
+	fmt.Println("Week 15 Results Before: " + leagueWeeklyResultsResponse.Schedule.WeeklySchedule[14].Matchup[0].Franchise[0].Score)
+	numWeeks := len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule)
+
+	for week := 0; week < numWeeks; week++ {
+		if len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup) > 5 {
+			for matchup := 0; matchup < 10; matchup++ {
+				for franchise := 0; franchise < len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise); franchise++ {
+					leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise[franchise].Score = "0"
+				}
+			}
+		}
+	}
+
+	fmt.Println("Week 15 Results After: " + leagueWeeklyResultsResponse.Schedule.WeeklySchedule[14].Matchup[0].Franchise[0].Score)
+	fmt.Println()
+	return leagueWeeklyResultsResponse
 }
 
 func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, leagueStandingsResponse LeagueStandingsResponse) []Franchise {
@@ -369,13 +423,40 @@ func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, l
 				franchiseStore[i].RecordWins, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordWins)
 				franchiseStore[i].RecordLosses, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordLosses)
 				franchiseStore[i].RecordTies, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordTies)
-				franchiseStore[i].PointsFor, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor, 64)
-				franchiseStore[i].PointsAgainst, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsAgainst, 64)
+				//franchiseStore[i].PointsFor, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor, 64)
+				//franchiseStore[i].PointsAgainst, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsAgainst, 64)
 			}
 		}
 	}
 	fmt.Println("Franchises:")
 	fmt.Println(franchiseStore)
+
+	return franchiseStore
+}
+
+func tabulateFantasyPoints(franchiseStore []Franchise, leagueWeeklyResultsResponse LeagueWeeklyResultsResponse) []Franchise {
+	numWeeks := len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule)
+	//numFranchises := len(franchiseStore)
+
+	for franchiseStoreTeam := 0; franchiseStoreTeam < len(franchiseStore); franchiseStoreTeam++ {
+		for week := 0; week < numWeeks; week++ {
+			for matchup := 0; matchup < len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup); matchup++ {
+				for franchise := 0; franchise < len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise); franchise++ {
+					if leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise[franchise].ID == franchiseStore[franchiseStoreTeam].TeamID {
+						s, err := strconv.ParseFloat(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise[franchise].Score, 64)
+						fmt.Printf("fteam: %d, matchup: %d, franchise: %d, Score: %s \n", franchiseStoreTeam, matchup, franchise, leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise[franchise].Score)
+						fmt.Printf("ScoreFloat: %f \n\n", s)
+						if err != nil {
+							fmt.Print(err.Error())
+							os.Exit(1)
+						} else {
+							franchiseStore[franchiseStoreTeam].PointsFor += s
+						}
+					}
+				}
+			}
+		}
+	}
 
 	return franchiseStore
 }
