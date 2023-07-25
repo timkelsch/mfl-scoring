@@ -440,11 +440,9 @@ func tabulateFantasyPoints(franchiseStore []Franchise, leagueWeeklyResultsRespon
 				for franchise := 0; franchise < len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise); franchise++ {
 					if leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise[franchise].ID == franchiseStore[franchiseStoreTeam].TeamID {
 						s, err := strconv.ParseFloat(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise[franchise].Score, 64)
-						fmt.Printf("fteam: %d, matchup: %d, franchise: %d, Score: %s \n", franchiseStoreTeam, matchup, franchise, leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise[franchise].Score)
-						fmt.Printf("ScoreFloat: %f \n\n", s)
 						if err != nil {
 							fmt.Print(err.Error())
-							os.Exit(1)
+							os.Exit(3)
 						} else {
 							franchiseStore[franchiseStoreTeam].PointsFor += s
 						}
