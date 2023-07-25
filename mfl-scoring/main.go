@@ -194,6 +194,8 @@ type ByPointsFor struct{ Franchises }
 type ByRecordMagic struct{ Franchises }
 type ByTotalScore struct{ Franchises }
 
+var numFranchises int
+
 func (f ByPointsFor) Less(i, j int) bool {
 	return f.Franchises[i].PointsFor > f.Franchises[j].PointsFor
 }
@@ -213,11 +215,13 @@ func main() {
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	franchiseDetails := getFranchiseDetails()
 	leagueStandings := getLeagueStandings()
-	checkResponseParity(franchiseDetails, leagueStandings)
 
 	// Nullify points assigned on double matchup weeks.
 	// 1. Get a list of weekly result results
 	weeklyResults := getLeagueWeeklyResults()
+
+	numTeamsInWeeklyResults := checkNumTeamsInWeeklyResults(weeklyResults)
+	checkResponseParity(franchiseDetails, leagueStandings, numTeamsInWeeklyResults)
 
 	// 2. Zero team fantasy points for double matchup weeks
 	nullifyDoubleMatchupFantasyPoints(weeklyResults)
@@ -302,7 +306,7 @@ func calculateRecordScore(franchises Franchises) Franchises {
 		for k := 0; k < int(teamsTied); k++ {
 			franchises[i+k].RecordScore = pointsPerTeam
 		}
-		i = i + int(teamsTied)
+		i += int(teamsTied)
 	}
 
 	return franchises
@@ -334,16 +338,13 @@ func getFranchiseDetails() LeagueResponse {
 func getLeagueStandings() LeagueStandingsResponse {
 	LeagueStandingsApiURL := MflUrl + LeagueYear + "/export?" + LeagueStandingsApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + os.Getenv("MFL_API_KEY")
 	fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsApiURL)
-	var response *http.Response
-	var err error
-	response, err = http.Get(LeagueStandingsApiURL)
+	response, err := http.Get(LeagueStandingsApiURL)
 	if err != nil {
 		fmt.Print(err.Error())
 		os.Exit(1)
 	}
 
-	var responseData []byte
-	responseData, err = ioutil.ReadAll(response.Body)
+	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -360,16 +361,13 @@ func getLeagueStandings() LeagueStandingsResponse {
 func getLeagueWeeklyResults() LeagueWeeklyResultsResponse {
 	LeagueWeeklyResultsApiURL := MflUrl + LeagueYear + "/export?" + LeagueScheduleApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + os.Getenv("MFL_API_KEY") //cfg.MflApiKey
 	fmt.Println("LeagueWeeklyResultsApiURL: " + LeagueWeeklyResultsApiURL)
-	var response *http.Response
-	var err error
-	response, err = http.Get(LeagueWeeklyResultsApiURL)
+	response, err := http.Get(LeagueWeeklyResultsApiURL)
 	if err != nil {
 		fmt.Print(err.Error())
 		os.Exit(1)
 	}
 
-	var responseData []byte
-	responseData, err = ioutil.ReadAll(response.Body)
+	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -383,12 +381,36 @@ func getLeagueWeeklyResults() LeagueWeeklyResultsResponse {
 	return leagueWeeklyResultsResponse
 }
 
-func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse LeagueStandingsResponse) {
+func checkNumTeamsInWeeklyResults(leagueWeeklyResultsResponse LeagueWeeklyResultsResponse) int {
+	var uniqueTeamIDs []string
+	for week := 0; week < len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule); week++ {
+		for matchup := 0; matchup < len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup); matchup++ {
+			for franchise := 0; franchise < len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise); franchise++ {
+				uniqueTeamIDs = appendIfMissing(uniqueTeamIDs, leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise[franchise].ID)
+			}
+		}
+	}
+
+	return len(uniqueTeamIDs)
+}
+
+func appendIfMissing(slice []string, i string) []string {
+	for _, ele := range slice {
+		if ele == i {
+			return slice
+		}
+	}
+	return append(slice, i)
+}
+
+func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse LeagueStandingsResponse, numTeamsInWeeklyResults int) {
+	numFranchises, _ = strconv.Atoi(leagueResponse.League.Franchises.Count)
 	numLeagueFranchises := len(leagueResponse.League.Franchises.Franchise)
 	numLeagueStandingsFranchises := len(leagueStandingsResponse.LeagueStandings.Franchise)
 
-	if numLeagueFranchises != numLeagueStandingsFranchises {
-		fmt.Printf("Responses don't have the same number of franchises:\n League API: %d\n LeagueStandings API: %d\n", numLeagueFranchises, numLeagueStandingsFranchises)
+	if numFranchises != numLeagueStandingsFranchises || numFranchises != numLeagueStandingsFranchises || numFranchises != numTeamsInWeeklyResults {
+		fmt.Printf("Responses don't have the same number of franchises:\n League API Franchises.Count: %d\n League API: %d\n LeagueStandings API: %d\n ScheduleAPI: %d\n",
+			numFranchises, numLeagueFranchises, numLeagueStandingsFranchises, numTeamsInWeeklyResults)
 		os.Exit(3)
 	}
 }
@@ -397,8 +419,9 @@ func nullifyDoubleMatchupFantasyPoints(leagueWeeklyResultsResponse LeagueWeeklyR
 	numWeeks := len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule)
 
 	for week := 0; week < numWeeks; week++ {
-		if len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup) > 5 {
-			for matchup := 0; matchup < 10; matchup++ {
+		matchups := len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup)
+		if matchups > (numFranchises / 2) {
+			for matchup := 0; matchup < matchups; matchup++ {
 				for franchise := 0; franchise < len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise); franchise++ {
 					leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise[franchise].Score = "0"
 				}
