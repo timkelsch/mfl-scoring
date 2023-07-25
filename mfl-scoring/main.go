@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"sort"
@@ -221,9 +222,10 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	// 2. Zero team fantasy points for double matchup weeks
 	nullifyDoubleMatchupFantasyPoints(weeklyResults)
 
+	// 3. Populate the array of Franchise objects so that we know which team ID is which
 	teamInfo := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
 
-	// 3. Add point totals to []Franchise
+	// 4. Add point totals to []Franchise
 	tabulateFantasyPoints(teamInfo, weeklyResults)
 
 	sort.Sort(ByPointsFor{teamInfo})
@@ -279,6 +281,7 @@ func calculateRecordMagic(franchises Franchises) Franchises {
 	for i := 0; i < len(franchises); i++ {
 		franchises[i].RecordMagic = float64(franchises[i].RecordWins*1) + (float64(franchises[i].RecordTies) * 0.5)
 	}
+
 	return franchises
 }
 
@@ -391,7 +394,6 @@ func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse 
 }
 
 func nullifyDoubleMatchupFantasyPoints(leagueWeeklyResultsResponse LeagueWeeklyResultsResponse) LeagueWeeklyResultsResponse {
-	fmt.Println("Week 15 Results Before: " + leagueWeeklyResultsResponse.Schedule.WeeklySchedule[14].Matchup[0].Franchise[0].Score)
 	numWeeks := len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule)
 
 	for week := 0; week < numWeeks; week++ {
@@ -404,8 +406,6 @@ func nullifyDoubleMatchupFantasyPoints(leagueWeeklyResultsResponse LeagueWeeklyR
 		}
 	}
 
-	fmt.Println("Week 15 Results After: " + leagueWeeklyResultsResponse.Schedule.WeeklySchedule[14].Matchup[0].Franchise[0].Score)
-	fmt.Println()
 	return leagueWeeklyResultsResponse
 }
 
@@ -423,13 +423,9 @@ func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, l
 				franchiseStore[i].RecordWins, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordWins)
 				franchiseStore[i].RecordLosses, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordLosses)
 				franchiseStore[i].RecordTies, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordTies)
-				//franchiseStore[i].PointsFor, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor, 64)
-				//franchiseStore[i].PointsAgainst, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsAgainst, 64)
 			}
 		}
 	}
-	fmt.Println("Franchises:")
-	fmt.Println(franchiseStore)
 
 	return franchiseStore
 }
@@ -456,7 +452,13 @@ func tabulateFantasyPoints(franchiseStore []Franchise, leagueWeeklyResultsRespon
 				}
 			}
 		}
+		franchiseStore[franchiseStoreTeam].PointsFor = roundFloat(franchiseStore[franchiseStoreTeam].PointsFor, 1)
 	}
 
 	return franchiseStore
+}
+
+func roundFloat(val float64, precision uint) float64 {
+	ratio := math.Pow(10, float64(precision))
+	return math.Round(val*ratio) / ratio
 }
