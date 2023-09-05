@@ -13,10 +13,10 @@ This is a sample template for mfl-scoring - Below is a brief explanation of what
 ```
 
 ## To Do:
-[] Implement tie break with all-play record percentage
-[] Horizontally center column values
-[] Standardize decimal format
-[x] Fix column format issues 
+- [ ] Implement tie break with all-play record percentage
+- [ ] Horizontally center column values
+- [ ] Standardize decimal format
+- [x] Fix column format issues 
 
 ## Requirements
 
