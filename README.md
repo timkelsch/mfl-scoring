@@ -12,6 +12,12 @@ This is a sample template for mfl-scoring - Below is a brief explanation of what
 └── template.yaml
 ```
 
+## To Do:
+[] Implement tie break with all-play record percentage
+[] Horizontally center column values
+[] Standardize decimal format
+[x] Fix column format issues 
+
 ## Requirements
 
 * AWS CLI already configured with Administrator permission

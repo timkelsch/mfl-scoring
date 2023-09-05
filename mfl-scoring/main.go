@@ -157,18 +157,22 @@ type LeagueWeeklyResultsResponse struct {
 }
 
 type Franchise struct {
-	TeamID        string
-	TeamName      string
-	OwnerName     string
-	RecordWins    int
-	RecordLosses  int
-	RecordTies    int
-	PointsAgainst float64
-	PointsFor     float64
-	PointScore    float64
-	RecordMagic   float64
-	RecordScore   float64
-	TotalScore    float64
+	TeamID            string
+	TeamName          string
+	OwnerName         string
+	RecordWins        int
+	RecordLosses      int
+	RecordTies        int
+	PointsAgainst     float64
+	PointsFor         float64
+	PointScore        float64
+	RecordMagic       float64
+	RecordScore       float64
+	TotalScore        float64
+	AllPlayWins       int
+	AllPlayLosses     int
+	AllPlayTies       int
+	AllPlayPercentage float64
 }
 
 type Config struct {
@@ -216,21 +220,20 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	franchiseDetails := getFranchiseDetails()
 	leagueStandings := getLeagueStandings()
 
-	// Nullify points assigned on double matchup weeks.
+	// Populate the array of Franchise objects so that we know which team ID is which
+	teamInfo := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
+
+	// Generate all-play win percentage for each franchise
 	// 1. Get a list of weekly result results
 	weeklyResults := getLeagueWeeklyResults()
 
 	numTeamsInWeeklyResults := checkNumTeamsInWeeklyResults(weeklyResults)
 	checkResponseParity(franchiseDetails, leagueStandings, numTeamsInWeeklyResults)
 
-	// 2. Zero team fantasy points for double matchup weeks
-	nullifyDoubleMatchupFantasyPoints(weeklyResults)
-
-	// 3. Populate the array of Franchise objects so that we know which team ID is which
-	teamInfo := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
-
-	// 4. Add point totals to []Franchise
-	tabulateFantasyPoints(teamInfo, weeklyResults)
+	// 2. Calculate all-play wins, losses, ties, and percentage for each week and franchise, and add that data to teamInfo
+	// To do this, I think we'll need to index the []Franchises or make it a map to facilitate incrementation of each all-play field on the fly
+	// New function that compares and increments?
+	teamInfo = compileWeeklyAllPlayData(teamInfo, weeklyResults)
 
 	sort.Sort(ByPointsFor{teamInfo})
 	// Assign points to teams based on fantasy points scored
@@ -246,6 +249,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	// Add up points assigned for fantasy points and points assigned for record
 	calculateTotalScore(teamInfo)
+	// Sort by TotalScore, then by all-play percentage (whatever that ends up being per support case from MFL)
 	sort.Sort(ByTotalScore{teamInfo})
 
 	return events.APIGatewayProxyResponse{
@@ -415,23 +419,6 @@ func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse 
 	}
 }
 
-func nullifyDoubleMatchupFantasyPoints(leagueWeeklyResultsResponse LeagueWeeklyResultsResponse) LeagueWeeklyResultsResponse {
-	numWeeks := len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule)
-
-	for week := 0; week < numWeeks; week++ {
-		matchups := len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup)
-		if matchups > (numFranchises / 2) {
-			for matchup := 0; matchup < matchups; matchup++ {
-				for franchise := 0; franchise < len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise); franchise++ {
-					leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise[franchise].Score = "0"
-				}
-			}
-		}
-	}
-
-	return leagueWeeklyResultsResponse
-}
-
 func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, leagueStandingsResponse LeagueStandingsResponse) []Franchise {
 	numLFranchises := len(franchiseDetailsResponse.League.Franchises.Franchise)
 	numLSFranchises := len(leagueStandingsResponse.LeagueStandings.Franchise)
@@ -446,6 +433,8 @@ func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, l
 				franchiseStore[i].RecordWins, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordWins)
 				franchiseStore[i].RecordLosses, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordLosses)
 				franchiseStore[i].RecordTies, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordTies)
+				franchiseStore[i].PointsFor, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor, 64)
+				franchiseStore[i].PointsAgainst, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsAgainst, 64)
 			}
 		}
 	}
@@ -453,10 +442,10 @@ func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, l
 	return franchiseStore
 }
 
-func tabulateFantasyPoints(franchiseStore []Franchise, leagueWeeklyResultsResponse LeagueWeeklyResultsResponse) []Franchise {
+func compileWeeklyAllPlayData(franchiseStore []Franchise, leagueWeeklyResultsResponse LeagueWeeklyResultsResponse) []Franchise {
 	numWeeks := len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule)
-	//numFranchises := len(franchiseStore)
 
+	// Need a map of int arrays and float64 per team
 	for franchiseStoreTeam := 0; franchiseStoreTeam < len(franchiseStore); franchiseStoreTeam++ {
 		for week := 0; week < numWeeks; week++ {
 			for matchup := 0; matchup < len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup); matchup++ {

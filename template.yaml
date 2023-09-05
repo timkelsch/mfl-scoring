@@ -12,11 +12,13 @@ Globals:
 
 Resources:
   MflScoringFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
     Properties:
       CodeUri: mfl-scoring/
       Handler: mfl-scoring
-      Runtime: go1.x
+      Runtime: provided.al2
       Architectures:
         - x86_64
       Events:
@@ -30,15 +32,9 @@ Resources:
           MFL_API_KEY: "{{resolve:ssm:MFL_API_KEY:1}}"
 
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   MflScoringAPI:
     Description: "API Gateway endpoint URL for Prod environment for First Function"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/mfl-scoring/"
-  #MflScoringHttpAPI:
-  #  Description: "API Gateway HTTP endpoint URL for Prod environment for First Function"
-  #  Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/mfl-scoring/"
   MflScoringFunction:
     Description: "Lambda Function ARN"
     Value: !GetAtt MflScoringFunction.Arn
