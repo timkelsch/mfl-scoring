@@ -14,6 +14,7 @@ This is a sample template for mfl-scoring - Below is a brief explanation of what
 
 ## To Do:
 - [ ] Add linter
+- [ ] Capitalize constants in main
 - [ ] Automate testing
 - [ ] Implement tie break with all-play record percentage
 - [ ] Horizontally center column values

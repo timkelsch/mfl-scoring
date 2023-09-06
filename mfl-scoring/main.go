@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"math"
 	"net/http"
 	"os"
 	"sort"
 	"strconv"
+
+	"github.com/mfl-scoring/config"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -175,10 +177,6 @@ type Franchise struct {
 	AllPlayPercentage float64
 }
 
-type Config struct {
-	MflApiKey string `envconfig:"MFL_API_KEY" required:"true"`
-}
-
 const (
 	MflUrl             string = "https://www46.myfantasyleague.com/"
 	LeagueYear         string = "2022"
@@ -197,6 +195,14 @@ func (f Franchises) Swap(i, j int) { f[i], f[j] = f[j], f[i] }
 type ByPointsFor struct{ Franchises }
 type ByRecordMagic struct{ Franchises }
 type ByTotalScore struct{ Franchises }
+
+type Request = events.APIGatewayProxyRequest
+
+var PS = config.NewParameterStore()
+
+var conf = config.NewConfig(PS)
+
+var API_KEY = conf.ApiKey
 
 var numFranchises int
 
@@ -230,12 +236,14 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	numTeamsInWeeklyResults := checkNumTeamsInWeeklyResults(weeklyResults)
 	checkResponseParity(franchiseDetails, leagueStandings, numTeamsInWeeklyResults)
 
-	// 2. Calculate all-play wins, losses, ties, and percentage for each week and franchise, and add that data to teamInfo
+	// TODO: 2. Calculate all-play wins, losses, ties, and percentage for each week and franchise, and add that data to teamInfo
 	// To do this, I think we'll need to index the []Franchises or make it a map to facilitate incrementation of each all-play field on the fly
 	// New function that compares and increments?
-	teamInfo = compileWeeklyAllPlayData(teamInfo, weeklyResults)
 
+	// Calculate total fantasy points per team and sort the table
+	teamInfo = calculateTotalFantasyPoints(teamInfo, weeklyResults)
 	sort.Sort(ByPointsFor{teamInfo})
+
 	// Assign points to teams based on fantasy points scored
 	calculatePointsScore(teamInfo)
 
@@ -261,9 +269,11 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 func printTeam(teams Franchises) string {
 	t := table.NewWriter()
 	t.SetOutputMirror(&bytes.Buffer{})
-	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", "Fantasy Points", "Points", "Record", "Total Points"})
+	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", "Fantasy Points", "Points", "Record", "Total Points", "AllPlay Wins", "AllPlay Losses",
+		"AllPlay Ties", "AllPlay %"})
 	for _, o := range teams {
-		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsFor, o.PointScore, o.RecordScore, o.TotalScore})
+		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsFor, o.PointScore, o.RecordScore, o.TotalScore,
+			o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
 	}
 
 	return t.Render()
@@ -317,7 +327,7 @@ func calculateRecordScore(franchises Franchises) Franchises {
 }
 
 func getFranchiseDetails() LeagueResponse {
-	LeagueApiURL := MflUrl + LeagueYear + "/export?" + LeagueApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + os.Getenv("MFL_API_KEY")
+	LeagueApiURL := MflUrl + LeagueYear + "/export?" + LeagueApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + API_KEY //os.Getenv("MFL_API_KEY")
 	fmt.Println("LeagueApiURL: " + LeagueApiURL)
 	response, err := http.Get(LeagueApiURL)
 	if err != nil {
@@ -325,7 +335,7 @@ func getFranchiseDetails() LeagueResponse {
 		os.Exit(2)
 	}
 
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -340,7 +350,7 @@ func getFranchiseDetails() LeagueResponse {
 }
 
 func getLeagueStandings() LeagueStandingsResponse {
-	LeagueStandingsApiURL := MflUrl + LeagueYear + "/export?" + LeagueStandingsApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + os.Getenv("MFL_API_KEY")
+	LeagueStandingsApiURL := MflUrl + LeagueYear + "/export?" + LeagueStandingsApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + API_KEY //os.Getenv("MFL_API_KEY")
 	fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsApiURL)
 	response, err := http.Get(LeagueStandingsApiURL)
 	if err != nil {
@@ -348,7 +358,7 @@ func getLeagueStandings() LeagueStandingsResponse {
 		os.Exit(1)
 	}
 
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -363,7 +373,7 @@ func getLeagueStandings() LeagueStandingsResponse {
 }
 
 func getLeagueWeeklyResults() LeagueWeeklyResultsResponse {
-	LeagueWeeklyResultsApiURL := MflUrl + LeagueYear + "/export?" + LeagueScheduleApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + os.Getenv("MFL_API_KEY") //cfg.MflApiKey
+	LeagueWeeklyResultsApiURL := MflUrl + LeagueYear + "/export?" + LeagueScheduleApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + API_KEY //os.Getenv("MFL_API_KEY") //cfg.MflApiKey
 	fmt.Println("LeagueWeeklyResultsApiURL: " + LeagueWeeklyResultsApiURL)
 	response, err := http.Get(LeagueWeeklyResultsApiURL)
 	if err != nil {
@@ -371,7 +381,7 @@ func getLeagueWeeklyResults() LeagueWeeklyResultsResponse {
 		os.Exit(1)
 	}
 
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -442,7 +452,7 @@ func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, l
 	return franchiseStore
 }
 
-func compileWeeklyAllPlayData(franchiseStore []Franchise, leagueWeeklyResultsResponse LeagueWeeklyResultsResponse) []Franchise {
+func calculateTotalFantasyPoints(franchiseStore []Franchise, leagueWeeklyResultsResponse LeagueWeeklyResultsResponse) []Franchise {
 	numWeeks := len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule)
 
 	// Need a map of int arrays and float64 per team

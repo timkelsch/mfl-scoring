@@ -16,9 +16,11 @@ Resources:
     Metadata:
       BuildMethod: go1.x
     Properties:
+      Role: !GetAtt MflScoringFunctionIamRole.Arn
       CodeUri: mfl-scoring/
       Handler: mfl-scoring
-      Runtime: provided.al2
+      #Runtime: provided.al2
+      Runtime: go1.x
       Architectures:
         - x86_64
       Events:
@@ -31,6 +33,40 @@ Resources:
         Variables:
           MFL_API_KEY: "{{resolve:ssm:MFL_API_KEY:1}}"
 
+  MflScoringFunctionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+      - PolicyName: kmsAccess
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - kms:Decrypt
+            Resource: "*"
+      - PolicyName: ssmAccess
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - ssm:GetParameter
+            Resource:
+            - arn:aws:ssm:us-east-1:287140326780:parameter/MFL_API_KEY
+
 Outputs:
   MflScoringAPI:
     Description: "API Gateway endpoint URL for Prod environment for First Function"
@@ -38,6 +74,6 @@ Outputs:
   MflScoringFunction:
     Description: "Lambda Function ARN"
     Value: !GetAtt MflScoringFunction.Arn
-  MflScoringFunctionIamRole:
-    Description: "Implicit IAM Role created for the MflScoringFunction"
-    Value: !GetAtt MflScoringFunctionRole.Arn
+  #MflScoringFunctionIamRole:
+  #  Description: "Implicit IAM Role created for the MflScoringFunction"
+  #  Value: !GetAtt MflScoringFunctionRole.Arn
