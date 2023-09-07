@@ -171,15 +171,16 @@ type Franchise struct {
 	RecordLosses      int
 	RecordTies        int
 	PointsAgainst     float64
-	PointsFor         float64
+	PointsFor         string
 	PointScore        float64
 	RecordMagic       float64
 	RecordScore       float64
-	TotalScore        float64
+	RecordScoreString string
+	TotalScore        string
 	AllPlayWins       int
 	AllPlayLosses     int
 	AllPlayTies       int
-	AllPlayPercentage float64
+	AllPlayPercentage string
 }
 
 const (
@@ -287,6 +288,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	allPlayTeamData := scrape()
 	newShit := appendAllPlay(teamInfo, allPlayTeamData)
+	fmt.Print(newShit)
 
 	return events.APIGatewayProxyResponse{
 		Body:       printTeam(newShit),
@@ -297,11 +299,11 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 func printTeam(teams Franchises) string {
 	t := table.NewWriter()
 	t.SetOutputMirror(&bytes.Buffer{})
-	t.AppendHeader(table.Row{"Team Name", "TeamID", "Owner", "Wins", "Losses", "Ties", "Fantasy Points", "Points", "Record", "Total Points",
+	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", "Fantasy Points", "Points", "Record", "Total Points",
 		"AllPlay Wins", "AllPlay Losses", "AllPlay Ties", "AllPlay %"})
 	for _, o := range teams {
-		t.AppendRow([]interface{}{o.TeamName, o.TeamID, o.OwnerName, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsFor, o.PointScore,
-			o.RecordScore, o.TotalScore, o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
+		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsFor, o.PointScore,
+			o.RecordScoreString, o.TotalScore, o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
 	}
 
 	fantasyPoints := []table.ColumnConfig{
@@ -319,8 +321,8 @@ func printTeam(teams Franchises) string {
 	}
 
 	sortBy := []table.SortBy{
-		{Number: 10, Mode: table.DscNumeric},
-		{Number: 14, Mode: table.DscNumeric},
+		{Name: "Total Points", Mode: table.DscNumeric},
+		{Name: "AllPlay %", Mode: table.DscNumeric},
 	}
 
 	t.SetColumnConfigs(fantasyPoints)
@@ -330,7 +332,7 @@ func printTeam(teams Franchises) string {
 
 func calculateTotalScore(franchises Franchises) Franchises {
 	for i := 0; i < len(franchises); i++ {
-		franchises[i].TotalScore = franchises[i].PointScore + franchises[i].RecordScore
+		franchises[i].TotalScore = strconv.FormatFloat(franchises[i].PointScore+franchises[i].RecordScore, 'f', 1, 64)
 	}
 
 	return franchises
@@ -368,6 +370,7 @@ func calculateRecordScore(franchises Franchises) Franchises {
 		var pointsPerTeam = currentPointsForGrabs / teamsTied
 		for k := 0; k < int(teamsTied); k++ {
 			franchises[i+k].RecordScore = pointsPerTeam
+			franchises[i+k].RecordScoreString = strconv.FormatFloat(pointsPerTeam, 'f', 1, 64)
 		}
 		i += int(teamsTied)
 	}
@@ -495,7 +498,8 @@ func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, l
 				franchiseStore[i].RecordWins, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordWins)
 				franchiseStore[i].RecordLosses, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordLosses)
 				franchiseStore[i].RecordTies, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordTies)
-				franchiseStore[i].PointsFor, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor, 64)
+				//franchiseStore[i].PointsFor, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor, 64)
+				franchiseStore[i].PointsFor = leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor
 				franchiseStore[i].PointsAgainst, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsAgainst, 64)
 			}
 		}
@@ -590,8 +594,8 @@ func appendAllPlay(franchises []Franchise, allPlayTeamData []TeamData) []Franchi
 				franchises[franchise].AllPlayWins, _ = strconv.Atoi(allPlayTeamData[team].W)
 				franchises[franchise].AllPlayLosses, _ = strconv.Atoi(allPlayTeamData[team].L)
 				franchises[franchise].AllPlayTies, _ = strconv.Atoi(allPlayTeamData[team].T)
-				franchises[franchise].AllPlayPercentage, _ = strconv.ParseFloat(allPlayTeamData[team].PCT, 32)
-				franchises[franchise].AllPlayPercentage = roundFloat(franchises[franchise].AllPlayPercentage, 3)
+				//franchises[franchise].AllPlayPercentage, _ = strconv.ParseFloat(allPlayTeamData[team].PCT, 32)
+				franchises[franchise].AllPlayPercentage = allPlayTeamData[team].PCT
 			}
 		}
 	}
