@@ -305,17 +305,26 @@ func printTeam(teams Franchises) string {
 	}
 
 	fantasyPoints := []table.ColumnConfig{
-		{Number: 7, Align: text.AlignCenter},
-		{Number: 8, Align: text.AlignCenter},
-		{Number: 9, Align: text.AlignCenter},
-		{Number: 10, Align: text.AlignCenter},
-		{Number: 11, Align: text.AlignCenter},
-		{Number: 12, Align: text.AlignCenter},
-		{Number: 13, Align: text.AlignCenter},
-		{Number: 14, Align: text.AlignCenter},
+		{Name: "Wins", Align: text.AlignCenter},
+		{Name: "Losses", Align: text.AlignCenter},
+		{Name: "Ties", Align: text.AlignCenter},
+		{Name: "Fantasy Points", Align: text.AlignCenter},
+		{Name: "Points", Align: text.AlignCenter},
+		{Name: "Record", Align: text.AlignCenter},
+		{Name: "Total Points", Align: text.AlignCenter},
+		{Name: "AllPlay Wins", Align: text.AlignCenter},
+		{Name: "AllPlay Losses", Align: text.AlignCenter},
+		{Name: "AllPlay Ties", Align: text.AlignCenter},
+		{Name: "AllPlay %", Align: text.AlignCenter},
+	}
+
+	sortBy := []table.SortBy{
+		{Number: 10, Mode: table.DscNumeric},
+		{Number: 14, Mode: table.DscNumeric},
 	}
 
 	t.SetColumnConfigs(fantasyPoints)
+	t.SortBy(sortBy)
 	return t.Render()
 }
 
