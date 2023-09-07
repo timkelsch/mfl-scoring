@@ -29,9 +29,6 @@ Resources:
           Properties:
             Path: /mfl-scoring
             Method: GET
-      Environment: 
-        Variables:
-          MFL_API_KEY: "{{resolve:ssm:MFL_API_KEY:1}}"
 
   MflScoringFunctionIamRole:
     Type: AWS::IAM::Role
@@ -67,6 +64,62 @@ Resources:
             Resource:
             - arn:aws:ssm:us-east-1:287140326780:parameter/MFL_API_KEY
 
+  MflScoringApiKeySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      KmsKeyId: !GetAtt MflScoringKey.Arn
+
+  MflScoringApiKeySecretResourcePolicy:
+    Type: AWS::SecretsManager::ResourcePolicy
+    Properties: 
+      BlockPublicPolicy: True
+      ResourcePolicy:
+        Version: '2012-10-17'
+        Statement:
+        - Resource: "*"
+          Action: secretsmanager:*
+          Effect: Allow
+          Principal:
+            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+        - Resource: "*"
+          Action: 
+            - secretsmanager:DescribeSecret
+            - secretsmanager:Get*
+            - secretsmanager:List*
+          Effect: Allow
+          Principal:
+            AWS: !GetAtt MflScoringFunctionIamRole.Arn
+      SecretId: !Ref MflScoringApiKeySecret
+
+  MflScoringKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Enabled: True
+      EnableKeyRotation: True
+      MultiRegion: True
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: key-default-1
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow use of the key
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt MflScoringFunctionIamRole.Arn
+            Action:
+              - 'kms:DescribeKey'
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey'
+              - 'kms:GenerateDataKeyWithoutPlaintext'
+            Resource: '*'
+
 Outputs:
   MflScoringAPI:
     Description: "API Gateway endpoint URL for Prod environment for First Function"
@@ -74,6 +127,3 @@ Outputs:
   MflScoringFunction:
     Description: "Lambda Function ARN"
     Value: !GetAtt MflScoringFunction.Arn
-  #MflScoringFunctionIamRole:
-  #  Description: "Implicit IAM Role created for the MflScoringFunction"
-  #  Value: !GetAtt MflScoringFunctionRole.Arn

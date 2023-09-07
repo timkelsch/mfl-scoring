@@ -15,10 +15,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mfl-scoring/config"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-secretsmanager-caching-go/secretcache"
 	"github.com/gocolly/colly"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
@@ -191,6 +190,7 @@ const (
 	LeagueScheduleApi  string = "TYPE=schedule"
 	LeagueId           string = "L=15781"
 	ApiOutputType      string = "JSON=1"
+	SecretArn          string = "MflScoringApiKeySecret-x1mDJYYsWop9"
 )
 
 type Franchises []Franchise
@@ -223,11 +223,8 @@ type TeamData struct {
 	PCT                string
 }
 
-var PS = config.NewParameterStore()
-
-var conf = config.NewConfig(PS)
-
-var API_KEY = conf.ApiKey
+var secretCache, _ = secretcache.New()
+var apiKey, err = secretCache.GetSecretString(SecretArn)
 
 var numFranchises int
 
@@ -248,18 +245,16 @@ func main() {
 }
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	franchiseDetails := getFranchiseDetails()
 	leagueStandings := getLeagueStandings()
 	weeklyResults := getLeagueWeeklyResults()
 
 	numTeamsInWeeklyResults := checkNumTeamsInWeeklyResults(weeklyResults)
 	checkResponseParity(franchiseDetails, leagueStandings, numTeamsInWeeklyResults)
-
-	// TODO: Generate all-play win percentage for each franchise
-	// Calculate all-play wins, losses, ties, and percentage for each week and franchise, and add that data to teamInfo
-	// To do this, I think we'll need to index the []Franchises or make it a map to facilitate incrementation of each all-play
-	// field on the fly
-	// New function that compares and increments?
 
 	// Populate the array of Franchise objects so that we know which team ID is which
 	teamInfo := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
@@ -379,12 +374,11 @@ func calculateRecordScore(franchises Franchises) Franchises {
 }
 
 func getFranchiseDetails() LeagueResponse {
-	LeagueApiURL := MflUrl + LeagueYear + "/export?" + LeagueApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + API_KEY
+	LeagueApiURL := MflUrl + LeagueYear + "/export?" + LeagueApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + apiKey
 	fmt.Println("LeagueApiURL: " + LeagueApiURL)
 	response, err := http.Get(LeagueApiURL)
 	if err != nil {
-		fmt.Print(err.Error())
-		os.Exit(2)
+		log.Fatal(err)
 	}
 
 	responseData, err := io.ReadAll(response.Body)
@@ -402,12 +396,11 @@ func getFranchiseDetails() LeagueResponse {
 }
 
 func getLeagueStandings() LeagueStandingsResponse {
-	LeagueStandingsApiURL := MflUrl + LeagueYear + "/export?" + LeagueStandingsApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + API_KEY
+	LeagueStandingsApiURL := MflUrl + LeagueYear + "/export?" + LeagueStandingsApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + apiKey
 	fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsApiURL)
 	response, err := http.Get(LeagueStandingsApiURL)
 	if err != nil {
-		fmt.Print(err.Error())
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	responseData, err := io.ReadAll(response.Body)
@@ -425,12 +418,11 @@ func getLeagueStandings() LeagueStandingsResponse {
 }
 
 func getLeagueWeeklyResults() LeagueWeeklyResultsResponse {
-	LeagueWeeklyResultsApiURL := MflUrl + LeagueYear + "/export?" + LeagueScheduleApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + API_KEY
+	LeagueWeeklyResultsApiURL := MflUrl + LeagueYear + "/export?" + LeagueScheduleApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + apiKey
 	fmt.Println("LeagueWeeklyResultsApiURL: " + LeagueWeeklyResultsApiURL)
 	response, err := http.Get(LeagueWeeklyResultsApiURL)
 	if err != nil {
-		fmt.Print(err.Error())
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	responseData, err := io.ReadAll(response.Body)
