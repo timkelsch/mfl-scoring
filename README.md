@@ -4,6 +4,7 @@
 - [ ] Automate testing
 - [ ] Build minimal front end
 - [ ] Add year selector on front end that defaults to current year but allows checking scores for earlier years
+- [x] Migrate runtime from go1.x to provided.al2
 - [x] Move API key to secretsmanager protected by KMS
 - [x] Implement tie break with all-play record percentage - just sorting and tests left
 - [x] Standardize decimal format per column

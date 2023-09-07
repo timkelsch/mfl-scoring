@@ -18,9 +18,8 @@ Resources:
     Properties:
       Role: !GetAtt MflScoringFunctionIamRole.Arn
       CodeUri: mfl-scoring/
-      Handler: mfl-scoring
-      #Runtime: provided.al2
-      Runtime: go1.x
+      Handler: bootstrap
+      Runtime: provided.al2
       Architectures:
         - x86_64
       Events:
