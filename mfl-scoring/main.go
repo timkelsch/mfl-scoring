@@ -7,15 +7,19 @@ import (
 	"io"
 	"log"
 	"math"
+	"net"
 	"net/http"
 	"os"
+	"regexp"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/mfl-scoring/config"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/gocolly/colly"
 	"github.com/jedib0t/go-pretty/v6/table"
 )
 
@@ -198,6 +202,25 @@ type ByTotalScore struct{ Franchises }
 
 type Request = events.APIGatewayProxyRequest
 
+type TeamData struct {
+	FranchiseName      string
+	WLT                string
+	PF                 string
+	PP                 string
+	EFF                string
+	BenchPoints        string
+	MaxPF              string
+	MinPF              string
+	CouldaWon          string
+	WouldaLost         string
+	PowerRank          string
+	AlternatePowerRank string
+	W                  string
+	L                  string
+	T                  string
+	PCT                string
+}
+
 var PS = config.NewParameterStore()
 
 var conf = config.NewConfig(PS)
@@ -225,43 +248,47 @@ func main() {
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	franchiseDetails := getFranchiseDetails()
 	leagueStandings := getLeagueStandings()
-
-	// Populate the array of Franchise objects so that we know which team ID is which
-	teamInfo := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
-
-	// Generate all-play win percentage for each franchise
-	// 1. Get a list of weekly result results
 	weeklyResults := getLeagueWeeklyResults()
 
 	numTeamsInWeeklyResults := checkNumTeamsInWeeklyResults(weeklyResults)
 	checkResponseParity(franchiseDetails, leagueStandings, numTeamsInWeeklyResults)
 
-	// TODO: 2. Calculate all-play wins, losses, ties, and percentage for each week and franchise, and add that data to teamInfo
-	// To do this, I think we'll need to index the []Franchises or make it a map to facilitate incrementation of each all-play field on the fly
+	// TODO: Generate all-play win percentage for each franchise
+	// Calculate all-play wins, losses, ties, and percentage for each week and franchise, and add that data to teamInfo
+	// To do this, I think we'll need to index the []Franchises or make it a map to facilitate incrementation of each all-play
+	// field on the fly
 	// New function that compares and increments?
 
-	// Calculate total fantasy points per team and sort the table
-	teamInfo = calculateTotalFantasyPoints(teamInfo, weeklyResults)
+	// Populate the array of Franchise objects so that we know which team ID is which
+	teamInfo := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
+
+	// Put teams in order of most fantasy points scored
 	sort.Sort(ByPointsFor{teamInfo})
 
 	// Assign points to teams based on fantasy points scored
 	calculatePointsScore(teamInfo)
 
-	// Assign imaginary points to teams based on their record (1 point per win, 0.5 point per tie) so we can get the tied teams next to each other
+	// Assign points to teams based on their record (1 point per win, 0.5 point per tie)
+	//  and sort by most points so we can get the tied teams next to each other
 	calculateRecordMagic(teamInfo)
 	sort.Sort(ByRecordMagic{teamInfo})
 
 	// Assign points to teams based on their record. Teams with identical records share the points they collectively earned,
-	// Ex: If there are two teams tied for the best record, both teams would receive 9.5 points (10 points for first place + 9 points for second place, divided by 2 teams)
+	// Ex: If there are two teams tied for the best record, both teams would receive 9.5 points
+	// (10 points for first place + 9 points for second place, divided by 2 teams)
 	calculateRecordScore(teamInfo)
 
 	// Add up points assigned for fantasy points and points assigned for record
 	calculateTotalScore(teamInfo)
+
 	// Sort by TotalScore, then by all-play percentage (whatever that ends up being per support case from MFL)
 	sort.Sort(ByTotalScore{teamInfo})
 
+	allPlayTeamData := scrape()
+	newShit := appendAllPlay(teamInfo, allPlayTeamData)
+
 	return events.APIGatewayProxyResponse{
-		Body:       printTeam(teamInfo),
+		Body:       printTeam(newShit),
 		StatusCode: 200,
 	}, nil
 }
@@ -269,11 +296,11 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 func printTeam(teams Franchises) string {
 	t := table.NewWriter()
 	t.SetOutputMirror(&bytes.Buffer{})
-	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", "Fantasy Points", "Points", "Record", "Total Points", "AllPlay Wins", "AllPlay Losses",
-		"AllPlay Ties", "AllPlay %"})
+	t.AppendHeader(table.Row{"Team Name", "TeamID", "Owner", "Wins", "Losses", "Ties", "Fantasy Points", "Points", "Record", "Total Points",
+		"AllPlay Wins", "AllPlay Losses", "AllPlay Ties", "AllPlay %"})
 	for _, o := range teams {
-		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsFor, o.PointScore, o.RecordScore, o.TotalScore,
-			o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
+		t.AppendRow([]interface{}{o.TeamName, o.TeamID, o.OwnerName, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsFor, o.PointScore,
+			o.RecordScore, o.TotalScore, o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
 	}
 
 	return t.Render()
@@ -327,7 +354,7 @@ func calculateRecordScore(franchises Franchises) Franchises {
 }
 
 func getFranchiseDetails() LeagueResponse {
-	LeagueApiURL := MflUrl + LeagueYear + "/export?" + LeagueApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + API_KEY //os.Getenv("MFL_API_KEY")
+	LeagueApiURL := MflUrl + LeagueYear + "/export?" + LeagueApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + API_KEY
 	fmt.Println("LeagueApiURL: " + LeagueApiURL)
 	response, err := http.Get(LeagueApiURL)
 	if err != nil {
@@ -350,7 +377,7 @@ func getFranchiseDetails() LeagueResponse {
 }
 
 func getLeagueStandings() LeagueStandingsResponse {
-	LeagueStandingsApiURL := MflUrl + LeagueYear + "/export?" + LeagueStandingsApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + API_KEY //os.Getenv("MFL_API_KEY")
+	LeagueStandingsApiURL := MflUrl + LeagueYear + "/export?" + LeagueStandingsApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + API_KEY
 	fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsApiURL)
 	response, err := http.Get(LeagueStandingsApiURL)
 	if err != nil {
@@ -373,7 +400,7 @@ func getLeagueStandings() LeagueStandingsResponse {
 }
 
 func getLeagueWeeklyResults() LeagueWeeklyResultsResponse {
-	LeagueWeeklyResultsApiURL := MflUrl + LeagueYear + "/export?" + LeagueScheduleApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + API_KEY //os.Getenv("MFL_API_KEY") //cfg.MflApiKey
+	LeagueWeeklyResultsApiURL := MflUrl + LeagueYear + "/export?" + LeagueScheduleApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + API_KEY
 	fmt.Println("LeagueWeeklyResultsApiURL: " + LeagueWeeklyResultsApiURL)
 	response, err := http.Get(LeagueWeeklyResultsApiURL)
 	if err != nil {
@@ -422,8 +449,10 @@ func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse 
 	numLeagueFranchises := len(leagueResponse.League.Franchises.Franchise)
 	numLeagueStandingsFranchises := len(leagueStandingsResponse.LeagueStandings.Franchise)
 
-	if numFranchises != numLeagueStandingsFranchises || numFranchises != numLeagueStandingsFranchises || numFranchises != numTeamsInWeeklyResults {
-		fmt.Printf("Responses don't have the same number of franchises:\n League API Franchises.Count: %d\n League API: %d\n LeagueStandings API: %d\n ScheduleAPI: %d\n",
+	if numFranchises != numLeagueStandingsFranchises || numFranchises != numLeagueStandingsFranchises ||
+		numFranchises != numTeamsInWeeklyResults {
+		fmt.Printf(
+			"Responses don't have the same number of franchises:\n League API Franchises.Count: %d\n League API: %d\n LeagueStandings API: %d\n ScheduleAPI: %d\n",
 			numFranchises, numLeagueFranchises, numLeagueStandingsFranchises, numTeamsInWeeklyResults)
 		os.Exit(3)
 	}
@@ -440,6 +469,7 @@ func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, l
 		franchiseStore[i].OwnerName = franchiseDetailsResponse.League.Franchises.Franchise[i].OwnerName
 		for j := 0; j < numLSFranchises; j++ {
 			if franchiseStore[i].TeamID == leagueStandingsResponse.LeagueStandings.Franchise[j].Id {
+				// TODO: Handle these errors, probably in a function
 				franchiseStore[i].RecordWins, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordWins)
 				franchiseStore[i].RecordLosses, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordLosses)
 				franchiseStore[i].RecordTies, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordTies)
@@ -452,33 +482,97 @@ func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, l
 	return franchiseStore
 }
 
-func calculateTotalFantasyPoints(franchiseStore []Franchise, leagueWeeklyResultsResponse LeagueWeeklyResultsResponse) []Franchise {
-	numWeeks := len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule)
-
-	// Need a map of int arrays and float64 per team
-	for franchiseStoreTeam := 0; franchiseStoreTeam < len(franchiseStore); franchiseStoreTeam++ {
-		for week := 0; week < numWeeks; week++ {
-			for matchup := 0; matchup < len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup); matchup++ {
-				for franchise := 0; franchise < len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise); franchise++ {
-					if leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise[franchise].ID == franchiseStore[franchiseStoreTeam].TeamID {
-						s, err := strconv.ParseFloat(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise[franchise].Score, 64)
-						if err != nil {
-							fmt.Print(err.Error())
-							os.Exit(3)
-						} else {
-							franchiseStore[franchiseStoreTeam].PointsFor += s
-						}
-					}
-				}
-			}
-		}
-		franchiseStore[franchiseStoreTeam].PointsFor = roundFloat(franchiseStore[franchiseStoreTeam].PointsFor, 1)
-	}
-
-	return franchiseStore
-}
-
 func roundFloat(val float64, precision uint) float64 {
 	ratio := math.Pow(10, float64(precision))
 	return math.Round(val*ratio) / ratio
+}
+
+func scrape() []TeamData {
+	//c := colly.NewCollector(colly.Debugger(&debug.LogDebugger{}))
+	c := colly.NewCollector()
+
+	c.WithTransport(&http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   90 * time.Second,
+			KeepAlive: 60 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	})
+
+	var franchiseData []TeamData
+
+	c.OnRequest(func(r *colly.Request) {
+		fmt.Println("Scraping: ", r.URL)
+	})
+
+	c.OnResponse(func(r *colly.Response) {
+		fmt.Println("Status: ", r.StatusCode)
+	})
+
+	c.OnHTML("table.report > tbody", func(h *colly.HTMLElement) {
+		h.ForEach("tr", func(_ int, el *colly.HTMLElement) {
+			teamData := TeamData{
+				FranchiseName:      el.ChildText("td:nth-child(1)"),
+				WLT:                el.ChildText("td:nth-child(2)"),
+				PF:                 el.ChildText("td:nth-child(3)"),
+				PP:                 el.ChildText("td:nth-child(4)"),
+				EFF:                el.ChildText("td:nth-child(5)"),
+				BenchPoints:        el.ChildText("td:nth-child(6)"),
+				MaxPF:              el.ChildText("td:nth-child(7)"),
+				MinPF:              el.ChildText("td:nth-child(8)"),
+				CouldaWon:          el.ChildText("td:nth-child(9)"),
+				WouldaLost:         el.ChildText("td:nth-child(10)"),
+				PowerRank:          el.ChildText("td:nth-child(11)"),
+				AlternatePowerRank: el.ChildText("td:nth-child(12)"),
+				W:                  el.ChildText("td:nth-child(13)"),
+				L:                  el.ChildText("td:nth-child(14)"),
+				T:                  el.ChildText("td:nth-child(15)"),
+				PCT:                el.ChildText("td:nth-child(16)"),
+			}
+			franchiseData = append(franchiseData, teamData)
+		})
+	})
+
+	c.Visit("https://www46.myfantasyleague.com/2022/options?L=15781&O=101&SORT=ALLPLAY")
+
+	c.OnError(func(r *colly.Response, err error) {
+		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
+	})
+
+	var franchiseDataReturn []TeamData
+
+	re := regexp.MustCompile(`^[a-zA-Z]`)
+
+	for i := range franchiseData {
+		checker := re.FindString(franchiseData[i].FranchiseName)
+
+		if checker != "" {
+			franchiseDataReturn = append(franchiseDataReturn, franchiseData[i])
+		}
+	}
+
+	//fmt.Println("franchiseDataReturn: ", franchiseDataReturn)
+	return franchiseDataReturn
+}
+
+func appendAllPlay(franchises []Franchise, allPlayTeamData []TeamData) []Franchise {
+	// Match on team name (not awesome)
+
+	for franchise := range franchises {
+		for team := range allPlayTeamData {
+			if franchises[franchise].TeamName == allPlayTeamData[team].FranchiseName {
+				franchises[franchise].AllPlayWins, _ = strconv.Atoi(allPlayTeamData[team].W)
+				franchises[franchise].AllPlayLosses, _ = strconv.Atoi(allPlayTeamData[team].L)
+				franchises[franchise].AllPlayTies, _ = strconv.Atoi(allPlayTeamData[team].T)
+				franchises[franchise].AllPlayPercentage, _ = strconv.ParseFloat(allPlayTeamData[team].PCT, 32)
+				franchises[franchise].AllPlayPercentage = roundFloat(franchises[franchise].AllPlayPercentage, 3)
+			}
+		}
+	}
+
+	return franchises
 }
