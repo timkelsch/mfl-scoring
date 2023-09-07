@@ -1,27 +1,14 @@
-# mfl-scoring
-
-This is a sample template for mfl-scoring - Below is a brief explanation of what we have generated for you:
-
-```bash
-.
-├── Makefile                    <-- Make to automate build
-├── README.md                   <-- This instructions file
-├── hello-world                 <-- Source code for a lambda function
-│   ├── main.go                 <-- Lambda function code
-│   └── main_test.go            <-- Unit tests
-└── template.yaml
-```
-
 ## To Do:
 - [ ] Add linter
 - [ ] Capitalize constants in main
+- [ ] Implement tie break with all-play record percentage - just sorting and tests left
+- [ ] Finalize tie break rules
 - [ ] Automate testing
-- [ ] Implement tie break with all-play record percentage
 - [ ] Horizontally center column values
-- [ ] Standardize decimal format
+- [ ] Standardize decimal format per column
 - [ ] Build minimal front end
 - [ ] Add year selector on front end that defaults to current year but allows checking scores for earlier years
-- [x] Fix column format issues 
+- [x] Fix column format issues
 
 ## Requirements
 
