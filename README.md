@@ -1,4 +1,6 @@
 ## To Do:
+- [ ] Update API Key
+- [ ] Move API key to secureString protected by KMS
 - [ ] Finalize tie break rules
 - [ ] Automate testing
 - [ ] Build minimal front end
