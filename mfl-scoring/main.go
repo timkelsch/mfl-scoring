@@ -21,6 +21,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gocolly/colly"
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 )
 
 type LeagueResponse struct {
@@ -303,6 +304,18 @@ func printTeam(teams Franchises) string {
 			o.RecordScore, o.TotalScore, o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
 	}
 
+	fantasyPoints := []table.ColumnConfig{
+		{Number: 7, Align: text.AlignCenter},
+		{Number: 8, Align: text.AlignCenter},
+		{Number: 9, Align: text.AlignCenter},
+		{Number: 10, Align: text.AlignCenter},
+		{Number: 11, Align: text.AlignCenter},
+		{Number: 12, Align: text.AlignCenter},
+		{Number: 13, Align: text.AlignCenter},
+		{Number: 14, Align: text.AlignCenter},
+	}
+
+	t.SetColumnConfigs(fantasyPoints)
 	return t.Render()
 }
 

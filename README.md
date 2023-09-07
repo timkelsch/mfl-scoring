@@ -1,13 +1,12 @@
 ## To Do:
-- [ ] Add linter
-- [ ] Capitalize constants in main
 - [ ] Implement tie break with all-play record percentage - just sorting and tests left
 - [ ] Finalize tie break rules
 - [ ] Automate testing
-- [ ] Horizontally center column values
 - [ ] Standardize decimal format per column
 - [ ] Build minimal front end
 - [ ] Add year selector on front end that defaults to current year but allows checking scores for earlier years
+- [x] Horizontally center column values
+- [x] Add golangci-lint
 - [x] Fix column format issues
 
 ## Requirements
