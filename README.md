@@ -1,16 +1,20 @@
 ## To Do:
-- [ ] Update API Key
 - [ ] Finalize tie break rules
 - [ ] Automate testing
 - [ ] Build minimal front end
 - [ ] Add year selector on front end that defaults to current year but allows checking scores for earlier years
+- [x] Rip out schedule API
+- [x] Update from 2022 to 2023 league year
+- [x] Allow teams with tied fantasy points to share championship points
+- [x] Update API Key
 - [x] Migrate runtime from go1.x to provided.al2
 - [x] Move API key to secretsmanager protected by KMS
-- [x] Implement tie break with all-play record percentage - just sorting and tests left
+- [x] Implement tie break with all-play record percentage
+- [x] Scrape allplay data from front end instead of schedule API
 - [x] Standardize decimal format per column
 - [x] Horizontally center column values
 - [x] Add golangci-lint
-- [x] Fix column format issues
+- [x] Fix manual formatting - use github.com/jedib0t/go-pretty/v6/table to automate
 
 ## Requirements
 

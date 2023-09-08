@@ -172,6 +172,7 @@ type Franchise struct {
 	PointsAgainst     float64
 	PointsFor         string
 	PointScore        float64
+	PointScoreString  string
 	RecordMagic       float64
 	RecordScore       float64
 	RecordScoreString string
@@ -184,19 +185,20 @@ type Franchise struct {
 
 const (
 	MflUrl             string = "https://www46.myfantasyleague.com/"
-	LeagueYear         string = "2022"
+	LeagueYear         string = "2023"
 	LeagueApi          string = "TYPE=league"
 	LeagueStandingsApi string = "TYPE=leagueStandings"
 	LeagueScheduleApi  string = "TYPE=schedule"
+	LeagueApiEndpoint  string = "export?"
+	LeagueWebEndpoint  string = "options?"
+	LeagueOutput       string = "O=101"
+	LeagueOutputSort   string = "SORT=ALLPLAY"
 	LeagueId           string = "L=15781"
 	ApiOutputType      string = "JSON=1"
 	SecretArn          string = "MflScoringApiKeySecret-x1mDJYYsWop9"
 )
 
 type Franchises []Franchise
-
-func (f Franchises) Len() int      { return len(f) }
-func (f Franchises) Swap(i, j int) { f[i], f[j] = f[j], f[i] }
 
 type ByPointsFor struct{ Franchises }
 type ByRecordMagic struct{ Franchises }
@@ -224,9 +226,14 @@ type TeamData struct {
 }
 
 var secretCache, _ = secretcache.New()
+
+// TODO: This probably isn't the right place for this. Can't check error and possible security issue:
 var apiKey, err = secretCache.GetSecretString(SecretArn)
 
 var numFranchises int
+
+func (f Franchises) Len() int      { return len(f) }
+func (f Franchises) Swap(i, j int) { f[i], f[j] = f[j], f[i] }
 
 func (f ByPointsFor) Less(i, j int) bool {
 	return f.Franchises[i].PointsFor > f.Franchises[j].PointsFor
@@ -245,28 +252,22 @@ func main() {
 }
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	franchiseDetails := getFranchiseDetails()
 	leagueStandings := getLeagueStandings()
-	weeklyResults := getLeagueWeeklyResults()
 
-	numTeamsInWeeklyResults := checkNumTeamsInWeeklyResults(weeklyResults)
-	checkResponseParity(franchiseDetails, leagueStandings, numTeamsInWeeklyResults)
+	checkResponseParity(franchiseDetails, leagueStandings)
 
-	// Populate the array of Franchise objects so that we know which team ID is which
+	// Populate the slice of Franchise objects with league standing data
 	teamInfo := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
 
 	// Put teams in order of most fantasy points scored
 	sort.Sort(ByPointsFor{teamInfo})
 
-	// Assign points to teams based on fantasy points scored
+	// Assign points to teams based on fantasy points scored, sharing points as necessary when teams tie
 	calculatePointsScore(teamInfo)
 
 	// Assign points to teams based on their record (1 point per win, 0.5 point per tie)
-	//  and sort by most points so we can get the tied teams next to each other
+	// and sort by most points so we can get the tied teams next to each other
 	calculateRecordMagic(teamInfo)
 	sort.Sort(ByRecordMagic{teamInfo})
 
@@ -334,8 +335,24 @@ func calculateTotalScore(franchises Franchises) Franchises {
 }
 
 func calculatePointsScore(franchises Franchises) Franchises {
-	for i := 0; i < len(franchises); i++ {
-		franchises[i].PointScore = float64(len(franchises) - i)
+	for i := 0; i < len(franchises); {
+		currentFantasyPoints := franchises[i].PointsFor
+		var currentPointsForGrabs = float64(len(franchises) - i)
+		var teamsTied float64 = 1
+		for j := i + 1; j < len(franchises); j++ {
+			if franchises[j].PointsFor == currentFantasyPoints {
+				currentPointsForGrabs = currentPointsForGrabs + float64(len(franchises)) - float64(i) - teamsTied
+				teamsTied++
+			} else {
+				break
+			}
+		}
+		var pointsPerTeam = currentPointsForGrabs / teamsTied
+		for k := 0; k < int(teamsTied); k++ {
+			franchises[i+k].PointScore = pointsPerTeam
+			franchises[i+k].PointScoreString = strconv.FormatFloat(pointsPerTeam, 'f', 1, 64)
+		}
+		i += int(teamsTied)
 	}
 
 	return franchises
@@ -374,7 +391,7 @@ func calculateRecordScore(franchises Franchises) Franchises {
 }
 
 func getFranchiseDetails() LeagueResponse {
-	LeagueApiURL := MflUrl + LeagueYear + "/export?" + LeagueApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + apiKey
+	LeagueApiURL := MflUrl + LeagueYear + "/" + LeagueApiEndpoint + LeagueApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + apiKey
 	fmt.Println("LeagueApiURL: " + LeagueApiURL)
 	response, err := http.Get(LeagueApiURL)
 	if err != nil {
@@ -396,7 +413,7 @@ func getFranchiseDetails() LeagueResponse {
 }
 
 func getLeagueStandings() LeagueStandingsResponse {
-	LeagueStandingsApiURL := MflUrl + LeagueYear + "/export?" + LeagueStandingsApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + apiKey
+	LeagueStandingsApiURL := MflUrl + LeagueYear + "/" + LeagueApiEndpoint + LeagueStandingsApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + apiKey
 	fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsApiURL)
 	response, err := http.Get(LeagueStandingsApiURL)
 	if err != nil {
@@ -417,41 +434,6 @@ func getLeagueStandings() LeagueStandingsResponse {
 	return leagueStandingsResponse
 }
 
-func getLeagueWeeklyResults() LeagueWeeklyResultsResponse {
-	LeagueWeeklyResultsApiURL := MflUrl + LeagueYear + "/export?" + LeagueScheduleApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + apiKey
-	fmt.Println("LeagueWeeklyResultsApiURL: " + LeagueWeeklyResultsApiURL)
-	response, err := http.Get(LeagueWeeklyResultsApiURL)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	responseData, err := io.ReadAll(response.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var leagueWeeklyResultsResponse LeagueWeeklyResultsResponse
-	err = json.Unmarshal(responseData, &leagueWeeklyResultsResponse)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return leagueWeeklyResultsResponse
-}
-
-func checkNumTeamsInWeeklyResults(leagueWeeklyResultsResponse LeagueWeeklyResultsResponse) int {
-	var uniqueTeamIDs []string
-	for week := 0; week < len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule); week++ {
-		for matchup := 0; matchup < len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup); matchup++ {
-			for franchise := 0; franchise < len(leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise); franchise++ {
-				uniqueTeamIDs = appendIfMissing(uniqueTeamIDs, leagueWeeklyResultsResponse.Schedule.WeeklySchedule[week].Matchup[matchup].Franchise[franchise].ID)
-			}
-		}
-	}
-
-	return len(uniqueTeamIDs)
-}
-
 func appendIfMissing(slice []string, i string) []string {
 	for _, ele := range slice {
 		if ele == i {
@@ -461,16 +443,15 @@ func appendIfMissing(slice []string, i string) []string {
 	return append(slice, i)
 }
 
-func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse LeagueStandingsResponse, numTeamsInWeeklyResults int) {
+func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse LeagueStandingsResponse) {
 	numFranchises, _ = strconv.Atoi(leagueResponse.League.Franchises.Count)
 	numLeagueFranchises := len(leagueResponse.League.Franchises.Franchise)
 	numLeagueStandingsFranchises := len(leagueStandingsResponse.LeagueStandings.Franchise)
 
-	if numFranchises != numLeagueStandingsFranchises || numFranchises != numLeagueStandingsFranchises ||
-		numFranchises != numTeamsInWeeklyResults {
+	if numFranchises != numLeagueFranchises || numFranchises != numLeagueStandingsFranchises {
 		fmt.Printf(
-			"Responses don't have the same number of franchises:\n League API Franchises.Count: %d\n League API: %d\n LeagueStandings API: %d\n ScheduleAPI: %d\n",
-			numFranchises, numLeagueFranchises, numLeagueStandingsFranchises, numTeamsInWeeklyResults)
+			"Responses don't have the same number of franchises:\n League API Franchises.Count: %d\n League API: %d\n LeagueStandings API: %d\n",
+			numFranchises, numLeagueFranchises, numLeagueStandingsFranchises)
 		os.Exit(3)
 	}
 }
@@ -555,7 +536,7 @@ func scrape() []TeamData {
 		})
 	})
 
-	c.Visit("https://www46.myfantasyleague.com/2022/options?L=15781&O=101&SORT=ALLPLAY")
+	c.Visit(MflUrl + LeagueYear + "/" + LeagueWebEndpoint + LeagueId + "&" + LeagueOutput + "&" + LeagueOutputSort)
 
 	c.OnError(func(r *colly.Response, err error) {
 		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
