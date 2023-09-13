@@ -170,7 +170,8 @@ type Franchise struct {
 	RecordLosses      int
 	RecordTies        int
 	PointsAgainst     float64
-	PointsFor         string
+	PointsFor         float64
+	PointsForString   string
 	PointScore        float64
 	PointScoreString  string
 	RecordMagic       float64
@@ -262,6 +263,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	// Put teams in order of most fantasy points scored
 	sort.Sort(ByPointsFor{teamInfo})
+	fmt.Printf("%+v \n", teamInfo)
 
 	// Assign points to teams based on fantasy points scored, sharing points as necessary when teams tie
 	calculatePointsScore(teamInfo)
@@ -298,7 +300,7 @@ func printTeam(teams Franchises) string {
 	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", "Fantasy Points", "Points", "Record", "Total Points",
 		"AllPlay Wins", "AllPlay Losses", "AllPlay Ties", "AllPlay %"})
 	for _, o := range teams {
-		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsFor, o.PointScore,
+		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsForString, o.PointScore,
 			o.RecordScoreString, o.TotalScore, o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
 	}
 
@@ -471,8 +473,8 @@ func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, l
 				franchiseStore[i].RecordWins, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordWins)
 				franchiseStore[i].RecordLosses, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordLosses)
 				franchiseStore[i].RecordTies, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordTies)
-				//franchiseStore[i].PointsFor, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor, 64)
-				franchiseStore[i].PointsFor = leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor
+				franchiseStore[i].PointsFor, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor, 64)
+				franchiseStore[i].PointsForString = leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor
 				franchiseStore[i].PointsAgainst, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsAgainst, 64)
 			}
 		}

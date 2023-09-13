@@ -1,8 +1,9 @@
 ## To Do:
-- [ ] Finalize tie break rules
+- [ ] Write unit tests
 - [ ] Automate testing
 - [ ] Build minimal front end
 - [ ] Add year selector on front end that defaults to current year but allows checking scores for earlier years
+- [x] Finalize tie break rules (1st tiebreak is fantasy points, 2nd is all-play %)
 - [x] Rip out schedule API
 - [x] Update from 2022 to 2023 league year
 - [x] Allow teams with tied fantasy points to share championship points
