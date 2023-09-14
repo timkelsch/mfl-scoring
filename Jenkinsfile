@@ -1,7 +1,7 @@
 pipeline {
     agent any
     tools {
-        docker { image 'golang:1.21.1-alpine3.18' }
+        dockerTool { image 'golang:1.21.1-alpine3.18' }
     }
     environment {
         CGO_ENABLED = 0 
