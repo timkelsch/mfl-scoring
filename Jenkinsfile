@@ -15,7 +15,7 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Compiling and building'
-                sh 'make build'
+                sh 'cd mfl-scoring; go build'
             }
         }
 
