@@ -1,6 +1,6 @@
 pipeline {
     agent any
-    tools { go '1.21' }
+    tools { go 'go1.21' }
     environment {
         CGO_ENABLED = 0 
         GOPATH = "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
