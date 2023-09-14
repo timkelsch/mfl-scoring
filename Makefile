@@ -1,7 +1,8 @@
 .PHONY: build
 
 build:
-	sam build
+	cd mfl-scoring
+	go build
 
 validate:
 	sam validate --lint
