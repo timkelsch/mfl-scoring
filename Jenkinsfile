@@ -29,7 +29,7 @@ pipeline {
                     sh 'cd mfl-scoring; go vet .'
                     //echo 'Running linting'
                     echo 'Running test'
-                    sh 'go test -v'
+                    sh 'cd mfl-scoring; go test -v'
                 }
             }
         }
