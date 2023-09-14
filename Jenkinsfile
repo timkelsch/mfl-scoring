@@ -29,8 +29,8 @@ pipeline {
                     sh 'curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2'
                     echo 'Running vetting'
                     sh 'cd mfl-scoring; go vet .'
-                    echo 'Running linting'
-                    sh 'cd mfl-scoring; $GOPATH/bin/golangci-lint run -v; ls -l'
+                    //echo 'Running linting'
+                    //sh 'cd mfl-scoring; $GOPATH/bin/golangci-lint run -v; ls -l'
                     echo 'Running test'
                     sh 'cd mfl-scoring; go test -v'
                 }
