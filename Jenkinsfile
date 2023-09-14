@@ -30,7 +30,7 @@ pipeline {
                     echo 'Running vetting'
                     sh 'cd mfl-scoring; go vet .'
                     echo 'Running linting'
-                    sh 'cd mfl-scoring; $GOPATH/bin/golangci-lint'
+                    sh 'cd mfl-scoring; $GOPATH/bin/golangci-lint run -v; ls -l'
                     echo 'Running test'
                     sh 'cd mfl-scoring; go test -v'
                 }
