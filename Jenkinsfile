@@ -1,5 +1,6 @@
 pipeline {
-    agent { docker { image 'golang:1.21.1-alpine3.18' } }
+    agent any
+    tools { go '1.21' }
     environment {
         CGO_ENABLED = 0 
         GOPATH = "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
