@@ -38,7 +38,7 @@ pipeline {
         }
         
         stage('Deploy') {
-            agent { docker { image 'public.ecr.aws/sam/build-go1.x:latest' } }
+            agent { docker { image 'arm64v8/golang:latest' } }
             steps {
                 sh 'sam build'
                 //sh 'sam deploy --no-confirm-changeset --no-fail-on-empty-changeset'
