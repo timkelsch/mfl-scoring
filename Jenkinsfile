@@ -38,7 +38,7 @@ pipeline {
         }
         
         stage('Deploy') {       
-            agent { docker { image 'public.ecr.aws/t9f0t3a2/sam-lambda-go'} }
+            agent { docker { image 'docker.io/kingjabroni/sam-lambda-go:v0.1'} }
             steps {
                 sh 'sam build'
                 //sh 'sam deploy --no-confirm-changeset --no-fail-on-empty-changeset'
