@@ -40,7 +40,7 @@ pipeline {
         stage('Deploy') {       
             steps {
                 sh '/var/jenkins_home/sam/venv/bin/sam build'
-                sh '/var/jenkins_home/sam/venv/bin/sam deploy --no-confirm-changeset --no-fail-on-empty-changeset'
+                sh '/var/jenkins_home/sam/venv/bin/sam deploy -t .aws-sam/build/template.yaml --no-confirm-changeset --no-fail-on-empty-changeset'
             }
         }
     }

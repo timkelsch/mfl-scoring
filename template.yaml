@@ -122,3 +122,4 @@ Outputs:
   MflScoringFunction:
     Description: "Lambda Function ARN"
     Value: !GetAtt MflScoringFunction.Arn
+    Export: MflScoringFunctionArn
