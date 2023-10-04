@@ -407,7 +407,7 @@ func scrape() []AllPlayTeamStats {
 		})
 	})
 
-	c.Visit(MflUrl + LeagueYear + "/" + LeagueWebPath + LeagueIdQuery + "&" + PowerRankingsTableQuery + "&" + LeagueOutputSort)
+	c.Visit(MflUrl + LeagueYear + "/" + LeagueWebPath + LeagueIdQuery + "&" + PowerRankingsTableQuery + "&" + LeagueOutputSortQuery)
 
 	c.OnError(func(r *colly.Response, err error) {
 		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
