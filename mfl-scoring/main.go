@@ -120,25 +120,14 @@ type LeagueStandingsResponse struct {
 	LeagueStandings struct {
 		Franchise []struct {
 			RecordLosses  string `json:"h2hl"`
-			PowerRank     string `json:"power_rank"`
-			Dp            string `json:"dp"`
 			PointsFor     string `json:"pf"`
-			StreakLen     string `json:"streak_len"`
 			PointsAgainst string `json:"pa"`
-			Maxpa         string `json:"maxpa"`
 			Id            string `json:"id"`
 			RecordTies    string `json:"h2ht"`
-			AllPlayL      string `json:"all_play_l"`
+			AllPlayLosses string `json:"all_play_l"`
 			RecordWins    string `json:"h2hw"`
-			AllPlayW      string `json:"all_play_w"`
-			Vp            string `json:"vp"`
-			Altpwr        string `json:"altpwr"`
-			Pp            string `json:"pp"`
-			Pwr           string `json:"pwr"`
-			Minpa         string `json:"minpa"`
-			AllPlayT      string `json:"all_play_t"`
-			StreakType    string `json:"streak_type"`
-			Op            string `json:"op"`
+			AllPlayWins   string `json:"all_play_w"`
+			AllPlayTies   string `json:"all_play_t"`
 		} `json:"franchise"`
 	} `json:"leagueStandings"`
 	Encoding string `json:"encoding"`
@@ -207,23 +196,23 @@ type ByTotalScore struct{ Franchises }
 
 type Request = events.APIGatewayProxyRequest
 
-type TeamData struct {
+type AllPlayTeamStats struct {
 	FranchiseName      string
-	WLT                string
-	PF                 string
-	PP                 string
-	EFF                string
+	WinsLossesTies     string
+	PointsFor          string
+	PointsPossible     string
+	Efficiency         string
 	BenchPoints        string
-	MaxPF              string
-	MinPF              string
+	MaximumPointsFor   string
+	MinimumPointsFor   string
 	CouldaWon          string
 	WouldaLost         string
 	PowerRank          string
 	AlternatePowerRank string
-	W                  string
-	L                  string
-	T                  string
-	PCT                string
+	AllPlayWins        string
+	AllPlayLosses      string
+	AllPlayTies        string
+	AllPlayPercentage  string
 }
 
 func (f Franchises) Len() int      { return len(f) }
@@ -249,7 +238,8 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	var secretCache, _ = secretcache.New()
 	var apiKey, err = secretCache.GetSecretString(SecretArn)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Print(err.Error())
+		os.Exit(1)
 	}
 
 	franchiseDetails := getFranchiseDetails(apiKey)
@@ -258,37 +248,37 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	checkResponseParity(franchiseDetails, leagueStandings)
 
 	// Populate the slice of Franchise objects with league standing data
-	teamInfo := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
+	franchisesWithStandings := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
 
 	// Put teams in order of most fantasy points scored
-	sort.Sort(ByPointsFor{teamInfo})
-	fmt.Printf("%+v \n", teamInfo)
+	sort.Sort(ByPointsFor{franchisesWithStandings})
+	fmt.Printf("%+v \n", franchisesWithStandings)
 
 	// Assign points to teams based on fantasy points scored, sharing points as necessary when teams tie
-	calculatePointsScore(teamInfo)
+	calculatePointsScore(franchisesWithStandings)
 
 	// Assign points to teams based on their record (1 point per win, 0.5 point per tie)
 	// and sort by most points so we can get the tied teams next to each other
-	calculateRecordMagic(teamInfo)
-	sort.Sort(ByRecordMagic{teamInfo})
+	calculateRecordMagic(franchisesWithStandings)
+	sort.Sort(ByRecordMagic{franchisesWithStandings})
 
 	// Assign points to teams based on their record. Teams with identical records share the points they collectively earned,
 	// Ex: If there are two teams tied for the best record, both teams would receive 9.5 points
 	// (10 points for first place + 9 points for second place, divided by 2 teams)
-	calculateRecordScore(teamInfo)
+	calculateRecordScore(franchisesWithStandings)
 
 	// Add up points assigned for fantasy points and points assigned for record
-	calculateTotalScore(teamInfo)
+	calculateTotalScore(franchisesWithStandings)
 
 	// Sort by TotalScore, then by all-play percentage (whatever that ends up being per support case from MFL)
-	sort.Sort(ByTotalScore{teamInfo})
+	sort.Sort(ByTotalScore{franchisesWithStandings})
 
 	allPlayTeamData := scrape()
-	newShit := appendAllPlay(teamInfo, allPlayTeamData)
-	fmt.Print(newShit)
+	franchisesWithStandingsAndAllplay := appendAllPlay(franchisesWithStandings, allPlayTeamData)
+	fmt.Print(franchisesWithStandingsAndAllplay)
 
 	return events.APIGatewayProxyResponse{
-		Body:       printTeam(newShit),
+		Body:       printTeam(franchisesWithStandingsAndAllplay),
 		StatusCode: 200,
 	}, nil
 }
@@ -396,7 +386,8 @@ func getFranchiseDetails(apiKey string) LeagueResponse {
 	fmt.Println("LeagueApiURL: " + LeagueApiURL)
 	response, err := http.Get(LeagueApiURL)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Print(err.Error())
+		os.Exit(1)
 	}
 
 	responseData, err := io.ReadAll(response.Body)
@@ -478,7 +469,7 @@ func roundFloat(val float64, precision uint) float64 {
 	return math.Round(val*ratio) / ratio
 }
 
-func scrape() []TeamData {
+func scrape() []AllPlayTeamStats {
 	//c := colly.NewCollector(colly.Debugger(&debug.LogDebugger{}))
 	c := colly.NewCollector()
 
@@ -494,7 +485,7 @@ func scrape() []TeamData {
 		ExpectContinueTimeout: 1 * time.Second,
 	})
 
-	var franchiseData []TeamData
+	var allPlayTeamsStats []AllPlayTeamStats
 
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Scraping: ", r.URL)
@@ -506,25 +497,25 @@ func scrape() []TeamData {
 
 	c.OnHTML("table.report > tbody", func(h *colly.HTMLElement) {
 		h.ForEach("tr", func(_ int, el *colly.HTMLElement) {
-			teamData := TeamData{
+			allPlayTeamStats := AllPlayTeamStats{
 				FranchiseName:      el.ChildText("td:nth-child(1)"),
-				WLT:                el.ChildText("td:nth-child(2)"),
-				PF:                 el.ChildText("td:nth-child(3)"),
-				PP:                 el.ChildText("td:nth-child(4)"),
-				EFF:                el.ChildText("td:nth-child(5)"),
+				WinsLossesTies:     el.ChildText("td:nth-child(2)"),
+				PointsFor:          el.ChildText("td:nth-child(3)"),
+				PointsPossible:     el.ChildText("td:nth-child(4)"),
+				Efficiency:         el.ChildText("td:nth-child(5)"),
 				BenchPoints:        el.ChildText("td:nth-child(6)"),
-				MaxPF:              el.ChildText("td:nth-child(7)"),
-				MinPF:              el.ChildText("td:nth-child(8)"),
+				MaximumPointsFor:   el.ChildText("td:nth-child(7)"),
+				MinimumPointsFor:   el.ChildText("td:nth-child(8)"),
 				CouldaWon:          el.ChildText("td:nth-child(9)"),
 				WouldaLost:         el.ChildText("td:nth-child(10)"),
 				PowerRank:          el.ChildText("td:nth-child(11)"),
 				AlternatePowerRank: el.ChildText("td:nth-child(12)"),
-				W:                  el.ChildText("td:nth-child(13)"),
-				L:                  el.ChildText("td:nth-child(14)"),
-				T:                  el.ChildText("td:nth-child(15)"),
-				PCT:                el.ChildText("td:nth-child(16)"),
+				AllPlayWins:        el.ChildText("td:nth-child(13)"),
+				AllPlayLosses:      el.ChildText("td:nth-child(14)"),
+				AllPlayTies:        el.ChildText("td:nth-child(15)"),
+				AllPlayPercentage:  el.ChildText("td:nth-child(16)"),
 			}
-			franchiseData = append(franchiseData, teamData)
+			allPlayTeamsStats = append(allPlayTeamsStats, allPlayTeamStats)
 		})
 	})
 
@@ -534,33 +525,33 @@ func scrape() []TeamData {
 		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
 	})
 
-	var franchiseDataReturn []TeamData
+	var allPlayTeamsStatsReturn []AllPlayTeamStats
 
 	re := regexp.MustCompile(`^[a-zA-Z]`)
 
-	for i := range franchiseData {
-		checker := re.FindString(franchiseData[i].FranchiseName)
+	for i := range allPlayTeamsStats {
+		checker := re.FindString(allPlayTeamsStats[i].FranchiseName)
 
 		if checker != "" {
-			franchiseDataReturn = append(franchiseDataReturn, franchiseData[i])
+			allPlayTeamsStatsReturn = append(allPlayTeamsStatsReturn, allPlayTeamsStats[i])
 		}
 	}
 
-	//fmt.Println("franchiseDataReturn: ", franchiseDataReturn)
-	return franchiseDataReturn
+	fmt.Println("allPlayTeamsStatsReturn: ", allPlayTeamsStatsReturn)
+	return allPlayTeamsStatsReturn
 }
 
-func appendAllPlay(franchises []Franchise, allPlayTeamData []TeamData) []Franchise {
+func appendAllPlay(franchises []Franchise, allPlayTeamData []AllPlayTeamStats) []Franchise {
 	// Match on team name (not awesome)
 
 	for franchise := range franchises {
 		for team := range allPlayTeamData {
 			if franchises[franchise].TeamName == allPlayTeamData[team].FranchiseName {
-				franchises[franchise].AllPlayWins, _ = strconv.Atoi(allPlayTeamData[team].W)
-				franchises[franchise].AllPlayLosses, _ = strconv.Atoi(allPlayTeamData[team].L)
-				franchises[franchise].AllPlayTies, _ = strconv.Atoi(allPlayTeamData[team].T)
+				franchises[franchise].AllPlayWins, _ = strconv.Atoi(allPlayTeamData[team].AllPlayWins)
+				franchises[franchise].AllPlayLosses, _ = strconv.Atoi(allPlayTeamData[team].AllPlayLosses)
+				franchises[franchise].AllPlayTies, _ = strconv.Atoi(allPlayTeamData[team].AllPlayTies)
 				//franchises[franchise].AllPlayPercentage, _ = strconv.ParseFloat(allPlayTeamData[team].PCT, 32)
-				franchises[franchise].AllPlayPercentage = allPlayTeamData[team].PCT
+				franchises[franchise].AllPlayPercentage = allPlayTeamData[team].AllPlayPercentage
 			}
 		}
 	}
