@@ -71,7 +71,6 @@ type Franchise struct {
 	RecordWins        int
 	RecordLosses      int
 	RecordTies        int
-	PointsAgainst     float64
 	PointsFor         float64
 	PointsForString   string
 	PointScore        float64
@@ -110,22 +109,11 @@ type ByTotalScore struct{ Franchises }
 type Request = events.APIGatewayProxyRequest
 
 type AllPlayTeamStats struct {
-	FranchiseName      string
-	WinsLossesTies     string
-	PointsFor          string
-	PointsPossible     string
-	Efficiency         string
-	BenchPoints        string
-	MaximumPointsFor   string
-	MinimumPointsFor   string
-	CouldaWon          string
-	WouldaLost         string
-	PowerRank          string
-	AlternatePowerRank string
-	AllPlayWins        string
-	AllPlayLosses      string
-	AllPlayTies        string
-	AllPlayPercentage  string
+	FranchiseName     string
+	AllPlayWins       string
+	AllPlayLosses     string
+	AllPlayTies       string
+	AllPlayPercentage string
 }
 
 func (f Franchises) Len() int      { return len(f) }
@@ -369,7 +357,6 @@ func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, l
 				franchiseStore[i].RecordTies, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordTies)
 				franchiseStore[i].PointsFor, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor, 64)
 				franchiseStore[i].PointsForString = leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor
-				franchiseStore[i].PointsAgainst, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsAgainst, 64)
 			}
 		}
 	}
@@ -411,22 +398,11 @@ func scrape() []AllPlayTeamStats {
 	c.OnHTML("table.report > tbody", func(h *colly.HTMLElement) {
 		h.ForEach("tr", func(_ int, el *colly.HTMLElement) {
 			allPlayTeamStats := AllPlayTeamStats{
-				FranchiseName:      el.ChildText("td:nth-child(1)"),
-				WinsLossesTies:     el.ChildText("td:nth-child(2)"),
-				PointsFor:          el.ChildText("td:nth-child(3)"),
-				PointsPossible:     el.ChildText("td:nth-child(4)"),
-				Efficiency:         el.ChildText("td:nth-child(5)"),
-				BenchPoints:        el.ChildText("td:nth-child(6)"),
-				MaximumPointsFor:   el.ChildText("td:nth-child(7)"),
-				MinimumPointsFor:   el.ChildText("td:nth-child(8)"),
-				CouldaWon:          el.ChildText("td:nth-child(9)"),
-				WouldaLost:         el.ChildText("td:nth-child(10)"),
-				PowerRank:          el.ChildText("td:nth-child(11)"),
-				AlternatePowerRank: el.ChildText("td:nth-child(12)"),
-				AllPlayWins:        el.ChildText("td:nth-child(13)"),
-				AllPlayLosses:      el.ChildText("td:nth-child(14)"),
-				AllPlayTies:        el.ChildText("td:nth-child(15)"),
-				AllPlayPercentage:  el.ChildText("td:nth-child(16)"),
+				FranchiseName:     el.ChildText("td:nth-child(1)"),
+				AllPlayWins:       el.ChildText("td:nth-child(13)"),
+				AllPlayLosses:     el.ChildText("td:nth-child(14)"),
+				AllPlayTies:       el.ChildText("td:nth-child(15)"),
+				AllPlayPercentage: el.ChildText("td:nth-child(16)"),
 			}
 			allPlayTeamsStats = append(allPlayTeamsStats, allPlayTeamStats)
 		})
