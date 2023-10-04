@@ -1,6 +1,6 @@
-module github.com/mfl-scoring
+module github.com/timkelsch/mfl-scoring/mfl-scoring
 
-go 1.17
+go 1.21
 
 require (
 	github.com/aws/aws-lambda-go v1.27.0
