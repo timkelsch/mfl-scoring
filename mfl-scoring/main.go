@@ -26,91 +26,25 @@ import (
 type LeagueResponse struct {
 	Version string `json:"version"`
 	League  struct {
-		CurrentWaiverType string `json:"currentWaiverType"`
-		PlayerLimitUnit   string `json:"playerLimitUnit"`
-		TaxiSquad         string `json:"taxiSquad"`
-		EndWeek           string `json:"endWeek"`
-		MaxWaiverRounds   string `json:"maxWaiverRounds"`
-		Lockout           string `json:"lockout"`
-		Franchises        struct {
+		Franchises struct {
 			Count     string `json:"count"`
 			Franchise []struct {
-				Icon                 string `json:"icon,omitempty"`
-				Name                 string `json:"name"`
-				WaiverSortOrder      string `json:"waiverSortOrder"`
-				LastVisit            string `json:"lastVisit"`
-				Logo                 string `json:"logo,omitempty"`
-				Email                string `json:"email"`
-				BbidAvailableBalance string `json:"bbidAvailableBalance"`
-				Id                   string `json:"id"`
-				OwnerName            string `json:"owner_name"`
-				Cell                 string `json:"cell,omitempty"`
-				Country              string `json:"country,omitempty"`
-				Phone                string `json:"phone,omitempty"`
-				State                string `json:"state,omitempty"`
-				Zip                  string `json:"zip,omitempty"`
-				City                 string `json:"city,omitempty"`
-				Address              string `json:"address,omitempty"`
-				TwitterUsername      string `json:"twitterUsername,omitempty"`
-				Abbrev               string `json:"abbrev,omitempty"`
-				Sound                string `json:"sound,omitempty"`
-				Url                  string `json:"url,omitempty"`
-				Stadium              string `json:"stadium,omitempty"`
-				PlayAudio            string `json:"play_audio,omitempty"`
-				MailEvent            string `json:"mail_event,omitempty"`
-				WirelessCarrier      string `json:"wireless_carrier,omitempty"`
-				Username             string `json:"username,omitempty"`
-				TimeZone             string `json:"time_zone,omitempty"`
-				UseAdvancedEditor    string `json:"use_advanced_editor,omitempty"`
+				Name      string `json:"name"`
+				Id        string `json:"id"`
+				OwnerName string `json:"owner_name"`
+				Username  string `json:"username,omitempty"`
 			} `json:"franchise"`
 		} `json:"franchises"`
-		StandingsSort string `json:"standingsSort"`
-		Id            string `json:"id"`
-		History       struct {
+		Id      string `json:"id"`
+		History struct {
 			League []struct {
 				Url  string `json:"url"`
 				Year string `json:"year"`
 			} `json:"league"`
 		} `json:"history"`
-		RosterSize      string `json:"rosterSize"`
-		Name            string `json:"name"`
-		BbidSeasonLimit string `json:"bbidSeasonLimit"`
-		RosterLimits    struct {
-			Position []struct {
-				Name  string `json:"name"`
-				Limit string `json:"limit"`
-			} `json:"position"`
-		} `json:"rosterLimits"`
-		BbidIncrement string `json:"bbidIncrement"`
-		MobileAlerts  string `json:"mobileAlerts"`
-		Starters      struct {
-			Count    string `json:"count"`
-			Position []struct {
-				Name  string `json:"name"`
-				Limit string `json:"limit"`
-			} `json:"position"`
-		} `json:"starters"`
-		BestLineup            string `json:"bestLineup"`
-		Precision             string `json:"precision"`
-		LastRegularSeasonWeek string `json:"lastRegularSeasonWeek"`
-		SurvivorPool          string `json:"survivorPool"`
-		BbidTiebreaker        string `json:"bbidTiebreaker"`
-		UsesContractYear      string `json:"usesContractYear"`
-		MinKeepers            string `json:"minKeepers"`
-		InjuredReserve        string `json:"injuredReserve"`
-		BbidConditional       string `json:"bbidConditional"`
-		StartWeek             string `json:"startWeek"`
-		SurvivorPoolStartWeek string `json:"survivorPoolStartWeek"`
-		SurvivorPoolEndWeek   string `json:"survivorPoolEndWeek"`
-		RostersPerPlayer      string `json:"rostersPerPlayer"`
-		BbidFCFSCharge        string `json:"bbidFCFSCharge"`
-		LeagueLogo            string `json:"leagueLogo"`
-		H2H                   string `json:"h2h"`
-		UsesSalaries          string `json:"usesSalaries"`
-		MaxKeepers            string `json:"maxKeepers"`
-		BbidMinimum           string `json:"bbidMinimum"`
-		BaseURL               string `json:"baseURL"`
-		LoadRosters           string `json:"loadRosters"`
+		Name    string `json:"name"`
+		H2H     string `json:"h2h"`
+		BaseURL string `json:"baseURL"`
 	} `json:"league"`
 	Encoding string `json:"encoding"`
 }
@@ -119,35 +53,14 @@ type LeagueStandingsResponse struct {
 	Version         string `json:"version"`
 	LeagueStandings struct {
 		Franchise []struct {
+			Id            string `json:"id"`
+			RecordWins    string `json:"h2hw"`
 			RecordLosses  string `json:"h2hl"`
+			RecordTies    string `json:"h2ht"`
 			PointsFor     string `json:"pf"`
 			PointsAgainst string `json:"pa"`
-			Id            string `json:"id"`
-			RecordTies    string `json:"h2ht"`
-			AllPlayLosses string `json:"all_play_l"`
-			RecordWins    string `json:"h2hw"`
-			AllPlayWins   string `json:"all_play_w"`
-			AllPlayTies   string `json:"all_play_t"`
 		} `json:"franchise"`
 	} `json:"leagueStandings"`
-	Encoding string `json:"encoding"`
-}
-
-type LeagueWeeklyResultsResponse struct {
-	Version  string `json:"version"`
-	Schedule struct {
-		WeeklySchedule []struct {
-			Week    string `json:"week"`
-			Matchup []struct {
-				Franchise []struct {
-					ID     string `json:"id"`
-					Result string `json:"result"`
-					IsHome string `json:"isHome"`
-					Score  string `json:"score"`
-				} `json:"franchise"`
-			} `json:"matchup"`
-		} `json:"weeklySchedule"`
-	} `json:"schedule"`
 	Encoding string `json:"encoding"`
 }
 
