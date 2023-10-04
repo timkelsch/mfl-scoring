@@ -226,13 +226,6 @@ type TeamData struct {
 	PCT                string
 }
 
-var secretCache, _ = secretcache.New()
-
-// TODO: This probably isn't the right place for this. Can't check error and possible security issue:
-var apiKey, err = secretCache.GetSecretString(SecretArn)
-
-var numFranchises int
-
 func (f Franchises) Len() int      { return len(f) }
 func (f Franchises) Swap(i, j int) { f[i], f[j] = f[j], f[i] }
 
@@ -253,8 +246,14 @@ func main() {
 }
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	franchiseDetails := getFranchiseDetails()
-	leagueStandings := getLeagueStandings()
+	var secretCache, _ = secretcache.New()
+	var apiKey, err = secretCache.GetSecretString(SecretArn)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	franchiseDetails := getFranchiseDetails(apiKey)
+	leagueStandings := getLeagueStandings(apiKey)
 
 	checkResponseParity(franchiseDetails, leagueStandings)
 
@@ -392,7 +391,7 @@ func calculateRecordScore(franchises Franchises) Franchises {
 	return franchises
 }
 
-func getFranchiseDetails() LeagueResponse {
+func getFranchiseDetails(apiKey string) LeagueResponse {
 	LeagueApiURL := MflUrl + LeagueYear + "/" + LeagueApiEndpoint + LeagueApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + apiKey
 	fmt.Println("LeagueApiURL: " + LeagueApiURL)
 	response, err := http.Get(LeagueApiURL)
@@ -414,7 +413,7 @@ func getFranchiseDetails() LeagueResponse {
 	return leagueResponse
 }
 
-func getLeagueStandings() LeagueStandingsResponse {
+func getLeagueStandings(apiKey string) LeagueStandingsResponse {
 	LeagueStandingsApiURL := MflUrl + LeagueYear + "/" + LeagueApiEndpoint + LeagueStandingsApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + apiKey
 	fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsApiURL)
 	response, err := http.Get(LeagueStandingsApiURL)
@@ -436,17 +435,8 @@ func getLeagueStandings() LeagueStandingsResponse {
 	return leagueStandingsResponse
 }
 
-func appendIfMissing(slice []string, i string) []string {
-	for _, ele := range slice {
-		if ele == i {
-			return slice
-		}
-	}
-	return append(slice, i)
-}
-
 func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse LeagueStandingsResponse) {
-	numFranchises, _ = strconv.Atoi(leagueResponse.League.Franchises.Count)
+	var numFranchises, _ = strconv.Atoi(leagueResponse.League.Franchises.Count)
 	numLeagueFranchises := len(leagueResponse.League.Franchises.Franchise)
 	numLeagueStandingsFranchises := len(leagueStandingsResponse.LeagueStandings.Franchise)
 
