@@ -86,18 +86,17 @@ type Franchise struct {
 }
 
 const (
-	MflUrl             string = "https://www46.myfantasyleague.com/"
-	LeagueYear         string = "2023"
-	LeagueApi          string = "TYPE=league"
-	LeagueStandingsApi string = "TYPE=leagueStandings"
-	LeagueScheduleApi  string = "TYPE=schedule"
-	LeagueApiEndpoint  string = "export?"
-	LeagueWebEndpoint  string = "options?"
-	LeagueOutput       string = "O=101"
-	LeagueOutputSort   string = "SORT=ALLPLAY"
-	LeagueId           string = "L=15781"
-	ApiOutputType      string = "JSON=1"
-	SecretArn          string = "MflScoringApiKeySecret-x1mDJYYsWop9"
+	MflUrl                  string = "https://www46.myfantasyleague.com/"
+	LeagueYear              string = "2023"
+	LeagueApiQuery          string = "TYPE=league"
+	LeagueStandingsApiQuery string = "TYPE=leagueStandings"
+	LeagueApiPath           string = "export?"
+	LeagueWebPath           string = "options?"
+	PowerRankingsTableQuery string = "O=101"
+	LeagueOutputSortQuery   string = "SORT=ALLPLAY"
+	LeagueIdQuery           string = "L=15781"
+	ApiOutputTypeQuery      string = "JSON=1"
+	ApiKeySecretArn         string = "MflScoringApiKeySecret-x1mDJYYsWop9"
 )
 
 type Franchises []Franchise
@@ -137,7 +136,7 @@ func main() {
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var secretCache, _ = secretcache.New()
-	var apiKey, err = secretCache.GetSecretString(SecretArn)
+	var apiKey, err = secretCache.GetSecretString(ApiKeySecretArn)
 	if err != nil {
 		fmt.Print(err.Error())
 		os.Exit(1)
@@ -283,7 +282,7 @@ func calculateRecordScore(franchises Franchises) Franchises {
 }
 
 func getFranchiseDetails(apiKey string) LeagueResponse {
-	LeagueApiURL := MflUrl + LeagueYear + "/" + LeagueApiEndpoint + LeagueApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + apiKey
+	LeagueApiURL := MflUrl + LeagueYear + "/" + LeagueApiPath + LeagueApiQuery + "&" + LeagueIdQuery + "&" + ApiOutputTypeQuery + "&APIKEY=" + apiKey
 	fmt.Println("LeagueApiURL: " + LeagueApiURL)
 	response, err := http.Get(LeagueApiURL)
 	if err != nil {
@@ -306,7 +305,7 @@ func getFranchiseDetails(apiKey string) LeagueResponse {
 }
 
 func getLeagueStandings(apiKey string) LeagueStandingsResponse {
-	LeagueStandingsApiURL := MflUrl + LeagueYear + "/" + LeagueApiEndpoint + LeagueStandingsApi + "&" + LeagueId + "&" + ApiOutputType + "&APIKEY=" + apiKey
+	LeagueStandingsApiURL := MflUrl + LeagueYear + "/" + LeagueApiPath + LeagueStandingsApiQuery + "&" + LeagueIdQuery + "&" + ApiOutputTypeQuery + "&APIKEY=" + apiKey
 	fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsApiURL)
 	response, err := http.Get(LeagueStandingsApiURL)
 	if err != nil {
@@ -408,7 +407,7 @@ func scrape() []AllPlayTeamStats {
 		})
 	})
 
-	c.Visit(MflUrl + LeagueYear + "/" + LeagueWebEndpoint + LeagueId + "&" + LeagueOutput + "&" + LeagueOutputSort)
+	c.Visit(MflUrl + LeagueYear + "/" + LeagueWebPath + LeagueIdQuery + "&" + PowerRankingsTableQuery + "&" + LeagueOutputSort)
 
 	c.OnError(func(r *colly.Response, err error) {
 		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
