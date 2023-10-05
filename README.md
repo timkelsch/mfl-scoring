@@ -1,6 +1,7 @@
 ## To Do:
 - [ ] Write unit tests
 - [ ] Find a better way of dealing with int/float issue in structs
+- [ ] Consolidate standard and allplay w/l/t into single fields
 - [ ] Add points tie breaker
 - [ ] Build minimal front end
 - [ ] Add year selector on front end that defaults to current year but allows checking scores for earlier years

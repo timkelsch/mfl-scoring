@@ -226,6 +226,8 @@ func calculateTotalScore(franchises Franchises) Franchises {
 }
 
 func calculatePointsScore(franchises Franchises) Franchises {
+	j, _ := json.MarshalIndent(franchises, "", "    ")
+	fmt.Println(string(j))
 	for i := 0; i < len(franchises); {
 		currentFantasyPoints := franchises[i].PointsFor
 		var currentPointsForGrabs = float64(len(franchises) - i)

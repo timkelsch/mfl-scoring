@@ -39,6 +39,7 @@ require (
 
 require (
 	github.com/jedib0t/go-pretty/v6 v6.4.6
+	github.com/nsf/jsondiff v0.0.0-20230430225905-43f6cf3098c1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/sys v0.12.0 // indirect
 )
