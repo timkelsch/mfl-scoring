@@ -5,6 +5,7 @@ pipeline {
         CGO_ENABLED = 0 
         GOPATH = "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
         GOCACHE="${WORKSPACE}"
+        SAM_CLI_TELEMETRY=0
     }
     stages {        
         stage('Pre Test') {
@@ -40,7 +41,7 @@ pipeline {
         stage('Deploy') {       
             steps {
                 sh '/var/jenkins_home/sam/venv/bin/sam build'
-                sh '/var/jenkins_home/sam/venv/bin/sam deploy -t .aws-sam/build/template.yaml --no-confirm-changeset --no-fail-on-empty-changeset'
+                sh '/var/jenkins_home/sam/venv/bin/sam deploy -t .aws-sam/build/template.yaml --no-confirm-changeset --no-fail-on-empty-changeset --config-file samconfig.yaml'
             }
         }
     }
