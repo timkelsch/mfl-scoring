@@ -41,7 +41,7 @@ pipeline {
         stage('Deploy') {       
             steps {
                 sh '/var/jenkins_home/sam/venv/bin/sam build'
-                sh 'pwd && ls -l && /var/jenkins_home/sam/venv/bin/sam deploy -t template.yaml --config-file samconfig.toml --no-confirm-changeset --no-fail-on-empty-changeset'
+                sh 'pwd && ls -al && /var/jenkins_home/sam/venv/bin/sam deploy -t template.yaml --config-file samconfig.toml --no-confirm-changeset --no-fail-on-empty-changeset'
             }
         }
     }
