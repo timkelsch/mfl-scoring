@@ -41,7 +41,7 @@ pipeline {
         stage('Deploy') {       
             steps {
                 sh '/var/jenkins_home/sam/venv/bin/sam build'
-                sh 'pwd && ls -al .aws-sam/build && /var/jenkins_home/sam/venv/bin/sam deploy -t .aws-sam/build/template.yaml --config-file samconfig.toml --no-confirm-changeset --no-fail-on-empty-changeset'
+                sh '/var/jenkins_home/sam/venv/bin/sam deploy -t .aws-sam/build/template.yaml --config-file /var/jenkins_home/workspace/mfl-pipeline/samconfig.toml --no-confirm-changeset --no-fail-on-empty-changeset'
             }
         }
     }
