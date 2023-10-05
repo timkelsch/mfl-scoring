@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -30,15 +31,15 @@ type LeagueResponse struct {
 			Count     string `json:"count"`
 			Franchise []struct {
 				Name      string `json:"name"`
-				Id        string `json:"id"`
+				ID        string `json:"id"`
 				OwnerName string `json:"owner_name"`
 				Username  string `json:"username,omitempty"`
 			} `json:"franchise"`
 		} `json:"franchises"`
-		Id      string `json:"id"`
+		ID      string `json:"id"`
 		History struct {
 			League []struct {
-				Url  string `json:"url"`
+				URL  string `json:"url"`
 				Year string `json:"year"`
 			} `json:"league"`
 		} `json:"history"`
@@ -53,7 +54,7 @@ type LeagueStandingsResponse struct {
 	Version         string `json:"version"`
 	LeagueStandings struct {
 		Franchise []struct {
-			Id            string `json:"id"`
+			ID            string `json:"id"`
 			RecordWins    string `json:"h2hw"`
 			RecordLosses  string `json:"h2hl"`
 			RecordTies    string `json:"h2ht"`
@@ -86,17 +87,17 @@ type Franchise struct {
 }
 
 const (
-	MflUrl                  string = "https://www46.myfantasyleague.com/"
+	MflURL                  string = "https://www46.myfantasyleague.com/"
 	LeagueYear              string = "2023"
-	LeagueApiQuery          string = "TYPE=league"
-	LeagueStandingsApiQuery string = "TYPE=leagueStandings"
-	LeagueApiPath           string = "export?"
+	LeagueAPIQuery          string = "TYPE=league"
+	LeagueStandingsAPIQuery string = "TYPE=leagueStandings"
+	LeagueAPIPath           string = "export?"
 	LeagueWebPath           string = "options?"
 	PowerRankingsTableQuery string = "O=101"
 	LeagueOutputSortQuery   string = "SORT=ALLPLAY"
-	LeagueIdQuery           string = "L=15781"
-	ApiOutputTypeQuery      string = "JSON=1"
-	ApiKeySecretArn         string = "MflScoringApiKeySecret-x1mDJYYsWop9"
+	LeagueIDQuery           string = "L=15781"
+	APIOutputTypeQuery      string = "JSON=1"
+	APIKeySecretARN         string = "MflScoringApiKeySecret-x1mDJYYsWop9"
 )
 
 type Franchises []Franchise
@@ -134,12 +135,14 @@ func main() {
 	lambda.Start(handler)
 }
 
-func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	var secretCache, _ = secretcache.New()
-	var apiKey, err = secretCache.GetSecretString(ApiKeySecretArn)
+func handler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	secretCache, err := secretcache.New()
 	if err != nil {
-		fmt.Print(err.Error())
-		os.Exit(1)
+		log.Fatal(err)
+	}
+	apiKey, err := secretCache.GetSecretString(APIKeySecretARN)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	franchiseDetails := getFranchiseDetails(apiKey)
@@ -226,7 +229,10 @@ func calculateTotalScore(franchises Franchises) Franchises {
 }
 
 func calculatePointsScore(franchises Franchises) Franchises {
-	j, _ := json.MarshalIndent(franchises, "", "    ")
+	j, err := json.MarshalIndent(franchises, "", "    ")
+	if err != nil {
+		fmt.Print(err.Error())
+	}
 	fmt.Println(string(j))
 	for i := 0; i < len(franchises); {
 		currentFantasyPoints := franchises[i].PointsFor
@@ -284,17 +290,17 @@ func calculateRecordScore(franchises Franchises) Franchises {
 }
 
 func getFranchiseDetails(apiKey string) LeagueResponse {
-	LeagueApiURL := MflUrl + LeagueYear + "/" + LeagueApiPath + LeagueApiQuery + "&" + LeagueIdQuery + "&" + ApiOutputTypeQuery + "&APIKEY=" + apiKey
-	fmt.Println("LeagueApiURL: " + LeagueApiURL)
-	response, err := http.Get(LeagueApiURL)
+	LeagueAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueAPIQuery + "&" + LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
+	fmt.Println("LeagueApiURL: " + LeagueAPIURL)
+
+	response, err := http.NewRequestWithContext(context.Background(), http.MethodGet, LeagueAPIURL, http.NoBody)
 	if err != nil {
-		fmt.Print(err.Error())
-		os.Exit(1)
+		log.Fatal(err.Error())
 	}
 
 	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err.Error())
 	}
 
 	var leagueResponse LeagueResponse
@@ -307,11 +313,12 @@ func getFranchiseDetails(apiKey string) LeagueResponse {
 }
 
 func getLeagueStandings(apiKey string) LeagueStandingsResponse {
-	LeagueStandingsApiURL := MflUrl + LeagueYear + "/" + LeagueApiPath + LeagueStandingsApiQuery + "&" + LeagueIdQuery + "&" + ApiOutputTypeQuery + "&APIKEY=" + apiKey
-	fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsApiURL)
-	response, err := http.Get(LeagueStandingsApiURL)
+	LeagueStandingsAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueStandingsAPIQuery + "&" + LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
+	fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsAPIURL)
+
+	response, err := http.NewRequestWithContext(context.Background(), http.MethodGet, LeagueStandingsAPIURL, http.NoBody)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err.Error())
 	}
 
 	responseData, err := io.ReadAll(response.Body)
@@ -329,7 +336,7 @@ func getLeagueStandings(apiKey string) LeagueStandingsResponse {
 }
 
 func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse LeagueStandingsResponse) {
-	var numFranchises, _ = strconv.Atoi(leagueResponse.League.Franchises.Count)
+	var numFranchises = convertStringToInteger(leagueResponse.League.Franchises.Count)
 	numLeagueFranchises := len(leagueResponse.League.Franchises.Franchise)
 	numLeagueStandingsFranchises := len(leagueStandingsResponse.LeagueStandings.Franchise)
 
@@ -347,22 +354,36 @@ func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, l
 
 	franchiseStore := make([]Franchise, numLFranchises)
 	for i := 0; i < numLFranchises; i++ {
-		franchiseStore[i].TeamID = franchiseDetailsResponse.League.Franchises.Franchise[i].Id
+		franchiseStore[i].TeamID = franchiseDetailsResponse.League.Franchises.Franchise[i].ID
 		franchiseStore[i].TeamName = franchiseDetailsResponse.League.Franchises.Franchise[i].Name
 		franchiseStore[i].OwnerName = franchiseDetailsResponse.League.Franchises.Franchise[i].OwnerName
 		for j := 0; j < numLSFranchises; j++ {
-			if franchiseStore[i].TeamID == leagueStandingsResponse.LeagueStandings.Franchise[j].Id {
-				// TODO: Handle these errors, probably in a function
-				franchiseStore[i].RecordWins, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordWins)
-				franchiseStore[i].RecordLosses, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordLosses)
-				franchiseStore[i].RecordTies, _ = strconv.Atoi(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordTies)
-				franchiseStore[i].PointsFor, _ = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor, 64)
-				franchiseStore[i].PointsForString = leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor
+			if franchiseStore[i].TeamID != leagueStandingsResponse.LeagueStandings.Franchise[j].ID {
+				continue
 			}
+
+			franchiseStore[i].RecordWins = convertStringToInteger(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordWins)
+			franchiseStore[i].RecordLosses = convertStringToInteger(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordLosses)
+			franchiseStore[i].RecordTies = convertStringToInteger(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordTies)
+			var err error
+			franchiseStore[i].PointsFor, err = strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor, 64)
+			if err != nil {
+				log.Fatal(err)
+			}
+			franchiseStore[i].PointsForString = leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor
 		}
 	}
 
 	return franchiseStore
+}
+
+func convertStringToInteger(str string) int {
+	integer, err := strconv.Atoi(str)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return integer
 }
 
 func roundFloat(val float64, precision uint) float64 {
@@ -371,7 +392,7 @@ func roundFloat(val float64, precision uint) float64 {
 }
 
 func scrape() []AllPlayTeamStats {
-	//c := colly.NewCollector(colly.Debugger(&debug.LogDebugger{}))
+	// c := colly.NewCollector(colly.Debugger(&debug.LogDebugger{}))
 	c := colly.NewCollector()
 
 	c.WithTransport(&http.Transport{
@@ -409,7 +430,7 @@ func scrape() []AllPlayTeamStats {
 		})
 	})
 
-	c.Visit(MflUrl + LeagueYear + "/" + LeagueWebPath + LeagueIdQuery + "&" + PowerRankingsTableQuery + "&" + LeagueOutputSortQuery)
+	_ = c.Visit(MflURL + LeagueYear + "/" + LeagueWebPath + LeagueIDQuery + "&" + PowerRankingsTableQuery + "&" + LeagueOutputSortQuery)
 
 	c.OnError(func(r *colly.Response, err error) {
 		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
@@ -432,15 +453,12 @@ func scrape() []AllPlayTeamStats {
 }
 
 func appendAllPlay(franchises []Franchise, allPlayTeamData []AllPlayTeamStats) []Franchise {
-	// Match on team name (not awesome)
-
 	for franchise := range franchises {
 		for team := range allPlayTeamData {
 			if franchises[franchise].TeamName == allPlayTeamData[team].FranchiseName {
-				franchises[franchise].AllPlayWins, _ = strconv.Atoi(allPlayTeamData[team].AllPlayWins)
-				franchises[franchise].AllPlayLosses, _ = strconv.Atoi(allPlayTeamData[team].AllPlayLosses)
-				franchises[franchise].AllPlayTies, _ = strconv.Atoi(allPlayTeamData[team].AllPlayTies)
-				//franchises[franchise].AllPlayPercentage, _ = strconv.ParseFloat(allPlayTeamData[team].PCT, 32)
+				franchises[franchise].AllPlayWins = convertStringToInteger(allPlayTeamData[team].AllPlayWins)
+				franchises[franchise].AllPlayLosses = convertStringToInteger(allPlayTeamData[team].AllPlayLosses)
+				franchises[franchise].AllPlayTies = convertStringToInteger(allPlayTeamData[team].AllPlayTies)
 				franchises[franchise].AllPlayPercentage = allPlayTeamData[team].AllPlayPercentage
 			}
 		}

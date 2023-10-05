@@ -28,20 +28,18 @@ pipeline {
                 withEnv(["PATH+GO=${GOPATH}/bin"]){
                     echo 'installing golangci-lint'
                     sh 'curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2'
-                    echo 'Running vetting'
-                    sh 'cd mfl-scoring; go vet .'
-                    echo 'Running linting'
-                    sh 'cd mfl-scoring; $GOPATH/bin/golangci-lint run -v; pwd; ls -l'
+                    echo 'Running lint'
+                    sh 'make lint'
                     echo 'Running test'
-                    sh 'cd mfl-scoring; go test -v -cover'
+                    sh 'make test'
                 }
             }
         }
         
         stage('Deploy') {       
             steps {
-                sh '/var/jenkins_home/sam/venv/bin/sam build'
-                sh '/var/jenkins_home/sam/venv/bin/sam deploy -t .aws-sam/build/template.yaml --config-file /var/jenkins_home/workspace/mfl-pipeline/samconfig.toml --no-confirm-changeset --no-fail-on-empty-changeset'
+                sh 'make jsambuild'
+                sh 'make jsamdeploy'
             }
         }
     }

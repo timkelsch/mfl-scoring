@@ -232,7 +232,7 @@ func TestCalculatePointsScoreBasic(t *testing.T) {
 			"",
 		},
 	}
-	expectedJsonStr := `
+	expectedJSONStr := `
 	[
 		{
 			"TeamID": "0001",
@@ -441,7 +441,7 @@ func TestCalculatePointsScoreBasic(t *testing.T) {
 	sort.Sort(ByPointsFor{out})
 	fmt.Println(printTeam(out))
 
-	JsonCompare(t, out, expectedJsonStr)
+	JSONCompare(t, out, expectedJSONStr)
 }
 
 func TestCalculatePointsScoreWithTies(t *testing.T) {
@@ -647,7 +647,7 @@ func TestCalculatePointsScoreWithTies(t *testing.T) {
 			"",
 		},
 	}
-	expectedJsonStr := `
+	expectedJSONStr := `
 	[
 		{
 			"TeamID": "0001",
@@ -856,5 +856,5 @@ func TestCalculatePointsScoreWithTies(t *testing.T) {
 	sort.Sort(ByPointsFor{out})
 	fmt.Println(printTeam(out))
 
-	JsonCompare(t, out, expectedJsonStr)
+	JSONCompare(t, out, expectedJSONStr)
 }

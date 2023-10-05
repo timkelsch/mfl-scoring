@@ -5,6 +5,7 @@
 - [ ] Add points tie breaker
 - [ ] Build minimal front end
 - [ ] Add year selector on front end that defaults to current year but allows checking scores for earlier years
+- [x] Implement golangci-lint
 - [x] Automate testing
 - [x] Finalize tie break rules (1st tiebreak is fantasy points, 2nd is all-play %)
 - [x] Rip out schedule API
