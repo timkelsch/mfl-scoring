@@ -21,4 +21,4 @@ jsambuild:
 
 jsamdeploy:
 	/var/jenkins_home/sam/venv/bin/sam deploy -t .aws-sam/build/template.yaml --config-file \
-	/var/jenkins_home/workspace/mfl-pipeline/samconfig.toml --no-confirm-changeset --no-fail-on-empty-changeset
+	/var/jenkins_home/workspace/mfl-scoring/samconfig.toml --no-confirm-changeset --no-fail-on-empty-changeset
