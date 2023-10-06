@@ -12,7 +12,7 @@ validate:
 	sam validate --lint
 
 lint:
-	cd mfl-scoring
+	cd mfl-scoring/mfl-scoring
 	pwd
 	ls -al
 	golangci-lint run -v
