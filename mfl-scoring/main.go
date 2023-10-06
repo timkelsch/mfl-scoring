@@ -293,20 +293,30 @@ func getFranchiseDetails(apiKey string) LeagueResponse {
 	LeagueAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueAPIQuery + "&" + LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
 	fmt.Println("LeagueApiURL: " + LeagueAPIURL)
 
-	response, err := http.NewRequestWithContext(context.Background(), http.MethodGet, LeagueAPIURL, http.NoBody)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, LeagueAPIURL, http.NoBody)
 	if err != nil {
-		log.Fatal(err.Error())
+		fmt.Println(err)
 	}
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer response.Body.Close()
 
 	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
-		log.Fatal(err.Error())
+		fmt.Println(err)
 	}
 
 	var leagueResponse LeagueResponse
 	err = json.Unmarshal(responseData, &leagueResponse)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 
 	return leagueResponse
@@ -316,20 +326,30 @@ func getLeagueStandings(apiKey string) LeagueStandingsResponse {
 	LeagueStandingsAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueStandingsAPIQuery + "&" + LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
 	fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsAPIURL)
 
-	response, err := http.NewRequestWithContext(context.Background(), http.MethodGet, LeagueStandingsAPIURL, http.NoBody)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, LeagueStandingsAPIURL, http.NoBody)
 	if err != nil {
-		log.Fatal(err.Error())
+		fmt.Println(err)
 	}
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer response.Body.Close()
 
 	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 
 	var leagueStandingsResponse LeagueStandingsResponse
 	err = json.Unmarshal(responseData, &leagueStandingsResponse)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 
 	return leagueStandingsResponse
