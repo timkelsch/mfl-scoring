@@ -132,7 +132,7 @@ linters:
     
     # Forces comment why another check is disabled.
     # Better not to have //nolint: at all ;)
-    - nolintlint
+    # - nolintlint
 
     # Finds slices that could potentially be pre-allocated.
     # Small performance win + cleaner code.
@@ -442,3 +442,6 @@ issues:
   # Even with a recent GPT-4 release I still believe that
   # I know better how to do my job and fix the suggestions.
   fix: false
+
+  exclude:
+    - commentedOutCode

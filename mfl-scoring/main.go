@@ -97,7 +97,7 @@ const (
 	LeagueOutputSortQuery   string = "SORT=ALLPLAY"
 	LeagueIDQuery           string = "L=15781"
 	APIOutputTypeQuery      string = "JSON=1"
-	APIKeySecretARN         string = "MflScoringApiKeySecret-x1mDJYYsWop9"
+	APIKeySecretARN         string = "MflScoringApiKeySecret-x1mDJYYsWop9" //nolint:gosec // Not credentials
 )
 
 type Franchises []Franchise
@@ -430,7 +430,8 @@ func scrape() []AllPlayTeamStats {
 		})
 	})
 
-	_ = c.Visit(MflURL + LeagueYear + "/" + LeagueWebPath + LeagueIDQuery + "&" + PowerRankingsTableQuery + "&" + LeagueOutputSortQuery)
+	_ = c.Visit(MflURL + LeagueYear + "/" + LeagueWebPath + LeagueIDQuery + //nolint:errcheck // error is checked next line
+		"&" + PowerRankingsTableQuery + "&" + LeagueOutputSortQuery) //nolint:errcheck // error is checked next line
 
 	c.OnError(func(r *colly.Response, err error) {
 		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)

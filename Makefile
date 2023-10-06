@@ -13,6 +13,8 @@ validate:
 
 lint:
 	cd mfl-scoring
+	pwd
+	ls -al
 	golangci-lint run -v
 
 sampush:
