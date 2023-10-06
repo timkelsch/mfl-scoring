@@ -1,12 +1,10 @@
 .PHONY: build
 
 build:
-	cd mfl-scoring
-	go build
+	cd mfl-scoring && go build
 
 test:
-	cd mfl-scoring
-	go test -v -cover
+	cd mfl-scoring && go test -v -cover
 
 validate:
 	sam validate --lint

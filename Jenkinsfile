@@ -19,7 +19,7 @@ pipeline {
             steps {
                 echo 'Compiling and building'
                 sh 'echo $GOCACHE'
-                sh 'cd mfl-scoring; go build'
+                sh 'make test'
             }
         }
 
