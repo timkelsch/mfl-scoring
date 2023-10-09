@@ -27,7 +27,8 @@ pipeline {
             steps {
                 withEnv(["PATH+GO=${GOPATH}/bin"]){
                     echo 'installing golangci-lint'
-                    sh 'curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2'
+                    sh 'curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
+                        sh -s -- -b $(go env GOPATH)/bin v1.54.2'
                     echo 'Running lint'
                     sh 'make lint'
                     echo 'Running test'
