@@ -1,16 +1,28 @@
 pipeline {
     agent any
-    
     tools { go 'go1.21' }
-
     environment {
-        CGO_ENABLED=0 
-        GOPATH="${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
+        CGO_ENABLED = 0 
+        GOPATH = "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
         GOCACHE="${WORKSPACE}"
         SAM_CLI_TELEMETRY=0
     }
-
     stages {        
+        stage('Pre Test') {
+            steps {
+                echo 'Installing dependencies' 
+                sh 'go version'
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                echo 'Compiling and building'
+                sh 'echo $GOCACHE'
+                sh 'make test'
+            }
+        }
+
         stage('Test') {
             steps {
                 withEnv(["PATH+GO=${GOPATH}/bin"]){
@@ -25,24 +37,11 @@ pipeline {
             }
         }
         
-        stage('Build') {
+        stage('Deploy') {       
             steps {
-                echo 'Compiling and building'
-                sh 'make build'
+                sh 'make jsambuild'
+                sh 'make jsamdeploy'
             }
-        }
-
-        stage('Push'){
-            steps{
-                echo 'Compiling and building'
-                sh 'make push'
-            }
-        }
-
-        stage('Deploy'){
-            steps{
-                sh "make deploy"
-            }        
         }
     }
 }
