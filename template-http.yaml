@@ -8,8 +8,50 @@ Parameters:
     Description: S3 bucket that holds the build artifacts
     Type: String
     Default: mfl-scoring-builds
+  HostedZoneId:
+    Description: Hosted zone id of the domain under which this app will be served
+    Type: String
+    Default: Z0291479D96D3UFQISZF
+  SubDomain:
+    Description: "SubDomain for API Gateway API"
+    Type: String
+    Default: 'mfltest.timismydaddy.com'
 
 Resources:
+  MflScoringCertificate:
+    Type: 'AWS::CertificateManager::Certificate'
+    Properties:
+      DomainName: !Ref SubDomain
+      CertificateTransparencyLoggingPreference: DISABLED
+      ValidationMethod: DNS
+
+  MflScoringCustomDomain:
+    Type: AWS::ApiGatewayV2::DomainName
+    Properties: 
+      DomainName: !Ref SubDomain
+      DomainNameConfigurations:
+        - CertificateArn: !Ref MflScoringCertificate
+
+  MflScoringApiMapping:
+    DependsOn:
+         - MflScoringRecordSet
+    Type: "AWS::ApiGatewayV2::ApiMapping"
+    Properties:
+      DomainName: !Ref SubDomain
+      ApiId: !Ref MflScoringApi
+      Stage: !Ref MflScoringApiStageProd
+      ApiMappingKey: ''
+
+  MflScoringRecordSet:
+    Type: "AWS::Route53::RecordSet"
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref SubDomain
+      Type: A
+      AliasTarget:
+        HostedZoneId: !GetAtt MflScoringCustomDomain.RegionalHostedZoneId
+        DNSName: !GetAtt MflScoringCustomDomain.RegionalDomainName
+
   MflScoringFunction:
     Type: AWS::Lambda::Function
     Properties:
