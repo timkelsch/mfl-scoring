@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+
+  CicdPipeline:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: 'aws:kms'
+              KMSMasterKeyID: !Ref BucketKey
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+
+  MflScoring:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: 'aws:kms'
+              KMSMasterKeyID: !Ref BucketKey
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+
+  BucketKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Enabled: True
+      EnableKeyRotation: True
+      MultiRegion: True
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: bucket-policy-1
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+
+Outputs:
+  CicdPipelineBucket:
+    Value: !Ref CicdPipeline
+    Export: 
+      Name: CicdPipelineBucketName
+  MflScoringBucket:
+    Value: !Ref MflScoring
+    Export: 
+      Name: MflScoringBucketName
