@@ -17,3 +17,4 @@
 .git/*
 .idea/*
 .aws-sam/*
+venv/*

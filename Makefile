@@ -7,13 +7,12 @@ BUILD_DIR=.aws-sam/build
 CODE_DIR=mfl-scoring
 S3_BUCKET=mfl-scoring-builds
 S3_PREFIX=builds
-API_ID=cxotw5q60g
-FUNCTION_NAME_STAGE=mfl-scoring-http-MflScoringStageFunction-cgdT1EMOrMbd
-FUNCTION_NAME_PROD=mfl-scoring-http-MflScoringProdFunction-vZajLTdguZE7
-FUNCTION_VERSION_STAGE=4
+API_ID=bc2pcjfiik
+FUNCTION_NAME=mfl-scoring-check-MflScoringFunction-jC2WqnR4ihCt
+FUNCTION_VERSION_STAGE=1
 FUNCTION_VERSION_PROD=2
-STACK_NAME=mfl-scoring-http
-TEMPLATE_FILE=file://template-http.yaml
+STACK_NAME=mfl-scoring-check
+TEMPLATE_FILE=file://template-check.yaml
 
 createstack:
 	aws cloudformation create-stack --stack-name ${STACK_NAME} --template-body ${TEMPLATE_FILE} \
@@ -35,59 +34,27 @@ package:
 push:
 	cd ${BUILD_DIR} && aws s3 cp ${BUILD_ARTIFACT} s3://${S3_BUCKET}/${S3_PREFIX}/${BUILD_ARTIFACT}
 
-updatelambdastage:
-	aws lambda update-function-code --function-name ${FUNCTION_NAME_STAGE} \
-		--s3-bucket ${S3_BUCKET} \
-		--s3-key ${S3_PREFIX}/${BUILD_ARTIFACT} \
-		--publish --region ${AWS_REGION}
-
-updatelambdaprod:
-	aws lambda update-function-code --function-name ${FUNCTION_NAME_PROD} \
+updatelambda:
+	aws lambda update-function-code --function-name ${FUNCTION_NAME} \
 		--s3-bucket ${S3_BUCKET} \
 		--s3-key ${S3_PREFIX}/${BUILD_ARTIFACT} \
 		--publish --region ${AWS_REGION}
 
 updatestagealias:
-	aws lambda update-alias --function-name "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT}:function:${FUNCTION_NAME_STAGE}" \
+	aws lambda update-alias --function-name "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT}:function:${FUNCTION_NAME}" \
 		--function-version ${FUNCTION_VERSION_STAGE} --name STAGE --region ${AWS_REGION}
 
 updateprodalias:
-	aws lambda update-alias --function-name "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT}:function:${FUNCTION_NAME_PROD}" \
+	aws lambda update-alias --function-name "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT}:function:${FUNCTION_NAME}" \
 		--function-version ${FUNCTION_VERSION_PROD} --name PROD --region ${AWS_REGION}
 
-pushtostage: test build package push updatelambdastage updatestagealias
+pushtostage: test build package push updatelambda updatestagealias
 
-pushtoprod: test build package push updatelambdaprod updateprodalias
+pushtoprod: test build package push updatelambda updateprodalias
 
-
-addpermissionstage:
-	aws lambda add-permission --function-name "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT}:function:${FUNCTION_NAME_STAGE}:${FUNCTION_VERSION_STAGE}" \
-		 --statement-id ${shell uuidgen} --action lambda:InvokeFunction --principal apigateway.amazonaws.com \
-		 --source-arn arn:aws:execute-api:${AWS_REGION}:${AWS_ACCOUNT}:${API_ID}/*/GET/*
-
-#		--qualifier STAGE --statement-id ${shell uuidgen} --action lambda:InvokeFunction --principal apigateway.amazonaws.com
-
-addpermissionprod:
-	aws lambda add-permission --function-name "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT}:function:${FUNCTION_NAME_PROD}:${FUNCTION_VERSION_PROD}" \
-		--statement-id ${shell uuidgen} --action lambda:InvokeFunction --principal apigateway.amazonaws.com
-		--source-arn arn:aws:execute-api:${AWS_REGION}:${AWS_ACCOUNT}:${API_ID}/*/GET/*
-
-#		--qualifier PROD --statement-id ${shell uuidgen} --action lambda:InvokeFunction --principal apigateway.amazonaws.com
-
-
-# publishversion:
-# 	aws lambda publish-version --function-name ${FUNCTION_NAME} \
-# 		--description ${BUILD_NUMBER} --region ${AWS_REGION}
-
-# updatestagealias-stupid:
-# 	LAMBDA_VERSION=$(shell aws lambda list-versions-by-function --function-name ${FUNCTION_NAME} \
-# 		--region ${AWS_REGION} --output json | jq -r ".Versions[] | select(.Version!=\"\\\$LATEST\") \
-# 		| select(.Description == \"${BUILD_NUMBER}\").Version"); \
-# 	aws lambda update-alias --function-name ${FUNCTION_NAME} --name STAGE --function-version \
-# 		$${LAMBDA_VERSION} --description ${BUILD_NUMBER} --region ${AWS_REGION}
 
 val:
-	aws cloudformation validate-template --template-body ${TEMPLATE_FILE}
+	aws cloudformation validate-template --debug --template-body ${TEMPLATE_FILE}
 
 sam-validate:
 	sam validate --lint

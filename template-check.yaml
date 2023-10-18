@@ -13,9 +13,17 @@ Parameters:
     Type: String
     Default: Z0291479D96D3UFQISZF
   SubDomain:
-    Description: "SubDomain for API Gateway API"
+    Description: SubDomain for API Gateway API
     Type: String
-    Default: 'mfltest.timismydaddy.com'
+    Default: 'mflcheck.timismydaddy.com'
+  # ApiKeySecretArn:
+  #   Description: ARN of the secret that holds the API key
+  #   Type: String
+  #   Default: arn:aws:secretsmanager:us-east-1:287140326780:secret:MflScoringApiKeySecret-x1mDJYYsWop9-ugl5G0
+  KmsKeyArn:
+    Description: ARN of the KMS key used to encrypt the secret
+    Type: String
+    Default: arn:aws:kms:us-east-1:287140326780:key/mrk-be939ce79e1f4d538be08038d602da0f
 
 Resources:
   MflScoringCertificate:
@@ -52,23 +60,13 @@ Resources:
         HostedZoneId: !GetAtt MflScoringCustomDomain.RegionalHostedZoneId
         DNSName: !GetAtt MflScoringCustomDomain.RegionalDomainName
 
-  MflScoringStageFunction:
+  MflScoringFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Role: !GetAtt MflScoringStagedFunctionIamRole.Arn
-      Code: 
-        S3Bucket: !Sub ${BuildBucket}
-        S3Key: builds/bootstrap.zip
-        # S3ObjectVersion: TODO
-      Handler: bootstrap
-      Runtime: provided.al2
-      MemorySize: 128
-      Timeout: 5
-
-  MflScoringProdFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      Role: !GetAtt MflScoringStagedFunctionIamRole.Arn
+      Role:
+        Fn::GetAtt:
+        - MflScoringStagedFunctionIamRole
+        - Arn
       Code: 
         S3Bucket: !Sub ${BuildBucket}
         S3Key: builds/bootstrap.zip
@@ -94,130 +92,45 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
+        - PolicyName: secretsManager
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:DescribeSecret
+                  - secretsmanager:GetSecretValue
+                Resource: !ImportValue mfl-scoring-MflScoringApiKeySecretArn #!Ref ApiKeySecretArn
         - PolicyName: kmsAccess
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-            - Effect: Allow
-              Action:
-              - kms:Decrypt
-              Resource: "*"
+              - Effect: Allow
+                Action:
+                - 'kms:DescribeKey'
+                - 'kms:Encrypt'
+                - 'kms:Decrypt'
+                - 'kms:ReEncrypt*'
+                - 'kms:GenerateDataKey'
+                - 'kms:GenerateDataKeyWithoutPlaintext'
+                Resource: !Ref KmsKeyArn
         - PolicyName: ssmAccess
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-            - Effect: Allow
-              Action:
-              - ssm:GetParameter
-              Resource:
-              - arn:aws:ssm:us-east-1:287140326780:parameter/MFL_API_KEY
-        - PolicyName: secretsManagerAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-            - Effect: Allow
-              Action:
-              - secretsmanager:DescribeSecret
-              - secretsmanager:GetSecretValue
-              Resource:
-              #- !GetAtt MflScoringStagedApiKeySecret.Arn TODO FIX THIS
-              - "*"
+              - Effect: Allow
+                Action: ssm:GetParameter
+                Resource: arn:aws:ssm:us-east-1:287140326780:parameter/MFL_API_KEY
 
-  MflScoringStagedApiKeySecret:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      KmsKeyId: !GetAtt MflScoringStagedKey.Arn
-
-  MflScoringStagedApiKeySecretResourcePolicy:
-    Type: AWS::SecretsManager::ResourcePolicy
-    Properties: 
-      BlockPublicPolicy: True
-      ResourcePolicy:
-        Version: '2012-10-17'
-        Statement:
-          - Resource: "*"
-            Action: secretsmanager:*
-            Effect: Allow
-            Principal:
-              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
-          - Resource: "*"
-            Action: 
-              - secretsmanager:DescribeSecret
-              - secretsmanager:Get*
-              - secretsmanager:List*
-            Effect: Allow
-            Principal:
-              AWS: !GetAtt MflScoringStagedFunctionIamRole.Arn
-      SecretId: !Ref MflScoringStagedApiKeySecret
-
-  MflScoringStagedKey:
-    Type: AWS::KMS::Key
-    Properties:
-      Enabled: True
-      EnableKeyRotation: True
-      MultiRegion: True
-      KeyPolicy:
-        Version: "2012-10-17"
-        Id: key-default-1
-        Statement:
-          - Sid: Enable IAM User Permissions
-            Effect: Allow
-            Principal:
-              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
-            Action: 'kms:*'
-            Resource: '*'
-          - Sid: Allow use of the key
-            Effect: Allow
-            Principal:
-              AWS: !GetAtt MflScoringStagedFunctionIamRole.Arn
-            Action:
-              - 'kms:DescribeKey'
-              - 'kms:Encrypt'
-              - 'kms:Decrypt'
-              - 'kms:ReEncrypt*'
-              - 'kms:GenerateDataKey'
-              - 'kms:GenerateDataKeyWithoutPlaintext'
-            Resource: '*'
-
-  MflScoringFunctionStagePermission:
+  LambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:invokeFunction
-      FunctionName: !Ref MflScoringFunctionStageAlias
+      FunctionName: !GetAtt MflScoringFunction.Arn
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 
-        - "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MflScoringApi}/*"
-        - MflScoringApi: !Ref MflScoringApi
-
-  MflScoringFunctionProdPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:invokeFunction
-      FunctionName: !Ref MflScoringFunctionProdAlias
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub 
-        - "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MflScoringApi}/*"
-        - MflScoringApi: !Ref MflScoringApi
-
-  MflScoringStageFunctionPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:invokeFunction
-      FunctionName: !GetAtt MflScoringStageFunction.Arn
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub 
-        - "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MflScoringApi}/*"
-        - MflScoringApi: !Ref MflScoringApi
-
-  MflScoringProdFunctionPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:invokeFunction
-      FunctionName: !GetAtt MflScoringProdFunction.Arn
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub 
-        - "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MflScoringApi}/*"
-        - MflScoringApi: !Ref MflScoringApi
+          - "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MflScoringApi}:*/*"
+          - MflScoringApi: !Ref MflScoringApi
 
   MflScoringApi:
     Type: AWS::ApiGatewayV2::Api
@@ -227,11 +140,6 @@ Resources:
 
   MflScoringIntegration:
     Type: AWS::ApiGatewayV2::Integration
-    DependsOn:
-      - MflScoringStageFunction
-      - MflScoringProdFunction
-      - MflScoringApiStageStage
-      - MflScoringApiStageProd
     Properties:
       ApiId: !Ref MflScoringApi
       Description: Lambda proxy integration
@@ -240,40 +148,63 @@ Resources:
       PayloadFormatVersion: "2.0"
       IntegrationUri: !Join
         - ''
-        - - !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:'
-          - '${stageVariables.LambdaFunction}:${stageVariables.LambdaAlias}/invocations'
+        - - !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${MflScoringFunction}'
+          - ':${stageVariables.LambdaAlias}/invocations'
 
   MflScoringApiRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref MflScoringApi
       RouteKey: "GET /mfl-scoring"
-      AuthorizationType: NONE
       Target: !Join
         - /
         - - integrations
           - !Ref MflScoringIntegration
 
+  MflScoringFunctionStagePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref MflScoringFunctionStageAlias
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:"
+          - !Ref MflScoringApi
+          - "/*/*/*"
+
+  MflScoringFunctionProdPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref MflScoringFunctionProdAlias
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:"
+          - !Ref MflScoringApi
+          - "/*/*/*"
+
   MflScoringFunctionStageAlias:
     Type: AWS::Lambda::Alias
     Properties:
       FunctionName:
-        Ref: MflScoringStageFunction
-      FunctionVersion: "$LATEST"
+        Ref: MflScoringFunction
+      FunctionVersion: 2
       Name: STAGE
       
   MflScoringFunctionProdAlias:
     Type: AWS::Lambda::Alias
     Properties:
-      FunctionName:
-        Ref: MflScoringProdFunction
-      FunctionVersion: "$LATEST"
+      FunctionName: !Ref MflScoringFunction
+      FunctionVersion: 1
       Name: PROD
 
   MflScoringApiStageStage:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
-      ApiId: !Ref MflScoringApi
+      ApiId:
+        Ref: MflScoringApi
       AccessLogSettings:
         DestinationArn: !GetAtt MflScoringStageStageLogGroup.Arn
         Format: >
@@ -284,13 +215,13 @@ Resources:
       StageName: stage
       StageVariables:
         LambdaAlias: STAGE
-        LambdaFunction: !GetAtt MflScoringStageFunction.Arn
       AutoDeploy: true
 
   MflScoringApiStageProd:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
-      ApiId: !Ref MflScoringApi
+      ApiId:
+        Ref: MflScoringApi
       AccessLogSettings:
         DestinationArn: !GetAtt MflScoringStageProdLogGroup.Arn
         Format: >
@@ -301,7 +232,6 @@ Resources:
       StageName: prod
       StageVariables:
         LambdaAlias: PROD
-        LambdaFunction: !GetAtt MflScoringProdFunction.Arn
       AutoDeploy: true
 
   MflScoringStageStageLogGroup:
@@ -331,3 +261,10 @@ Outputs:
     Value: !Sub 
       - "https://${MflScoringApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/mfl-scoring"
       - Stage: !Ref MflScoringApiStageProd
+  CustomProdUrl:
+    Description: Custom prod URL
+    Value: !Join
+      - ''
+      - - "https://"
+        - !Ref MflScoringCustomDomain
+        - "/mfl-scoring"
