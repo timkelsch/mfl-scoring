@@ -190,7 +190,7 @@ Resources:
     Properties:
       FunctionName:
         Ref: MflScoringFunction
-      FunctionVersion: 2
+      FunctionVersion: $LATEST
       Name: STAGE
       
   MflScoringFunctionProdAlias:

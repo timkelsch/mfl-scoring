@@ -190,7 +190,7 @@ func printTeam(teams Franchises) string {
 	t := table.NewWriter()
 	t.SetOutputMirror(&bytes.Buffer{})
 	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", "Fantasy Points", "Points", "Record", "Total Points",
-		"AllPlay W", "AllPlay L", "AllPlay Ties", "AllPlay %"})
+		"AllPlay W", "AllPlay L", "AllPlay T", "AllPlay %"})
 	for _, o := range teams {
 		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsForString, o.PointScore,
 			o.RecordScoreString, o.TotalScore, o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
@@ -206,7 +206,7 @@ func printTeam(teams Franchises) string {
 		{Name: "Total Points", Align: text.AlignCenter},
 		{Name: "AllPlay W", Align: text.AlignCenter},
 		{Name: "AllPlay L", Align: text.AlignCenter},
-		{Name: "AllPlay Ties", Align: text.AlignCenter},
+		{Name: "AllPlay T", Align: text.AlignCenter},
 		{Name: "AllPlay %", Align: text.AlignCenter},
 	}
 

@@ -7,10 +7,10 @@ BUILD_DIR=.aws-sam/build
 CODE_DIR=mfl-scoring
 S3_BUCKET=mfl-scoring-builds
 S3_PREFIX=builds
+
 API_ID=bc2pcjfiik
 FUNCTION_NAME=mfl-scoring-check-MflScoringFunction-jC2WqnR4ihCt
-FUNCTION_VERSION_STAGE=1
-FUNCTION_VERSION_PROD=2
+FUNCTION_VERSION_PROD=1
 STACK_NAME=mfl-scoring-check
 TEMPLATE_FILE=file://template-check.yaml
 
@@ -42,7 +42,7 @@ updatelambda:
 
 updatestagealias:
 	aws lambda update-alias --function-name "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT}:function:${FUNCTION_NAME}" \
-		--function-version ${FUNCTION_VERSION_STAGE} --name STAGE --region ${AWS_REGION}
+		--function-version '$$LATEST' --name STAGE --region ${AWS_REGION}
 
 updateprodalias:
 	aws lambda update-alias --function-name "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT}:function:${FUNCTION_NAME}" \
