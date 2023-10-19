@@ -42,7 +42,8 @@ pipeline {
 
         stage('Deploy'){
             steps{
-                sh "make deploy"
+                sh 'make updatelambda'
+                sh 'make updatestagealias'
             }        
         }
     }
