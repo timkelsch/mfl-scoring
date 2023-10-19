@@ -266,4 +266,4 @@ Outputs:
   MflScoringFunctionArn:
     Value: !GetAtt MflScoringFunction.Arn
     Export:
-      Name: MflScoringFunctionArn
+      Name: MflScoringFunctionCheckArn
