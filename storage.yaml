@@ -70,3 +70,7 @@ Outputs:
     Value: !GetAtt MflScoring.Arn
     Export: 
       Name: MflScoringBucketArn
+  StorageKeyArn:
+    Value: !Ref BucketKey
+    Export:
+      Name: StorageKeyArn
