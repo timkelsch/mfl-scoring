@@ -263,3 +263,7 @@ Outputs:
       - - "https://"
         - !Ref MflScoringCustomDomain
         - "/mfl-scoring"
+  MflScoringFunctionArn:
+    Value: !GetAtt MflScoringFunction.Arn
+    Export:
+      Name: MflScoringFunctionArn
