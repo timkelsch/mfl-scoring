@@ -27,14 +27,15 @@ pipeline {
         
         stage('Build') {
             steps {
-                echo 'Compiling and building'
+                echo 'Building'
                 sh 'make build'
             }
         }
 
         stage('Push'){
             steps{
-                echo 'Compiling and building'
+                echo 'Packaging and Pushing'
+                sh 'make package'
                 sh 'make push'
             }
         }

@@ -32,7 +32,7 @@ package:
 	cd ${BUILD_DIR} && zip ${BUILD_ARTIFACT} bootstrap
 
 push:
-	cd ${BUILD_DIR} && ls -al /usr/bin/aws && aws s3 cp ${BUILD_ARTIFACT} s3://${S3_BUCKET}/${S3_PREFIX}/${BUILD_ARTIFACT}
+	cd ${BUILD_DIR} && aws s3 cp ${BUILD_ARTIFACT} s3://${S3_BUCKET}/${S3_PREFIX}/${BUILD_ARTIFACT}
 
 updatelambda:
 	aws lambda update-function-code --function-name ${FUNCTION_NAME} \
