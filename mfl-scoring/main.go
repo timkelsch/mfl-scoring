@@ -189,7 +189,7 @@ func handler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, e
 func printTeam(teams Franchises) string {
 	t := table.NewWriter()
 	t.SetOutputMirror(&bytes.Buffer{})
-	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", "Fantasy Points", "Points", "Record", "Total Points",
+	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", "Fantasy Pts", "Points", "Record", "Total Pts",
 		"AllPlay W", "AllPlay L", "AllPlay T", "AllPlay %"})
 	for _, o := range teams {
 		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsForString, o.PointScore,
@@ -200,10 +200,10 @@ func printTeam(teams Franchises) string {
 		{Name: "Wins", Align: text.AlignCenter},
 		{Name: "Losses", Align: text.AlignCenter},
 		{Name: "Ties", Align: text.AlignCenter},
-		{Name: "Fantasy Points", Align: text.AlignCenter},
+		{Name: "Fantasy Pts", Align: text.AlignCenter},
 		{Name: "Points", Align: text.AlignCenter},
 		{Name: "Record", Align: text.AlignCenter},
-		{Name: "Total Points", Align: text.AlignCenter},
+		{Name: "Total Pts", Align: text.AlignCenter},
 		{Name: "AllPlay W", Align: text.AlignCenter},
 		{Name: "AllPlay L", Align: text.AlignCenter},
 		{Name: "AllPlay T", Align: text.AlignCenter},
@@ -211,7 +211,8 @@ func printTeam(teams Franchises) string {
 	}
 
 	sortBy := []table.SortBy{
-		{Name: "Total Points", Mode: table.DscNumeric},
+		{Name: "Total Pts", Mode: table.DscNumeric},
+		{Name: "Record", Mode: table.DscNumeric},
 		{Name: "AllPlay %", Mode: table.DscNumeric},
 	}
 

@@ -17,11 +17,11 @@ Parameters:
     Type: String
     Default: 'mflcheck.timismydaddy.com'
   # ApiKeySecretArn:
-  #   Description: ARN of the secret that holds the API key
+  #   Description: ARN of the secret that holds the MFL API key
   #   Type: String
   #   Default: arn:aws:secretsmanager:us-east-1:287140326780:secret:MflScoringApiKeySecret-x1mDJYYsWop9-ugl5G0
   KmsKeyArn:
-    Description: ARN of the KMS key used to encrypt the secret
+    Description: ARN of the KMS key used to encrypt the secret. It's here to avoid circular dependency hell.
     Type: String
     Default: arn:aws:kms:us-east-1:287140326780:key/mrk-be939ce79e1f4d538be08038d602da0f
 
@@ -222,11 +222,6 @@ Resources:
     Properties:
       ApiId:
         Ref: MflScoringApi
-      AccessLogSettings:
-        DestinationArn: !GetAtt MflScoringStageProdLogGroup.Arn
-        Format: >
-          $context.identity.sourceIp - - [$context.requestTime] "$context.httpMethod $context.routeKey $context.protocol" 
-          $context.status $context.responseLength $context.requestId $context.integrationErrorMessage
       DefaultRouteSettings:
         DetailedMetricsEnabled: True
       StageName: prod

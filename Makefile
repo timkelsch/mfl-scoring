@@ -5,7 +5,7 @@ AWS_ACCOUNT=287140326780
 BUILD_ARTIFACT=bootstrap.zip
 BUILD_DIR=.aws-sam/build
 CODE_DIR=mfl-scoring
-S3_BUCKET=mfl-scoring-builds
+S3_BUCKET=storage-mflscoring-17z65jydt72tq
 S3_PREFIX=builds
 
 API_ID=bc2pcjfiik
