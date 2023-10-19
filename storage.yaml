@@ -54,11 +54,19 @@ Resources:
     UpdateReplacePolicy: Retain
 
 Outputs:
-  CicdPipelineBucket:
+  CicdPipelineBucketName:
     Value: !Ref CicdPipeline
     Export: 
       Name: CicdPipelineBucketName
-  MflScoringBucket:
+  MflScoringBucketName:
     Value: !Ref MflScoring
     Export: 
       Name: MflScoringBucketName
+  CicdPipelineBucketArn:
+    Value: !GetAtt CicdPipeline.Arn
+    Export: 
+      Name: CicdPipelineBucketArn
+  MflScoringBucketArn:
+    Value: !GetAtt MflScoring.Arn
+    Export: 
+      Name: MflScoringBucketArn
