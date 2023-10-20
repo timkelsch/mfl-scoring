@@ -11,7 +11,7 @@ Parameters:
   SubDomain:
     Description: SubDomain for API Gateway API
     Type: String
-    Default: 'mflcheck.timismydaddy.com'
+    Default: 'spankme.timismydaddy.com'
   KmsKeyId:
     Description: Id of the KMS key used to encrypt the secret. It's here to avoid circular dependency hell.
     Type: String
@@ -92,7 +92,7 @@ Resources:
                 Action:
                   - secretsmanager:DescribeSecret
                   - secretsmanager:GetSecretValue
-                Resource: !ImportValue mfl-scoring-MflScoringApiKeySecretArn #!Ref ApiKeySecretArn
+                Resource: !Sub 'arn:${AWS::Partition}:secret:${AWS::Region}:${AWS::AccountId}:key/MflScoringApiKeySecret-enC9xWtZjXpH-40G5qG'
         - PolicyName: kmsAccess
           PolicyDocument:
             Version: '2012-10-17'
@@ -119,6 +119,62 @@ Resources:
       SourceArn: !Sub 
           - "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MflScoringApi}:*/*"
           - MflScoringApi: !Ref MflScoringApi
+
+  MflScoringApiKeySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      KmsKeyId: !GetAtt MflScoringKey.Arn
+
+  MflScoringApiKeySecretResourcePolicy:
+    Type: AWS::SecretsManager::ResourcePolicy
+    Properties: 
+      BlockPublicPolicy: True
+      SecretId: !Ref MflScoringApiKeySecret
+      ResourcePolicy:
+        Version: '2012-10-17'
+        Statement:
+        - Resource: "*"
+          Action: secretsmanager:*
+          Effect: Allow
+          Principal:
+            AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
+        - Resource: "*"
+          Action: 
+            - secretsmanager:DescribeSecret
+            - secretsmanager:Get*
+            - secretsmanager:List*
+          Effect: Allow
+          Principal:
+            AWS: !GetAtt MflScoringFunctionIamRole.Arn
+
+  MflScoringKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Enabled: True
+      EnableKeyRotation: True
+      MultiRegion: True
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: key-default-1
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow use of the key
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt MflScoringFunctionIamRole.Arn
+            Action:
+              - 'kms:DescribeKey'
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey'
+              - 'kms:GenerateDataKeyWithoutPlaintext'
+            Resource: '*'
 
   MflScoringApi:
     Type: AWS::ApiGatewayV2::Api

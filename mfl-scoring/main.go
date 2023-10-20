@@ -97,7 +97,7 @@ const (
 	LeagueOutputSortQuery   string = "SORT=ALLPLAY"
 	LeagueIDQuery           string = "L=15781"
 	APIOutputTypeQuery      string = "JSON=1"
-	APIKeySecretARN         string = "MflScoringApiKeySecret-x1mDJYYsWop9" //nolint:gosec // Not credentials
+	APIKeySecretARN         string = "MflScoringApiKeySecret-enC9xWtZjXpH-40G5qG" //nolint:gosec // Not credentials
 )
 
 type Franchises []Franchise
