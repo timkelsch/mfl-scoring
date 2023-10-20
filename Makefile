@@ -13,7 +13,7 @@ FUNCTION_NAME=mfl-scoring-check-MflScoringFunction-jC2WqnR4ihCt
 FUNCTION_VERSION_PROD=1
 STACK_NAME=mfl-scoring-check
 TEMPLATE_FILE=file://template-check.yaml
-
+ 
 createstack:
 	aws cloudformation create-stack --stack-name ${STACK_NAME} --template-body ${TEMPLATE_FILE} \
 		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
