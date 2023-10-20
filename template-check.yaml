@@ -62,7 +62,7 @@ Resources:
         DNSName: !GetAtt MflScoringCustomDomain.RegionalDomainName
 
   MflScoringFunction:
-    Type: AWS::Lambda::Function # //NOSONAR
+    Type: AWS::Lambda::Function
     Properties:
       Role:
         Fn::GetAtt:
