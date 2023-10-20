@@ -187,7 +187,7 @@ func handler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, e
 }
 
 const (
-	TotalPts   string = "TotalPts"
+	TotalPts   string = "Total Pts"
 	AllPlayPct string = "AllPlay %"
 	Record     string = "Record"
 )
@@ -209,7 +209,7 @@ func printTeam(teams Franchises) string {
 		{Name: "Fantasy Pts", Align: text.AlignCenter},
 		{Name: "Points", Align: text.AlignCenter},
 		{Name: "Record", Align: text.AlignCenter},
-		{Name: "Total Pts", Align: text.AlignCenter},
+		{Name: TotalPts, Align: text.AlignCenter},
 		{Name: "AllPlay W", Align: text.AlignCenter},
 		{Name: "AllPlay L", Align: text.AlignCenter},
 		{Name: "AllPlay T", Align: text.AlignCenter},
