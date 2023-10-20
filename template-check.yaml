@@ -4,10 +4,6 @@ Description: AWS CloudFormation template that contains a Lambda function behind 
   API Gateway that has two stages mapped to two Lambda aliases
 
 Parameters:
-  BuildBucket:
-    Description: S3 bucket that holds the build artifacts
-    Type: String
-    Default: mfl-scoring-builds
   HostedZoneId:
     Description: Hosted zone id of the domain under which this app will be served
     Type: String
@@ -17,7 +13,7 @@ Parameters:
     Type: String
     Default: 'mflcheck.timismydaddy.com'
   KmsKeyId:
-    Description: ARN of the KMS key used to encrypt the secret. It's here to avoid circular dependency hell.
+    Description: Id of the KMS key used to encrypt the secret. It's here to avoid circular dependency hell.
     Type: String
     Default: mrk-be939ce79e1f4d538be08038d602da0f
 
@@ -62,17 +58,17 @@ Resources:
     Properties:
       Role:
         Fn::GetAtt:
-        - MflScoringStagedFunctionIamRole
+        - MflScoringFunctionIamRole
         - Arn
       Code: 
-        S3Bucket: !Sub ${BuildBucket}
+        S3Bucket: !ImportValue MflScoringBucketName
         S3Key: builds/bootstrap.zip
       Handler: bootstrap
       Runtime: provided.al2
       MemorySize: 128
       Timeout: 5
 
-  MflScoringStagedFunctionIamRole:
+  MflScoringFunctionIamRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
