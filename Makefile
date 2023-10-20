@@ -1,7 +1,7 @@
 .PHONY: build
 
 AWS_REGION=us-east-1
-AWS_ACCOUNT=287140326780
+AWS_ACCOUNT:=$(shell cat .awsAccountId)
 BUILD_ARTIFACT=bootstrap.zip
 BUILD_DIR=.aws-sam/build
 CODE_DIR=mfl-scoring
@@ -23,7 +23,7 @@ updatestack:
 		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
 
 test:
-	cd ${CODE_DIR} && go test -v -cover
+	cd ${CODE_DIR} && go test -cover
 
 build:
 	cd ${CODE_DIR} && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -tags lambda.norpc -o ../.aws-sam/build/bootstrap main.go
@@ -52,6 +52,8 @@ pushtostage: test build package push updatelambda updatestagealias
 
 pushtoprod: test build package push updatelambda updateprodalias
 
+testaaid:
+	echo "AccountId: ${AWS_ACCOUNT}"
 
 val:
 	aws cloudformation validate-template --debug --template-body ${TEMPLATE_FILE}

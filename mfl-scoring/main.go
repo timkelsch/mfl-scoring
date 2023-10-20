@@ -155,7 +155,7 @@ func handler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, e
 
 	// Put teams in order of most fantasy points scored
 	sort.Sort(ByPointsFor{franchisesWithStandings})
-	fmt.Printf("%+v \n", franchisesWithStandings)
+	// fmt.Printf("%+v \n", franchisesWithStandings)
 
 	// Assign points to teams based on fantasy points scored, sharing points as necessary when teams tie
 	calculatePointsScore(franchisesWithStandings)
@@ -178,7 +178,7 @@ func handler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, e
 
 	allPlayTeamData := scrape()
 	franchisesWithStandingsAndAllplay := appendAllPlay(franchisesWithStandings, allPlayTeamData)
-	fmt.Print(franchisesWithStandingsAndAllplay)
+	// fmt.Print(franchisesWithStandingsAndAllplay)
 
 	return events.APIGatewayProxyResponse{
 		Body:       printTeam(franchisesWithStandingsAndAllplay),
@@ -236,11 +236,12 @@ func calculateTotalScore(franchises Franchises) Franchises {
 }
 
 func calculatePointsScore(franchises Franchises) Franchises {
-	j, err := json.MarshalIndent(franchises, "", "    ")
-	if err != nil {
-		fmt.Print(err.Error())
-	}
-	fmt.Println(string(j))
+	/*
+		 	j, err := json.MarshalIndent(franchises, "", "    ")
+			if err != nil {
+				fmt.Print(err.Error())
+			}
+			fmt.Println(string(j)) */
 	for i := 0; i < len(franchises); {
 		currentFantasyPoints := franchises[i].PointsFor
 		var currentPointsForGrabs = float64(len(franchises) - i)
@@ -476,7 +477,7 @@ func scrape() []AllPlayTeamStats {
 		}
 	}
 
-	fmt.Println("allPlayTeamsStatsReturn: ", allPlayTeamsStatsReturn)
+	// fmt.Println("allPlayTeamsStatsReturn: ", allPlayTeamsStatsReturn)
 	return allPlayTeamsStatsReturn
 }
 

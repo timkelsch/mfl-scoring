@@ -49,15 +49,6 @@ Resources:
             Action:
             - kms:Decrypt
             Resource: "*"
-      - PolicyName: ssmAccess
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action:
-            - ssm:GetParameter
-            Resource:
-            - arn:aws:ssm:us-east-1:287140326780:parameter/MFL_API_KEY
 
   MflScoringApiKeySecret:
     Type: AWS::SecretsManager::Secret
