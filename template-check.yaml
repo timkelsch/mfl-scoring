@@ -70,7 +70,6 @@ Resources:
       Code: 
         S3Bucket: !Sub ${BuildBucket}
         S3Key: builds/bootstrap.zip
-        # S3ObjectVersion: TODO
       Handler: bootstrap
       Runtime: provided.al2
       MemorySize: 128
