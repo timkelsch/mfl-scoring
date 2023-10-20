@@ -8,7 +8,7 @@ import (
 	"github.com/nsf/jsondiff"
 )
 
-func JSONCompare(t *testing.T, result interface{}, expectedJSONStr string) {
+func JSONCompare(t *testing.T, result interface{}, expectedJSONStr string) bool {
 	outJSONStr, err := json.MarshalIndent(result, "", "    ")
 	if err != nil {
 		t.Fatal("error marshaling the result: ", err)
@@ -20,5 +20,7 @@ func JSONCompare(t *testing.T, result interface{}, expectedJSONStr string) {
 		fmt.Println("The real output with ident --->")
 		fmt.Println(string(outJSONStr))
 		t.Errorf("The expected result is not equal to what we have: \n %s", diff)
+		return false
 	}
+	return true
 }
