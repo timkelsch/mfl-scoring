@@ -1,7 +1,7 @@
 .PHONY: build
 
 AWS_REGION=us-east-1
-AWS_ACCOUNT:=$(shell cat .awsAccountId)
+AWS_ACCOUNT=$(shell aws sts get-caller-identity | jq -r '.Account')
 BUILD_ARTIFACT=bootstrap.zip
 BUILD_DIR=.aws-sam/build
 CODE_DIR=mfl-scoring
@@ -52,8 +52,6 @@ pushtostage: test build package push updatelambda updatestagealias
 
 pushtoprod: test build package push updatelambda updateprodalias
 
-testaaid:
-	echo "AccountId: ${AWS_ACCOUNT}"
 
 val:
 	aws cloudformation validate-template --debug --template-body ${TEMPLATE_FILE}
