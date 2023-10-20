@@ -186,11 +186,17 @@ func handler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, e
 	}, nil
 }
 
+const (
+	TotalPts   string = "TotalPts"
+	AllPlayPct string = "AllPlay %"
+	Record     string = "Record"
+)
+
 func printTeam(teams Franchises) string {
 	t := table.NewWriter()
 	t.SetOutputMirror(&bytes.Buffer{})
-	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", "Fantasy Pts", "Points", "Record", "Total Pts",
-		"AllPlay W", "AllPlay L", "AllPlay T", "AllPlay %"})
+	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", "Fantasy Pts", "Points", Record, TotalPts,
+		"AllPlay W", "AllPlay L", "AllPlay T", AllPlayPct})
 	for _, o := range teams {
 		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsForString, o.PointScore,
 			o.RecordScoreString, o.TotalScore, o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
@@ -211,9 +217,9 @@ func printTeam(teams Franchises) string {
 	}
 
 	sortBy := []table.SortBy{
-		{Name: "Total Pts", Mode: table.DscNumeric},
-		{Name: "Record", Mode: table.DscNumeric},
-		{Name: "AllPlay %", Mode: table.DscNumeric},
+		{Name: TotalPts, Mode: table.DscNumeric},
+		{Name: Record, Mode: table.DscNumeric},
+		{Name: AllPlayPct, Mode: table.DscNumeric},
 	}
 
 	t.SetColumnConfigs(fantasyPoints)

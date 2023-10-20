@@ -39,6 +39,7 @@ Resources:
       DomainName: !Ref SubDomain
       DomainNameConfigurations:
         - CertificateArn: !Ref MflScoringCertificate
+          SecurityPolicy: TLS_1_2
 
   MflScoringApiMapping:
     DependsOn:
@@ -61,7 +62,7 @@ Resources:
         DNSName: !GetAtt MflScoringCustomDomain.RegionalDomainName
 
   MflScoringFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Lambda::Function # //NOSONAR
     Properties:
       Role:
         Fn::GetAtt:
