@@ -16,6 +16,4 @@
 
 .git/*
 .idea/*
-.aws-sam/*
 venv/*
-.awsAccountId

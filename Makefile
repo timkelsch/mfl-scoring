@@ -10,7 +10,7 @@ S3_PREFIX=builds
 
 API_ID=bc2pcjfiik
 FUNCTION_NAME=mfl-scoring-check-MflScoringFunction-jC2WqnR4ihCt
-FUNCTION_VERSION_PROD=27
+FUNCTION_VERSION_PROD=31
 STACK_NAME=mfl-scoring-check
 TEMPLATE_FILE=file://template-check.yaml
  

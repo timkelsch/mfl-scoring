@@ -1,34 +1,34 @@
----
 AWSTemplateFormatVersion: '2010-09-09'
+
 Description: AWS CloudFormation template that contains a Lambda function behind an
-  API Gateway that has two stages mapped to two Lambda aliases
+  API Gateway with custom domain that has two stages mapped to two Lambda aliases
 
 Parameters:
   HostedZoneId:
-    Description: Hosted zone id of the domain under which this app will be served
+    Description: Hosted zone id of the domain at which this API will be served
     Type: String
     Default: Z0291479D96D3UFQISZF
-  SubDomain:
-    Description: SubDomain for API Gateway API
+  DomainName:
+    Description: Domain name for API Gateway API
     Type: String
     Default: 'spankme.timismydaddy.com'
-  KmsKeyId:
-    Description: Id of the KMS key used to encrypt the secret. It's here to avoid circular dependency hell.
+  ApiPath:
+    Description: API path IE https://abc.example.com/stage/<ApiPath>
     Type: String
-    Default: mrk-be939ce79e1f4d538be08038d602da0f
+    Default: mfl-scoring
 
 Resources:
   MflScoringCertificate:
     Type: 'AWS::CertificateManager::Certificate'
     Properties:
-      DomainName: !Ref SubDomain
+      DomainName: !Ref DomainName
       CertificateTransparencyLoggingPreference: DISABLED
       ValidationMethod: DNS
 
   MflScoringCustomDomain:
     Type: AWS::ApiGatewayV2::DomainName
     Properties: 
-      DomainName: !Ref SubDomain
+      DomainName: !Ref DomainName
       DomainNameConfigurations:
         - CertificateArn: !Ref MflScoringCertificate
           SecurityPolicy: TLS_1_2
@@ -38,7 +38,7 @@ Resources:
          - MflScoringRecordSet
     Type: "AWS::ApiGatewayV2::ApiMapping"
     Properties:
-      DomainName: !Ref SubDomain
+      DomainName: !Ref DomainName
       ApiId: !Ref MflScoringApi
       Stage: !Ref MflScoringApiStageProd
       ApiMappingKey: ''
@@ -47,7 +47,7 @@ Resources:
     Type: "AWS::Route53::RecordSet"
     Properties:
       HostedZoneId: !Ref HostedZoneId
-      Name: !Ref SubDomain
+      Name: !Ref DomainName
       Type: A
       AliasTarget:
         HostedZoneId: !GetAtt MflScoringCustomDomain.RegionalHostedZoneId
@@ -76,39 +76,37 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - 'sts:AssumeRole'
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
       Path: /
-      ManagedPolicyArns:
+      ManagedPolicyArns: 
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      Policies:
-        - PolicyName: secretsManager
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - secretsmanager:DescribeSecret
-                  - secretsmanager:GetSecretValue
-                Resource: !Sub 'arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret/MflScoringApiKeySecret-enC9xWtZjXpH-40G5qG'
-        - PolicyName: kmsAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                - 'kms:DescribeKey'
-                - 'kms:Encrypt'
-                - 'kms:Decrypt'
-                - 'kms:ReEncrypt*'
-                - 'kms:GenerateDataKey'
-                - 'kms:GenerateDataKeyWithoutPlaintext'
-                Resource: !Join 
-                  - ''
-                  - - !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/' 
-                    - !Ref KmsKeyId
+
+  MflScoringFunctionIamRolePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      Roles:
+        - !Ref MflScoringFunctionIamRole
+      PolicyName: AllowS3
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Sid: secretsManager
+          Effect: Allow
+          Action:
+            - secretsmanager:DescribeSecret
+            - secretsmanager:GetSecretValue
+          Resource: !Ref MflScoringApiKeySecret
+        - Sid: kms 
+          Effect: Allow
+          Action:
+          - 'kms:DescribeKey'
+          - 'kms:Encrypt'
+          - 'kms:Decrypt'
+          - 'kms:ReEncrypt*'
+          - 'kms:GenerateDataKey'
+          - 'kms:GenerateDataKeyWithoutPlaintext'
+          Resource: !GetAtt MflScoringKey.Arn
 
   LambdaPermission:
     Type: AWS::Lambda::Permission
@@ -200,10 +198,9 @@ Resources:
     Properties:
       ApiId: !Ref MflScoringApi
       RouteKey: "GET /mfl-scoring"
-      Target: !Join
-        - /
-        - - integrations
-          - !Ref MflScoringIntegration
+      Target: !Sub 
+        - 'integrations/${Integration}'
+        - Integration: !Ref MflScoringIntegration
 
   MflScoringFunctionStagePermission:
     Type: AWS::Lambda::Permission
@@ -213,9 +210,11 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Join
         - ''
-        - - !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:"
+        - - !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:'
           - !Ref MflScoringApi
-          - "/*/*/*"
+          - '/'
+          - !Ref MflScoringApiStageStage
+          - '/GET/*'
 
   MflScoringFunctionProdPermission:
     Type: AWS::Lambda::Permission
@@ -225,15 +224,16 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Join
         - ''
-        - - !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:"
+        - - !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:'
           - !Ref MflScoringApi
-          - "/*/*/*"
+          - '/'
+          - !Ref MflScoringApiStageProd
+          - '/GET/*'
 
   MflScoringFunctionStageAlias:
     Type: AWS::Lambda::Alias
     Properties:
-      FunctionName:
-        Ref: MflScoringFunction
+      FunctionName: !Ref MflScoringFunction
       FunctionVersion: $LATEST
       Name: STAGE
       
@@ -241,14 +241,13 @@ Resources:
     Type: AWS::Lambda::Alias
     Properties:
       FunctionName: !Ref MflScoringFunction
-      FunctionVersion: 1
+      FunctionVersion: 1 # This isn't enforced on stack updates
       Name: PROD
 
   MflScoringApiStageStage:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
-      ApiId:
-        Ref: MflScoringApi
+      ApiId: !Ref MflScoringApi
       AccessLogSettings:
         DestinationArn: !GetAtt MflScoringStageStageLogGroup.Arn
         Format: >
@@ -264,8 +263,7 @@ Resources:
   MflScoringApiStageProd:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
-      ApiId:
-        Ref: MflScoringApi
+      ApiId: !Ref MflScoringApi
       DefaultRouteSettings:
         DetailedMetricsEnabled: True
       StageName: prod
@@ -277,36 +275,42 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties: 
       LogGroupName: !Sub 
-          - 'API-Gateway-Execution-Logs_${ApiId}/stage'
-          - ApiId: !Ref MflScoringApi
+        - 'API-Gateway-Execution-Logs_${ApiId}/stage'
+        - ApiId: !Ref MflScoringApi
       RetentionInDays: 30
 
   MflScoringStageProdLogGroup:
     Type: AWS::Logs::LogGroup
     Properties: 
       LogGroupName: !Sub 
-          - 'API-Gateway-Execution-Logs_${ApiId}/prod'
-          - ApiId: !Ref MflScoringApi
+        - 'API-Gateway-Execution-Logs_${ApiId}/prod'
+        - ApiId: !Ref MflScoringApi
       RetentionInDays: 30
 
 Outputs:
   StageUrl:
     Description: URL of the "stage" stage
     Value: !Sub 
-      - "https://${MflScoringApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/mfl-scoring"
+      - "https://${MflScoringApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/${ApiPath}"
       - Stage: !Ref MflScoringApiStageStage
+        ApiPath: !Ref ApiPath
+
   ProdUrl:
     Description: URL of the "prod" stage
     Value: !Sub 
-      - "https://${MflScoringApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/mfl-scoring"
+      - "https://${MflScoringApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/${ApiPath}"
       - Stage: !Ref MflScoringApiStageProd
+        ApiPath: !Ref ApiPath
+
   CustomProdUrl:
     Description: Custom prod URL
     Value: !Join
       - ''
       - - "https://"
         - !Ref MflScoringCustomDomain
-        - "/mfl-scoring"
+        - "/"
+        - !Ref ApiPath
+
   MflScoringFunctionArn:
     Value: !GetAtt MflScoringFunction.Arn
     Export:
