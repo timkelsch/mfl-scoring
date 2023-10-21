@@ -92,7 +92,7 @@ Resources:
                 Action:
                   - secretsmanager:DescribeSecret
                   - secretsmanager:GetSecretValue
-                Resource: !Sub 'arn:${AWS::Partition}:secret:${AWS::Region}:${AWS::AccountId}:key/MflScoringApiKeySecret-enC9xWtZjXpH-40G5qG'
+                Resource: !Sub 'arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret/MflScoringApiKeySecret-enC9xWtZjXpH-40G5qG'
         - PolicyName: kmsAccess
           PolicyDocument:
             Version: '2012-10-17'
