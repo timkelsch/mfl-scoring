@@ -1,5 +1,5 @@
 ## To Do:
-- [ ] Dockerize this app
+- [ ] Dockerize this app 
 - [ ] Finish unit tests
 - [ ] Find a better way of dealing with int/float issue in structs
 - [ ] Consolidate standard and allplay w/l/t into single fields
