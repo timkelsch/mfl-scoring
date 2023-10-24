@@ -299,7 +299,7 @@ func calculateRecordScore(franchises Franchises) Franchises {
 
 func getFranchiseDetails(apiKey string) LeagueResponse {
 	LeagueAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueAPIQuery + "&" + LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
-	fmt.Println("LeagueApiURL: " + LeagueAPIURL)
+	// fmt.Println("LeagueApiURL: " + LeagueAPIURL)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -332,7 +332,7 @@ func getFranchiseDetails(apiKey string) LeagueResponse {
 
 func getLeagueStandings(apiKey string) LeagueStandingsResponse {
 	LeagueStandingsAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueStandingsAPIQuery + "&" + LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
-	fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsAPIURL)
+	// fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsAPIURL)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
