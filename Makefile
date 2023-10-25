@@ -1,9 +1,14 @@
 .PHONY: build
 
+
 AWS_REGION=us-east-1
 AWS_ACCOUNT=$(shell aws sts get-caller-identity | jq -r '.Account')
 CODE_DIR=mfl-scoring
-IMAGE_URI=${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/mfl-score:latest
+VERSION=$(shell aws ecr get-login-password --region us-east-1 | docker login --username AWS \
+  --password-stdin 287140326780.dkr.ecr.us-east-1.amazonaws.com; aws ecr describe-images \
+  --region us-east-1 --output json --repository-name mfl-score \
+  --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' | jq . -r)
+IMAGE_URI=${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/mfl-score:${VERSION}
 
 FUNCTION_NAME=mfl-scoring-check-MflScoringFunction-jsrPurkbiCjK
 FUNCTION_VERSION_PROD=31
