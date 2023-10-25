@@ -22,7 +22,7 @@ test:
 	cd ${CODE_DIR} && go test -cover
 
 push:
-	push.sh
+	./push.sh
 
 updatelambda:
 	aws lambda update-function-code --function-name ${FUNCTION_NAME} \
