@@ -15,13 +15,13 @@ pipeline {
     }
 
     stages {
-        stage('scm') {
-            steps {
-                 dir("$WORKSPACE/mfl-scoring") {
-                     git branch: '**', url: 'https://github.com/timkelsch/mfl-scoring'
-                 }
-            }
-        }
+        // stage('scm') {
+        //     steps {
+        //          dir("$WORKSPACE/mfl-scoring") {
+        //              git branch: '**', url: 'https://github.com/timkelsch/mfl-scoring'
+        //          }
+        //     }
+        // }
         
         stage('Test') {
             steps {
