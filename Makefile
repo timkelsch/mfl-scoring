@@ -3,7 +3,7 @@
 AWS_REGION=us-east-1
 AWS_ACCOUNT=$(shell aws sts get-caller-identity | jq -r '.Account')
 CODE_DIR=mfl-scoring
-IMAGE_URI=$$AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/mfl-score:latest
+IMAGE_URI=${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/mfl-score:latest
 
 FUNCTION_NAME=mfl-scoring-check-MflScoringFunction-jsrPurkbiCjK
 FUNCTION_VERSION_PROD=31
