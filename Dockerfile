@@ -4,7 +4,8 @@ FROM golang:1.21-alpine3.18 AS BUILD
 WORKDIR /app
 # Copy dependencies list
 COPY mfl-scoring/go.mod mfl-scoring/go.sum ./
-RUN ls -al && which go && go mod download
+RUN ls -al && which go 
+RUN go mod download
 # Build with optional lambda.norpc tag
 COPY mfl-scoring/*.go .
 # RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
