@@ -40,7 +40,7 @@ pipeline {
         stage('Build and Push') {
             steps {
                 echo 'Building and Pushing to ECR'
-                sh 'make imagepush'
+                sh 'make push'
             }
         }
 
