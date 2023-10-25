@@ -1,4 +1,4 @@
-FROM golang:1.21 AS BUILD
+FROM golang:1.21-alpine AS BUILD
 WORKDIR /app
 COPY mfl-scoring/go.mod mfl-scoring/go.sum ./
 RUN ls -al && which go 
