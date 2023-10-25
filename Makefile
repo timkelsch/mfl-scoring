@@ -5,7 +5,7 @@ AWS_REGION=us-east-1
 AWS_ACCOUNT=$(shell aws sts get-caller-identity | jq -r '.Account')
 CODE_DIR=mfl-scoring
 VERSION=$(shell aws ecr get-login-password --region us-east-1 | docker login --username AWS \
-  --password-stdin 287140326780.dkr.ecr.us-east-1.amazonaws.com; aws ecr describe-images \
+  --password-stdin 287140326780.dkr.ecr.us-east-1.amazonaws.com 2>&1 > /dev/null && aws ecr describe-images \
   --region us-east-1 --output json --repository-name mfl-score \
   --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' | jq . -r)
 IMAGE_URI=${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/mfl-score:${VERSION}
@@ -31,8 +31,7 @@ push:
 
 updatelambda:
 	aws lambda update-function-code --function-name ${FUNCTION_NAME} \
-		--image-uri ${IMAGE_URI}
-		--publish --region ${AWS_REGION}
+		--image-uri ${IMAGE_URI} --publish --region ${AWS_REGION}
 
 updatestagealias:
 	aws lambda update-alias --function-name "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT}:function:${FUNCTION_NAME}" \
