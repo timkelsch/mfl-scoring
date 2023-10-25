@@ -140,8 +140,9 @@ func handler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, e
 	if err != nil {
 		log.Fatal(err)
 	}
+	// apiKey err := secretCache.GetSecretString(APIKeySecretARN)
 
-	apiKey, err := secretCache.GetSecretString(APIKeySecretARN)
+	apiKey := secretCache.VersionStage
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -237,11 +238,12 @@ func calculateTotalScore(franchises Franchises) Franchises {
 }
 
 func calculatePointsScore(franchises Franchises) Franchises {
-	/* j, err := json.MarshalIndent(franchises, "", "    ")
-	if err != nil {
-		fmt.Print(err.Error())
-	}
-	fmt.Println(string(j)) */
+	/*
+		 	j, err := json.MarshalIndent(franchises, "", "    ")
+			if err != nil {
+				fmt.Print(err.Error())
+			}
+			fmt.Println(string(j)) */
 	for i := 0; i < len(franchises); {
 		currentFantasyPoints := franchises[i].PointsFor
 		var currentPointsForGrabs = float64(len(franchises) - i)
@@ -298,7 +300,7 @@ func calculateRecordScore(franchises Franchises) Franchises {
 }
 
 func getFranchiseDetails(apiKey string) LeagueResponse {
-	LeagueAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueAPIQuery + "&" + LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
+	LeagueAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueAPIQuery + "&" + LeagueIDQuery + "&" + APIOutputTypeQuery //+ "&APIKEY=" + apiKey
 	// fmt.Println("LeagueApiURL: " + LeagueAPIURL)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -331,7 +333,7 @@ func getFranchiseDetails(apiKey string) LeagueResponse {
 }
 
 func getLeagueStandings(apiKey string) LeagueStandingsResponse {
-	LeagueStandingsAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueStandingsAPIQuery + "&" + LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
+	LeagueStandingsAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueStandingsAPIQuery + "&" + LeagueIDQuery + "&" + APIOutputTypeQuery //+ "&APIKEY=" + apiKey
 	// fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsAPIURL)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)

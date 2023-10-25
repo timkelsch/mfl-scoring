@@ -5,14 +5,13 @@ AWS_ACCOUNT=$(shell aws sts get-caller-identity | jq -r '.Account')
 BUILD_ARTIFACT=bootstrap.zip
 BUILD_DIR=.aws-sam/build
 CODE_DIR=mfl-scoring
-S3_BUCKET=storage-mflscoring-17z65jydt72tq
-S3_PREFIX=builds
+IMAGE_URI=$$AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/mfl-score:$$LATEST
 
-API_ID=bc2pcjfiik
-FUNCTION_NAME=mfl-scoring-check-MflScoringFunction-jC2WqnR4ihCt
-FUNCTION_VERSION_PROD=31
-STACK_NAME=mfl-scoring-check
-TEMPLATE_FILE=file://template-check.yaml
+API_ID=
+FUNCTION_NAME=
+FUNCTION_VERSION_PROD=1
+STACK_NAME=mfl-scoring-temp
+TEMPLATE_FILE=file://template-temp.yaml
  
 createstack:
 	aws cloudformation create-stack --stack-name ${STACK_NAME} --template-body ${TEMPLATE_FILE} \
@@ -42,7 +41,7 @@ updatelambda:
 
 updatelambdaimage:
 	aws lambda update-function-code --function-name ${FUNCTION_NAME} \
-		--image-uri 287140326780.dkr.ecr.us-east-1.amazonaws.com/mfl-score:$$LATEST
+		--image-uri ${IMAGE_URI}
 		--publish --region ${AWS_REGION}
 
 updatestagealias:

@@ -56,15 +56,10 @@ Resources:
   MflScoringFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Role:
-        Fn::GetAtt:
-        - MflScoringFunctionIamRole
-        - Arn
+      Role: !GetAtt MflScoringFunctionIamRole.Arn
       Code: 
-        S3Bucket: !ImportValue MflScoringBucketName
-        S3Key: builds/bootstrap.zip
-      Handler: bootstrap
-      Runtime: provided.al2
+        ImageUri: 287140326780.dkr.ecr.us-east-1.amazonaws.com/mfl-score:0.8
+      PackageType: Image
       MemorySize: 128
       Timeout: 5
 
@@ -241,7 +236,7 @@ Resources:
     Type: AWS::Lambda::Alias
     Properties:
       FunctionName: !Ref MflScoringFunction
-      FunctionVersion: 1 # This isn't enforced on stack updates
+      FunctionVersion: $LATEST # This isn't enforced on stack updates
       Name: PROD
 
   MflScoringApiStageStage:
