@@ -41,6 +41,8 @@ pushtostage: test build package push updatelambda updatestagealias
 
 pushtoprod: test build package push updatelambda updateprodalias
 
+build:
+	docker build --platform linux/amd64 -t mfl-scoring-image:mod .
 
 val:
 	aws cloudformation validate-template --debug --template-body ${TEMPLATE_FILE}
