@@ -5,7 +5,7 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '5', artifactNumToKeepStr: '5'))
     }    
 
-    tools { go 'go1.21' }
+    tools { go 'go1.21' } 
 
     environment {
         CGO_ENABLED=0 
