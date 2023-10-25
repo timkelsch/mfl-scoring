@@ -15,6 +15,6 @@ NEXT_VERSION="${v1}.${v2}"                      # paste back together
 
 REPO="287140326780.dkr.ecr.us-east-1.amazonaws.com/mfl-score:${NEXT_VERSION}"
 
-IMAGE=$(docker build -q --platform linux/amd64 -t mfl-scoring-image:"${NEXT_VERSION}" . | cut -d: -f2)
+IMAGE=$(docker build -q -t mfl-scoring-image:"${NEXT_VERSION}" . | cut -d: -f2)
 docker tag "${IMAGE}" "${REPO}"
 docker push "${REPO}"
