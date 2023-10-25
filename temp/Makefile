@@ -39,6 +39,9 @@ updatelambda:
 		--s3-key ${S3_PREFIX}/${BUILD_ARTIFACT} \
 		--publish --region ${AWS_REGION}
 
+imagepush:
+	push.sh
+
 updatelambdaimage:
 	aws lambda update-function-code --function-name ${FUNCTION_NAME} \
 		--image-uri ${IMAGE_URI}

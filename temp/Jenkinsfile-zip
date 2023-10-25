@@ -14,7 +14,7 @@ pipeline {
         SAM_CLI_TELEMETRY=0
     }
 
-    stages {
+    stages {        
         stage('Test') {
             steps {
                 withEnv(["PATH+GO=${GOPATH}/bin"]){
@@ -29,10 +29,18 @@ pipeline {
             }
         }
         
-        stage('Build and Push') {
+        stage('Build') {
             steps {
-                echo 'Building and Pushing to ECR'
-                sh 'make imagepush'
+                echo 'Building'
+                sh 'make build'
+            }
+        }
+
+        stage('Push'){
+            steps{
+                echo 'Packaging and Pushing'
+                sh 'make package'
+                sh 'make push'
             }
         }
 
