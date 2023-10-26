@@ -14,6 +14,29 @@ pipeline {
     }
 
     stages {        
+        stage('Check for Modified Files') {
+            steps {
+                script {
+                    def changes = currentBuild.changeSets.poll()
+                    if (changes.isEmpty()) {
+                        currentBuild.result = 'ABORTED'
+                        error("No changes detected. Pipeline aborted.")
+                    }
+
+                    // Define the list of files you want to check for changes
+                    def filesToCheck = ['Dockerfile', 'mfl-scoring/*']
+
+                    for (entry in changes) {
+                        for (file in filesToCheck) {
+                            if (entry.affectedPaths.contains(file)) {
+                                echo "Found changes in ${file}. Proceeding with the pipeline."
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Test') {
             steps {
                 withEnv(["PATH+GO=${GOPATH}/bin"]){
