@@ -61,7 +61,7 @@ Resources:
         ImageUri: 287140326780.dkr.ecr.us-east-1.amazonaws.com/mfl-score:0.8
       PackageType: Image
       Architectures:
-           - x86_64
+           - arm64
       MemorySize: 128
       Timeout: 5
 
