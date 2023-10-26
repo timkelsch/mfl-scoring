@@ -1,6 +1,4 @@
 pipeline {
-    agent any
-  
     options {
         buildDiscarder(logRotator(numToKeepStr: '5', artifactNumToKeepStr: '5'))
     }    
@@ -37,16 +35,14 @@ pipeline {
             }
         }
         
-        stage('Build and Push') {
+        stage('Build, Push, Update Lambda') {
             steps {
-                echo 'Building and Pushing to ECR'
                 sh 'make push'
             }
         }
 
         stage('Deploy'){
             steps{
-                sh 'make updatelambda'
                 sh 'make updatestagealias'
             }        
         }

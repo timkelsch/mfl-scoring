@@ -14,7 +14,11 @@ FUNCTION_NAME=mfl-scoring-check-MflScoringFunction-jsrPurkbiCjK
 FUNCTION_VERSION_PROD=31
 STACK_NAME=mfl-scoring-check
 TEMPLATE_FILE=file://template-check.yaml
- 
+
+export FUNCTION_NAME
+export AWS_REGION
+export AWS_ACCOUNT
+
 createstack:
 	aws cloudformation create-stack --stack-name ${STACK_NAME} --template-body ${TEMPLATE_FILE} \
 		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
