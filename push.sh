@@ -13,7 +13,8 @@ CURRENT_VERSION=$(aws ecr describe-images --region "${AWS_REGION}" --output json
 
 IFS=. read -r v1 v2 <<< "${CURRENT_VERSION}"    # split into (integer) components
 ((v2++))                                        # do the math
-NEXT_VERSION="${v1}.${v2}"                      # paste back together
+# NEXT_VERSION="${v1}.${v2}"                      # paste back together
+NEXT_VERSION=0.13
 
 IMAGE_URI="${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/mfl-score:${NEXT_VERSION}"
 
