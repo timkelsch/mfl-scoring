@@ -11,7 +11,7 @@ VERSION=$(shell aws ecr get-login-password --region us-east-1 | docker login --u
 IMAGE_URI=${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/mfl-score:${VERSION}
 
 FUNCTION_NAME=mfl-scoring-check-MflScoringFunction-jsrPurkbiCjK
-FUNCTION_VERSION_PROD=31
+FUNCTION_VERSION_PROD=5
 STACK_NAME=mfl-scoring-check
 TEMPLATE_FILE=file://template-check.yaml
 
@@ -21,7 +21,7 @@ export AWS_ACCOUNT
 
 createstack:
 	aws cloudformation create-stack --stack-name ${STACK_NAME} --template-body ${TEMPLATE_FILE} \
-		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
+		#--capabilities CAPABILITY_IAM --region ${AWS_REGION}
 
 updatestack:
 	aws cloudformation update-stack --stack-name ${STACK_NAME} --template-body ${TEMPLATE_FILE} \
