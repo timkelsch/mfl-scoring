@@ -4,8 +4,8 @@ COPY mfl-scoring/go.mod mfl-scoring/go.sum ./
 RUN ls -al && which go 
 RUN go mod download
 COPY mfl-scoring/*.go .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -tags lambda.norpc -o main main.go
-
+RUN CGO_ENABLED=0 go build -tags lambda.norpc -o main main.go
+# GOOS=linux GOARCH=arm64 
 # Copy artifacts to a clean image
 FROM public.ecr.aws/lambda/provided:al2
 WORKDIR /app

@@ -238,7 +238,7 @@ Resources:
     Type: AWS::Lambda::Alias
     Properties:
       FunctionName: !Ref MflScoringFunction
-      FunctionVersion: $LATEST # This isn't enforced on stack updates
+      FunctionVersion: $LATEST # This isn't enforced on stack updates. It needs to be updated to a static release after the stack is created
       Name: PROD
 
   MflScoringApiStageStage:
