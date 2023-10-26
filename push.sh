@@ -21,5 +21,5 @@ IMAGE=$(docker build -q -t mfl-scoring-image:"${NEXT_VERSION}" . | cut -d: -f2)
 docker tag "${IMAGE}" "${IMAGE_URI}"
 docker push "${IMAGE_URI}"
 
-aws lambda update-function-code --function-name "${FUNCTION_NAME}" \
+aws lambda update-function-code --function-name "${FUNCTION_NAME}" --architectures arm64 \
 		--image-uri "${IMAGE_URI}" --publish --region "${AWS_REGION}"
