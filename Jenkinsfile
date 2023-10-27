@@ -30,7 +30,7 @@ pipeline {
                     for (changeLogSet in changeLogSets) {
                         for (entry in changeLogSet) {
                             for (file in filesToCheck) {
-                                if (entry.getAffectedPaths.contains(file)) {
+                                if (entry.getAffectedPaths().contains(file)) {
                                     echo "${file} was modified"
                                     numFilesToCheckChanged++
                                 }
