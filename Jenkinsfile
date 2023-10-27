@@ -27,11 +27,13 @@ pipeline {
                     // Define the list of files you want to check for changes
                     def filesToCheck = ['Dockerfile', '*.go', 'go.*']
                     def numFilesToCheckChanged = 0
-                    for (entry in changeLogSets) {
-                        for (file in filesToCheck) {
-                            if (entry.affectedPaths.contains(file)) {
-                                echo "${file} was modified"
-                                numFilesToCheckChanged++
+                    for changeLogSet in changeLogSets) {
+                        for (entry in changeLogSet) {
+                            for (file in filesToCheck) {
+                                if (entry.affectedPaths.contains(file)) {
+                                    echo "${file} was modified"
+                                    numFilesToCheckChanged++
+                                }
                             }
                         }
                     }
