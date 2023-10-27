@@ -18,16 +18,14 @@ pipeline {
             steps {
                 script {
                     def changeLogSets = currentBuild.changeSets
-                    // for (changeLogSet in changeLogSets) {
-                    //     echo "changeLogSet: " + changeLogSet.getAffectedPaths()
-                    // }
                     if (changeLogSets.isEmpty()) {
                         currentBuild.result = 'ABORTED'
                         error("No changes detected. Pipeline aborted.")
                     }
 
                     // Define the list of files you want to check for changes
-                    def filesToCheck = ['Dockerfile', 'mfl-scoring/main_test.go', 'go.*']
+                    def filesToCheck = ['Dockerfile', 'mfl-scoring/main.go', 'mfl-scoring/main_test.go', 'go.mod', 'go.sum']
+                    
                     def numFilesToCheckChanged = 0
                     for (changeLogSet in changeLogSets) {
                         for (entry in changeLogSet) {
@@ -48,20 +46,6 @@ pipeline {
                         currentBuild.result = 'ABORTED'
                         error("No changes detected. Pipeline aborted.")
                     }                
-
-                    // for (int i = 0; i < changeLogSets.size(); i++) {
-                    //     def entries = changeLogSets[i].items
-                    //     echo "ENTRIES: ${entries}"
-                    //     for (file in filesToCheck) {
-                    //         echo "FILE ${file}"
-                    //         if (entries.contains(file)) {
-                    //             echo "Found changes in ${file}. Proceeding with the pipeline."
-                    //         } else {
-                    //             currentBuild.result = 'ABORTED'
-                    //             error("No changes detected. Pipeline aborted.")
-                    //         }
-                    //     }
-                    // }
                 }
             }
         }
@@ -80,6 +64,12 @@ pipeline {
             }
         }
         
+        stage('Check if Docker image has changed') {
+            steps {
+                
+            }
+        }
+
         stage('Build, Push, Update Lambda') {
             steps {
                 sh 'make push'
