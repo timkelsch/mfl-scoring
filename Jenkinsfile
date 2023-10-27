@@ -18,9 +18,9 @@ pipeline {
             steps {
                 script {
                     def changeLogSets = currentBuild.changeSets
-                    for (changeLogSet in changeLogSets) {
-                        echo "changeLogSet: " + changeLogSet.getAffectedPaths()
-                    }
+                    // for (changeLogSet in changeLogSets) {
+                    //     echo "changeLogSet: " + changeLogSet.getAffectedPaths()
+                    // }
                     if (changeLogSets.isEmpty()) {
                         currentBuild.result = 'ABORTED'
                         error("No changes detected. Pipeline aborted.")
