@@ -37,7 +37,7 @@ if [[ $(docker image ls --format json "${CURRENT_IMAGE}" | jq -r '.ID' | wc -l) 
     fi
 fi
 
-if [[ "${CURRENT_IMAGE_ID}" == "${NEW_IMAGE_ID}" ]]; then
+if [ "${CURRENT_IMAGE_ID}" = "${NEW_IMAGE_ID}" ]; then
   echo "The image built for this commit already exists in the remote repository. Exiting."
   exit
 fi
