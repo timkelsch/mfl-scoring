@@ -27,7 +27,7 @@ pipeline {
                     }
 
                     // Define the list of files you want to check for changes
-                    def filesToCheck = ['Dockerfile', 'main_test.go', 'go.*']
+                    def filesToCheck = ['Dockerfile', 'mfl-scoring/main_test.go', 'go.*']
                     def numFilesToCheckChanged = 0
                     for (changeLogSet in changeLogSets) {
                         for (entry in changeLogSet) {
