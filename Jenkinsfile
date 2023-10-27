@@ -17,8 +17,8 @@ pipeline {
         stage('Check for Modified Files') {
             steps {
                 script {
-                    def changeLogSets = currentBuild.rawBuild.changeSets
-                    echo "${changeLogSets}"[0].items
+                    def changeLogSets = currentBuild.changeSets
+                    echo "HELLO"
                     if (changeLogSets.isEmpty()) {
                         currentBuild.result = 'ABORTED'
                         error("No changes detected. Pipeline aborted.")
