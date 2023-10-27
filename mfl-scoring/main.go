@@ -370,7 +370,7 @@ func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse 
 
 	if numFranchises != numLeagueFranchises || numFranchises != numLeagueStandingsFranchises {
 		fmt.Printf(
-			"xxxxxxxResponses don't have the same number of franchises:\n League API Franchises.Count: %d\n League API: %d\n LeagueStandings API: %d\n",
+			"xxxxxxxxResponses don't have the same number of franchises:\n League API Franchises.Count: %d\n League API: %d\n LeagueStandings API: %d\n",
 			numFranchises, numLeagueFranchises, numLeagueStandingsFranchises)
 		os.Exit(3)
 	}
