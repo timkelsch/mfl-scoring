@@ -31,7 +31,7 @@ pipeline {
                         def entries = changeLogSets[i].items
                         echo "${entries}"
                         for (file in filesToCheck) {
-                            echo "${file}"
+                            echo "FILE ${file}"
                             if (entries.contains(file)) {
                                 echo "Found changes in ${file}. Proceeding with the pipeline."
                             } else {
