@@ -18,7 +18,7 @@ pipeline {
             steps {
                 script {
                     def changeLogSets = currentBuild.changeSets
-                    echo "${changeLogSets}[0].items"
+                    echo "${changeLogSets}"[0].items
                     if (changeLogSets.isEmpty()) {
                         currentBuild.result = 'ABORTED'
                         error("No changes detected. Pipeline aborted.")
@@ -30,6 +30,7 @@ pipeline {
                     for (int i = 0; i < changeLogSets.size(); i++) {
                         def entries = changeLogSets[i].items
                         for (file in filesToCheck) {
+                            echo "${file}"
                             if (entries.contains(file)) {
                                 echo "Found changes in ${file}. Proceeding with the pipeline."
                             } else {
