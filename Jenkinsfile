@@ -29,6 +29,7 @@ pipeline {
 
                     for (int i = 0; i < changeLogSets.size(); i++) {
                         def entries = changeLogSets[i].items
+                        echo "${entries}"
                         for (file in filesToCheck) {
                             echo "${file}"
                             if (entries.contains(file)) {
