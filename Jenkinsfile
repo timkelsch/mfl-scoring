@@ -66,7 +66,7 @@ pipeline {
         
         stage('Check if Docker image has changed') {
             steps {
-                
+                echo "poop"
             }
         }
 
