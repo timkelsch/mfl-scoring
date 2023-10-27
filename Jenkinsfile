@@ -39,33 +39,7 @@ pipeline {
                                 error("No changes detected. Pipeline aborted.")
                             }
                         }
-
-                        // for (int j = 0; j < entries.length; j++) {
-                        //     def entry = entries[j]
-                        //     def files = new ArrayList(entry.affectedFiles)
-                        //     for (int k = 0; k < files.size(); k++) {
-                        //         def file = files[k]
-                        //         echo "${file.editType.name} ${file.path}"
-                        //     }
-                        // }
                     }
-
-                    // def changes = currentBuild.changeSets.poll()
-                    // if (changes.isEmpty()) {
-                    //     currentBuild.result = 'ABORTED'
-                    //     error("No changes detected. Pipeline aborted.")
-                    // }
-
-                    // // Define the list of files you want to check for changes
-                    // def filesToCheck = ['path/to/file1', 'path/to/file2']
-
-                    // for (entry in changes) {
-                    //     for (file in filesToCheck) {
-                    //         if (entry.affectedPaths.contains(file)) {
-                    //             echo "Found changes in ${file}. Proceeding with the pipeline."
-                    //         }
-                    //     }
-                    // }
                 }
             }
         }
