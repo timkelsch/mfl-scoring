@@ -36,7 +36,7 @@ pipeline {
                         }
                     }
 
-                    if numFilesToCheckChanged > 0 {
+                    if (numFilesToCheckChanged > 0) {
                             echo "Found changes in ${file}. Proceeding with the pipeline."
                         } else {
                             currentBuild.result = 'ABORTED'
