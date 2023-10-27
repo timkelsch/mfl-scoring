@@ -37,12 +37,11 @@ pipeline {
                     }
 
                     if (numFilesToCheckChanged > 0) {
-                            echo "Found changes in ${file}. Proceeding with the pipeline."
-                        } else {
-                            currentBuild.result = 'ABORTED'
-                            error("No changes detected. Pipeline aborted.")
-                        }
-                    }
+                        echo "Found changes in ${file}. Proceeding with the pipeline."
+                    } else {
+                        currentBuild.result = 'ABORTED'
+                        error("No changes detected. Pipeline aborted.")
+                    }                
 
                     // for (int i = 0; i < changeLogSets.size(); i++) {
                     //     def entries = changeLogSets[i].items
