@@ -26,20 +26,37 @@ pipeline {
 
                     // Define the list of files you want to check for changes
                     def filesToCheck = ['Dockerfile', '*.go', 'go.*']
-
-                    for (int i = 0; i < changeLogSets.size(); i++) {
-                        def entries = changeLogSets[i].items
-                        echo "ENTRIES: ${entries}"
+                    def numFilesToCheckChanged = 0
+                    for (entry in changeLogSets) {
                         for (file in filesToCheck) {
-                            echo "FILE ${file}"
-                            if (entries.contains(file)) {
-                                echo "Found changes in ${file}. Proceeding with the pipeline."
-                            } else {
-                                currentBuild.result = 'ABORTED'
-                                error("No changes detected. Pipeline aborted.")
+                            if (entry.affectedPaths.contains(file)) {
+                                echo "${file} was modified"
+                                numFilesToCheckChanged++
                             }
                         }
                     }
+
+                    if numFilesToCheckChanged > 0 {
+                            echo "Found changes in ${file}. Proceeding with the pipeline."
+                        } else {
+                            currentBuild.result = 'ABORTED'
+                            error("No changes detected. Pipeline aborted.")
+                        }
+                    }
+
+                    // for (int i = 0; i < changeLogSets.size(); i++) {
+                    //     def entries = changeLogSets[i].items
+                    //     echo "ENTRIES: ${entries}"
+                    //     for (file in filesToCheck) {
+                    //         echo "FILE ${file}"
+                    //         if (entries.contains(file)) {
+                    //             echo "Found changes in ${file}. Proceeding with the pipeline."
+                    //         } else {
+                    //             currentBuild.result = 'ABORTED'
+                    //             error("No changes detected. Pipeline aborted.")
+                    //         }
+                    //     }
+                    // }
                 }
             }
         }
