@@ -30,7 +30,7 @@ pipeline {
                     for (changeLogSet in changeLogSets) {
                         for (entry in changeLogSet) {
                             for (file in filesToCheck) {
-                                if (entry.affectedPaths.contains(file)) {
+                                if (entry.getAffectedPaths.contains(file)) {
                                     echo "${file} was modified"
                                     numFilesToCheckChanged++
                                 }
@@ -39,7 +39,7 @@ pipeline {
                     }
 
                     if (numFilesToCheckChanged > 0) {
-                        echo "Found changes in ${file}. Proceeding with the pipeline."
+                        echo "Found changes. Proceeding with the pipeline."
                     } else {
                         currentBuild.result = 'ABORTED'
                         error("No changes detected. Pipeline aborted.")
