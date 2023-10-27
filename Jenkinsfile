@@ -18,6 +18,7 @@ pipeline {
             steps {
                 script {
                     def changeLogSets = currentBuild.changeSets
+                    echo "${changeLogSets}"
                     if (changeLogSets.isEmpty()) {
                         currentBuild.result = 'ABORTED'
                         error("No changes detected. Pipeline aborted.")
