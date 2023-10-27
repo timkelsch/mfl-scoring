@@ -27,16 +27,25 @@ pipeline {
                     // Define the list of files you want to check for changes
                     def filesToCheck = ['Dockerfile', '*.go', 'go.*']
 
-                    for (entry in changeLogSets) {
+                    for (int i = 0; i < changeLogSets.size(); i++) {
                         def entries = changeLogSets[i].items
-                        for (int j = 0; j < entries.length; j++) {
-                            def entry = entries[j]
-                            def files = new ArrayList(entry.affectedFiles)
-                            for (int k = 0; k < files.size(); k++) {
-                                def file = files[k]
-                                echo "${file.editType.name} ${file.path}"
+                        for (file in filesToCheck) {
+                            if (entries.contains(file)) {
+                                echo "Found changes in ${file}. Proceeding with the pipeline."
+                            } else {
+                                currentBuild.result = 'ABORTED'
+                                error("No changes detected. Pipeline aborted.")
                             }
                         }
+
+                        // for (int j = 0; j < entries.length; j++) {
+                        //     def entry = entries[j]
+                        //     def files = new ArrayList(entry.affectedFiles)
+                        //     for (int k = 0; k < files.size(); k++) {
+                        //         def file = files[k]
+                        //         echo "${file.editType.name} ${file.path}"
+                        //     }
+                        // }
                     }
 
                     // def changes = currentBuild.changeSets.poll()
