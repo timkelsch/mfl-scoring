@@ -47,3 +47,7 @@ docker push "${NEW_IMAGE_URI}"
 
 aws lambda update-function-code --function-name "${FUNCTION_NAME}" --architectures arm64 \
 		--image-uri "${NEW_IMAGE_URI}" --publish --region "${AWS_REGION}"
+
+# This gets complicated because if an image has been uploaded before, even if it has since been deleted,
+# ECR will use the imagePushedAt of the first time it was pushed. This breaks the sort by query in 
+# CURRENT_VERSION.
