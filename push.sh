@@ -33,13 +33,13 @@ if [[ $(docker image ls --format json "${CURRENT_IMAGE}" | jq -r '.ID' | wc -l) 
     # And set the CURRENT_IMAGE_ID using that
     if ! CURRENT_IMAGE_ID=$(docker inspect --format '{{.Id}}' "${CURRENT_IMAGE}"); then
       echo "Cannot determine current image ID. Exiting."
-      exit
+      exit 2
     fi
 fi
 
 if [ "${CURRENT_IMAGE_ID}" = "${NEW_IMAGE_ID}" ]; then
   echo "The image built for this commit already exists in the remote repository. Exiting."
-  exit
+  exit 2
 fi
 
 docker tag "${NEW_IMAGE_ID}" "${NEW_IMAGE_URI}"
