@@ -16,7 +16,7 @@ pipeline {
     stages {        
         stage('Check for Modified Files') {
             steps {
-                echo "Hi"
+                echo "Hello"
                 // script {
                 //     def changeLogSets = currentBuild.changeSets
                 //     if (changeLogSets.isEmpty()) {
