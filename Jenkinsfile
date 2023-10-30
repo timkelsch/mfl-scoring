@@ -64,12 +64,6 @@ pipeline {
                 }
             }
         }
-        
-        stage('Check if Docker image has changed') {
-            steps {
-                echo "poop"
-            }
-        }
 
         stage('Build, Push, Update Lambda') {
             steps {
