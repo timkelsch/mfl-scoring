@@ -73,14 +73,14 @@ pipeline {
         stage('Build, Push, Update Lambda') {
             steps {
                 script {
-                    r = sh (
+                    RETURN_CODE = sh (
                         script: 'make push', 
                         returnStatus: true
                     )
                     echo "A"
-                    echo "returnStatus: + ${r}"
+                    echo "returnStatus: ${RETURN_CODE}"
                     echo "B"
-                    if ($r != 0) {
+                    if (${RETURN_CODE} != '0') {
                         currentBuild.result = 'ABORTED'
                         error('Stopping early…')
                     }
