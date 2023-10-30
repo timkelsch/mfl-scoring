@@ -80,7 +80,7 @@ pipeline {
                     echo "A"
                     echo "returnStatus: ${RETURN_CODE}"
                     echo "B"
-                    if (${RETURN_CODE} != '0') {
+                    if (RETURN_CODE != 0) {
                         currentBuild.result = 'ABORTED'
                         error('Stopping early…')
                     }
