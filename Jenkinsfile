@@ -86,5 +86,18 @@ pipeline {
                 sh 'make updatestagealias'
             }        
         }
+
+        stage('Clean Up') {
+            steps {
+                script {
+                    RETURN_CODE = sh (
+                        script: 'docker system prune -a -f', 
+                        returnStatus: true
+                    )
+
+                    echo "returnStatus: ${RETURN_CODE}"
+                }
+            }
+        }
     }
 }
