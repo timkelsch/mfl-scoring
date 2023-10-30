@@ -38,8 +38,8 @@ if [[ $(docker image ls --format json "${CURRENT_IMAGE}" | jq -r '.ID' | wc -l) 
 fi
 
 if [ "${CURRENT_IMAGE_ID}" = "${NEW_IMAGE_ID}" ]; then
-  echo "The image built for this commit already exists in the remote repository. Exiting."
-  exit 2
+  echo "The image built for this commit is the same as the most recent image in the remote repository. Exiting."
+  exit 3
 fi
 
 docker tag "${NEW_IMAGE_ID}" "${NEW_IMAGE_URI}"
