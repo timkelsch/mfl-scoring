@@ -74,11 +74,11 @@ pipeline {
             steps {
                 script {
                     def r = sh script: 'make push', returnStatus: true
-                }
                 echo 'returnStatus: ' + $returnStatus
                 if (returnStatus != 0) {
                     currentBuild.result = 'ABORTED'
                     error('Stopping early…')
+                }
                 }
             }
         }
