@@ -77,7 +77,9 @@ pipeline {
                         script: 'make push', 
                         returnStatus: true
                     )
+                    echo "A"
                     echo "returnStatus: + ${r}"
+                    echo "B"
                     if ($r != 0) {
                         currentBuild.result = 'ABORTED'
                         error('Stopping early…')
