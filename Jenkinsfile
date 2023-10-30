@@ -16,37 +16,38 @@ pipeline {
     stages {        
         stage('Check for Modified Files') {
             steps {
+                echo "Hi"
                 script {
-                    def changeLogSets = currentBuild.changeSets
-                    if (changeLogSets.isEmpty()) {
-                        currentBuild.result = 'ABORTED'
-                        error("No changes detected. Pipeline aborted.")
-                    }
+                //     def changeLogSets = currentBuild.changeSets
+                //     if (changeLogSets.isEmpty()) {
+                //         currentBuild.result = 'ABORTED'
+                //         error("No changes detected. Pipeline aborted.")
+                //     }
 
-                    // Define the list of files you want to check for changes
-                    def filesToCheck = ['Dockerfile', 'mfl-scoring/main.go', 'mfl-scoring/main_test.go', 'mfl-scoring/go.mod', 'mfl-scoring/go.sum']
+                //     // Define the list of files you want to check for changes
+                //     def filesToCheck = ['Dockerfile', 'mfl-scoring/main.go', 'mfl-scoring/main_test.go', 'mfl-scoring/go.mod', 'mfl-scoring/go.sum']
                     
-                    def numFilesToCheckChanged = 0
-                    for (changeLogSet in changeLogSets) {
-                        for (entry in changeLogSet) {
-                            for (file in filesToCheck) {
-                                echo "File: " + file
-                                echo "AffectedPaths: " + entry.getAffectedPaths()
-                                if (entry.getAffectedPaths().contains(file)) {
-                                    echo "${file} was modified"
-                                    numFilesToCheckChanged++
-                                }
-                            }
-                        }
-                    }
+                //     def numFilesToCheckChanged = 0
+                //     for (changeLogSet in changeLogSets) {
+                //         for (entry in changeLogSet) {
+                //             for (file in filesToCheck) {
+                //                 echo "File: " + file
+                //                 echo "AffectedPaths: " + entry.getAffectedPaths()
+                //                 if (entry.getAffectedPaths().contains(file)) {
+                //                     echo "${file} was modified"
+                //                     numFilesToCheckChanged++
+                //                 }
+                //             }
+                //         }
+                //     }
 
-                    if (numFilesToCheckChanged > 0) {
-                        echo "Found changes. Proceeding with the pipeline."
-                    } else {
-                        currentBuild.result = 'ABORTED'
-                        error("No changes detected. Pipeline aborted.")
-                    }                
-                }
+                //     if (numFilesToCheckChanged > 0) {
+                //         echo "Found changes. Proceeding with the pipeline."
+                //     } else {
+                //         currentBuild.result = 'ABORTED'
+                //         error("No changes detected. Pipeline aborted.")
+                //     }                
+                // }
             }
         }
 
