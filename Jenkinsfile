@@ -73,7 +73,7 @@ pipeline {
         stage('Build, Push, Update Lambda') {
             steps {
                 script {
-                    r = sh (script: 'make push', returnStatus: true).trim()
+                    r = sh (script: 'make push', returnStatus: true)
                     echo 'returnStatus: ' + $r
                     if ($r != 0) {
                         currentBuild.result = 'ABORTED'
