@@ -24,7 +24,7 @@ pipeline {
                     }
 
                     // Define the list of files you want to check for changes
-                    def filesToCheck = ['Dockerfile', 'mfl-scoring/main.go', 'mfl-scoring/main_test.go', 'go.mod', 'go.sum']
+                    def filesToCheck = ['Dockerfile', 'mfl-scoring/main.go', 'mfl-scoring/main_test.go', 'mfl-scoring/go.mod', 'mfl-scoring/go.sum']
                     
                     def numFilesToCheckChanged = 0
                     for (changeLogSet in changeLogSets) {
@@ -72,7 +72,14 @@ pipeline {
 
         stage('Build, Push, Update Lambda') {
             steps {
-                sh 'make push'
+                script {
+                    def r = sh script: 'make push', returnStatus: true
+                }
+                echo 'returnStatus: ' + $returnStatus
+                if (returnStatus != 0) {
+                    currentBuild.result = 'ABORTED'
+                    error('Stopping early…')
+                }
             }
         }
 
