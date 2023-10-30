@@ -3,7 +3,7 @@ module github.com/timkelsch/mfl-scoring/mfl-scoring
 go 1.21
 
 require (
-	github.com/aws/aws-lambda-go v1.27.0
+	github.com/aws/aws-lambda-go v1.41.0
 	github.com/aws/aws-secretsmanager-caching-go v1.1.2
 	github.com/gocolly/colly v1.2.0
 )
@@ -14,7 +14,7 @@ require (
 	github.com/antchfx/htmlquery v1.3.0 // indirect
 	github.com/antchfx/xmlquery v1.3.17 // indirect
 	github.com/antchfx/xpath v1.2.4 // indirect
-	github.com/aws/aws-sdk-go v1.44.287 // indirect
+	github.com/aws/aws-sdk-go v1.46.7 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
