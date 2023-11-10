@@ -141,8 +141,6 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		log.Fatal(err)
 	}
 
-	fmt.Printf("request: %v\n", request)
-
 	apiKey, err := secretCache.GetSecretString(APIKeySecretARN)
 	if err != nil {
 		log.Fatal(err)
@@ -183,23 +181,37 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	franchisesWithStandingsAndAllplay := appendAllPlay(franchisesWithStandings, allPlayTeamData)
 	// fmt.Print(franchisesWithStandingsAndAllplay)
 
-	return events.APIGatewayProxyResponse{
-		Body:       printTeam(franchisesWithStandingsAndAllplay),
-		StatusCode: 200,
-	}, nil
+	fmt.Printf("requestContext: %v\n", request.RequestContext.DomainName)
+	switch request.RequestContext.DomainPrefix {
+	case "bc2pcjfiik":
+		return events.APIGatewayProxyResponse{
+			Body:       printTeamPro(franchisesWithStandingsAndAllplay),
+			StatusCode: 200,
+		}, nil
+
+	default:
+		return events.APIGatewayProxyResponse{
+			Body:       printTeam(franchisesWithStandingsAndAllplay),
+			StatusCode: 200,
+		}, nil
+	}
 }
 
 const (
 	TotalPts   string = "Total Pts"
 	AllPlayPct string = "AllPlay %"
 	Record     string = "Record"
+	FantasyPts string = "FantasyPts"
+	AllPlayW   string = "AllPlay W"
+	AllPlayL   string = "AllPlay L"
+	AllPlayT   string = "AllPlay T"
 )
 
 func printTeam(teams Franchises) string {
 	t := table.NewWriter()
 	t.SetOutputMirror(&bytes.Buffer{})
-	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", "Fantasy Pts", "Points", Record, TotalPts,
-		"AllPlay W", "AllPlay L", "AllPlay T", AllPlayPct})
+	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", FantasyPts, "Points", Record, TotalPts,
+		AllPlayW, AllPlayL, AllPlayT, AllPlayPct})
 	for _, o := range teams {
 		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsForString, o.PointScore,
 			o.RecordScoreString, o.TotalScore, o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
@@ -209,13 +221,13 @@ func printTeam(teams Franchises) string {
 		{Name: "Wins", Align: text.AlignCenter},
 		{Name: "Losses", Align: text.AlignCenter},
 		{Name: "Ties", Align: text.AlignCenter},
-		{Name: "Fantasy Pts", Align: text.AlignCenter},
+		{Name: FantasyPts, Align: text.AlignCenter},
 		{Name: "Points", Align: text.AlignCenter},
 		{Name: "Record", Align: text.AlignCenter},
 		{Name: TotalPts, Align: text.AlignCenter},
-		{Name: "AllPlay W", Align: text.AlignCenter},
-		{Name: "AllPlay L", Align: text.AlignCenter},
-		{Name: "AllPlay T", Align: text.AlignCenter},
+		{Name: AllPlayW, Align: text.AlignCenter},
+		{Name: AllPlayL, Align: text.AlignCenter},
+		{Name: AllPlayT, Align: text.AlignCenter},
 		{Name: "AllPlay %", Align: text.AlignCenter},
 	}
 
@@ -230,41 +242,41 @@ func printTeam(teams Franchises) string {
 	return t.Render()
 }
 
-// Hide unflattering team names for professional project
-// func printTeamPro(teams Franchises) string {
-// 	t := table.NewWriter()
-// 	t.SetOutputMirror(&bytes.Buffer{})
-// 	t.AppendHeader(table.Row{"Team ID", "Wins", "Losses", "Ties", "Fantasy Pts", "Points", Record, TotalPts,
-// 		"AllPlay W", "AllPlay L", "AllPlay T", AllPlayPct})
-// 	for _, o := range teams {
-// 		t.AppendRow([]interface{}{o.TeamID, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsForString, o.PointScore,
-// 			o.RecordScoreString, o.TotalScore, o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
-// 	}
+// Hide uncouth team names for professional project.
+func printTeamPro(teams Franchises) string {
+	t := table.NewWriter()
+	t.SetOutputMirror(&bytes.Buffer{})
+	t.AppendHeader(table.Row{"Team ID", "Wins", "Losses", "Ties", "Fantasy Pts", "Points", Record, TotalPts,
+		AllPlayW, AllPlayL, AllPlayT, AllPlayPct})
+	for _, o := range teams {
+		t.AppendRow([]interface{}{o.TeamID, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsForString, o.PointScore,
+			o.RecordScoreString, o.TotalScore, o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
+	}
 
-// 	fantasyPoints := []table.ColumnConfig{
-// 		{Name: "Wins", Align: text.AlignCenter},
-// 		{Name: "Losses", Align: text.AlignCenter},
-// 		{Name: "Ties", Align: text.AlignCenter},
-// 		{Name: "Fantasy Pts", Align: text.AlignCenter},
-// 		{Name: "Points", Align: text.AlignCenter},
-// 		{Name: "Record", Align: text.AlignCenter},
-// 		{Name: TotalPts, Align: text.AlignCenter},
-// 		{Name: "AllPlay W", Align: text.AlignCenter},
-// 		{Name: "AllPlay L", Align: text.AlignCenter},
-// 		{Name: "AllPlay T", Align: text.AlignCenter},
-// 		{Name: "AllPlay %", Align: text.AlignCenter},
-// 	}
+	fantasyPoints := []table.ColumnConfig{
+		{Name: "Wins", Align: text.AlignCenter},
+		{Name: "Losses", Align: text.AlignCenter},
+		{Name: "Ties", Align: text.AlignCenter},
+		{Name: "Fantasy Pts", Align: text.AlignCenter},
+		{Name: "Points", Align: text.AlignCenter},
+		{Name: "Record", Align: text.AlignCenter},
+		{Name: TotalPts, Align: text.AlignCenter},
+		{Name: AllPlayW, Align: text.AlignCenter},
+		{Name: AllPlayL, Align: text.AlignCenter},
+		{Name: AllPlayT, Align: text.AlignCenter},
+		{Name: AllPlayPct, Align: text.AlignCenter},
+	}
 
-// 	sortBy := []table.SortBy{
-// 		{Name: TotalPts, Mode: table.DscNumeric},
-// 		{Name: Record, Mode: table.DscNumeric},
-// 		{Name: AllPlayPct, Mode: table.DscNumeric},
-// 	}
+	sortBy := []table.SortBy{
+		{Name: TotalPts, Mode: table.DscNumeric},
+		{Name: Record, Mode: table.DscNumeric},
+		{Name: AllPlayPct, Mode: table.DscNumeric},
+	}
 
-// 	t.SetColumnConfigs(fantasyPoints)
-// 	t.SortBy(sortBy)
-// 	return t.Render()
-// }
+	t.SetColumnConfigs(fantasyPoints)
+	t.SortBy(sortBy)
+	return t.Render()
+}
 
 func calculateTotalScore(franchises Franchises) Franchises {
 	for i := 0; i < len(franchises); i++ {
