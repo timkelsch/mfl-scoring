@@ -252,7 +252,6 @@ func printTeamCouthly(teams Franchises) string {
 		t.AppendRow([]interface{}{o.TeamID, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsForString, o.PointScore,
 			o.RecordScoreString, o.TotalScore, o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
 	}
-	t.AppendRow([]interface{}{"\nTeam names are hidden to avoid unnecessary HR violations"})
 
 	fantasyPoints := []table.ColumnConfig{
 		{Name: "Wins", Align: text.AlignCenter},
@@ -276,7 +275,7 @@ func printTeamCouthly(teams Franchises) string {
 
 	t.SetColumnConfigs(fantasyPoints)
 	t.SortBy(sortBy)
-	return t.Render()
+	return t.Render() + "\nTeam names are hidden to protect the eyes and minds of the pure"
 }
 
 func calculateTotalScore(franchises Franchises) Franchises {
