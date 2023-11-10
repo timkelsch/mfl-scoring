@@ -185,13 +185,13 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	switch request.RequestContext.DomainPrefix {
 	case "bc2pcjfiik":
 		return events.APIGatewayProxyResponse{
-			Body:       printTeamPro(franchisesWithStandingsAndAllplay),
+			Body:       printTeamCouthly(franchisesWithStandingsAndAllplay),
 			StatusCode: 200,
 		}, nil
 
 	default:
 		return events.APIGatewayProxyResponse{
-			Body:       printTeam(franchisesWithStandingsAndAllplay),
+			Body:       printTeamUncouthly(franchisesWithStandingsAndAllplay),
 			StatusCode: 200,
 		}, nil
 	}
@@ -207,7 +207,7 @@ const (
 	AllPlayT   string = "AllPlay T"
 )
 
-func printTeam(teams Franchises) string {
+func printTeamUncouthly(teams Franchises) string {
 	t := table.NewWriter()
 	t.SetOutputMirror(&bytes.Buffer{})
 	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", FantasyPts, "Points", Record, TotalPts,
@@ -243,7 +243,7 @@ func printTeam(teams Franchises) string {
 }
 
 // Hide uncouth team names for professional project.
-func printTeamPro(teams Franchises) string {
+func printTeamCouthly(teams Franchises) string {
 	t := table.NewWriter()
 	t.SetOutputMirror(&bytes.Buffer{})
 	t.AppendHeader(table.Row{"Team ID", "Wins", "Losses", "Ties", "Fantasy Pts", "Points", Record, TotalPts,
@@ -252,6 +252,7 @@ func printTeamPro(teams Franchises) string {
 		t.AppendRow([]interface{}{o.TeamID, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsForString, o.PointScore,
 			o.RecordScoreString, o.TotalScore, o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
 	}
+	t.AppendRow([]interface{}{"\nTeam names are hidden to avoid unnecessary HR violations"})
 
 	fantasyPoints := []table.ColumnConfig{
 		{Name: "Wins", Align: text.AlignCenter},
