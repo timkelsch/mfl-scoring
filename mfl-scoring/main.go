@@ -141,7 +141,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		log.Fatal(err)
 	}
 
-	s, _ := json.MarshalIndent(request, "", "\t")
+	s, _ := json.MarshalIndent(request, "", "  ")
 	fmt.Print(s)
 
 	apiKey, err := secretCache.GetSecretString(APIKeySecretARN)
