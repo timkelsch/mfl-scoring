@@ -20,7 +20,7 @@ pipeline {
                     def changeLogSets = currentBuild.changeSets
                     if (changeLogSets.isEmpty()) {
                         currentBuild.result = 'ABORTED'
-                        error("No changes detected. Pipeline aborted.")
+                        error("ChangeLogSets is empty. Pipeline aborted.")
                     }
 
                     // Define the list of files you want to check for changes
