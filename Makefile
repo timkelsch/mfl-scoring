@@ -11,7 +11,7 @@ VERSION=$(shell aws ecr get-login-password --region us-east-1 | docker login --u
 IMAGE_URI=${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/mfl-score:${VERSION}
 
 FUNCTION_NAME=mfl-scoring-check-MflScoringFunction-jsrPurkbiCjK
-FUNCTION_VERSION_PROD=6
+FUNCTION_VERSION_PROD=22
 STACK_NAME=mfl-scoring-check
 TEMPLATE_FILE=file://template-check.yaml
 
