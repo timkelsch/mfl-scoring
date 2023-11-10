@@ -141,8 +141,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		log.Fatal(err)
 	}
 
-	s, _ := json.MarshalIndent(request, "", "  ")
-	fmt.Print(s)
+	fmt.Printf("request: %v\n", request)
 
 	apiKey, err := secretCache.GetSecretString(APIKeySecretARN)
 	if err != nil {
