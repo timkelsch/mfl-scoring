@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -98,7 +99,7 @@ const (
 	LeagueIDQuery           string = "L=15781"
 	APIOutputTypeQuery      string = "JSON=1"
 	APIKeySecretARN         string = "MflScoringApiKeySecret-cB3KIsJ4cyEv" //nolint:gosec // Not credentials
-	// Fix this bullshit ^
+	// Fix this bullshit ^.
 )
 
 type Franchises []Franchise
@@ -182,20 +183,19 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	franchisesWithStandingsAndAllplay := appendAllPlay(franchisesWithStandings, allPlayTeamData)
 	// fmt.Print(franchisesWithStandingsAndAllplay)
 
-	fmt.Printf("requestContext: %v\n", request.RequestContext.DomainName)
-	switch request.RequestContext.DomainPrefix {
-	case "bc2pcjfiik":
+	fmt.Printf("requestContext.DomainName: %v\n", request.RequestContext.DomainName)
+	if strings.Contains(request.RequestContext.DomainName, "execute-api") {
 		return events.APIGatewayProxyResponse{
 			Body:       printScoringTableCouthly(franchisesWithStandingsAndAllplay),
 			StatusCode: 200,
 		}, nil
-
-	default:
-		return events.APIGatewayProxyResponse{
-			Body:       printScoringTableUncouthly(franchisesWithStandingsAndAllplay),
-			StatusCode: 200,
-		}, nil
 	}
+
+	return events.APIGatewayProxyResponse{
+		Body:       printScoringTableUncouthly(franchisesWithStandingsAndAllplay),
+		StatusCode: 200,
+	}, nil
+
 }
 
 const (
@@ -247,7 +247,7 @@ func printScoringTableUncouthly(teams Franchises) string {
 func printScoringTableCouthly(teams Franchises) string {
 	t := table.NewWriter()
 	t.SetOutputMirror(&bytes.Buffer{})
-	t.AppendHeader(table.Row{"Team ID", "Wins", "Losses", "Ties", "Fantasy Pts", "Points", Record, TotalPts,
+	t.AppendHeader(table.Row{"Team ID", "Wins", "Losses", "Ties", FantasyPts, "Points", Record, TotalPts,
 		AllPlayW, AllPlayL, AllPlayT, AllPlayPct})
 	for _, o := range teams {
 		t.AppendRow([]interface{}{o.TeamID, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsForString, o.PointScore,
@@ -258,7 +258,7 @@ func printScoringTableCouthly(teams Franchises) string {
 		{Name: "Wins", Align: text.AlignCenter},
 		{Name: "Losses", Align: text.AlignCenter},
 		{Name: "Ties", Align: text.AlignCenter},
-		{Name: "Fantasy Pts", Align: text.AlignCenter},
+		{Name: FantasyPts, Align: text.AlignCenter},
 		{Name: "Points", Align: text.AlignCenter},
 		{Name: "Record", Align: text.AlignCenter},
 		{Name: TotalPts, Align: text.AlignCenter},
