@@ -119,6 +119,8 @@ Resources:
 
   MflScoringApiKeySecret:
     Type: AWS::SecretsManager::Secret
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
     Properties:
       KmsKeyId: !GetAtt MflScoringKey.Arn
 
@@ -146,6 +148,8 @@ Resources:
 
   MflScoringKey:
     Type: AWS::KMS::Key
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
     Properties:
       Enabled: True
       EnableKeyRotation: True
@@ -273,6 +277,8 @@ Resources:
 
   MflScoringStageStageLogGroup:
     Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
     Properties: 
       LogGroupName: !Sub 
         - 'API-Gateway-Execution-Logs_${ApiId}/stage'
@@ -281,6 +287,8 @@ Resources:
 
   MflScoringStageProdLogGroup:
     Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
     Properties: 
       LogGroupName: !Sub 
         - 'API-Gateway-Execution-Logs_${ApiId}/prod'
