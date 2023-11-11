@@ -185,13 +185,13 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	switch request.RequestContext.DomainPrefix {
 	case "bc2pcjfiik":
 		return events.APIGatewayProxyResponse{
-			Body:       printTeamCouthly(franchisesWithStandingsAndAllplay),
+			Body:       printScoringTableCouthly(franchisesWithStandingsAndAllplay),
 			StatusCode: 200,
 		}, nil
 
 	default:
 		return events.APIGatewayProxyResponse{
-			Body:       printTeamUncouthly(franchisesWithStandingsAndAllplay),
+			Body:       printScoringTableUncouthly(franchisesWithStandingsAndAllplay),
 			StatusCode: 200,
 		}, nil
 	}
@@ -207,7 +207,7 @@ const (
 	AllPlayT   string = "AllPlay T"
 )
 
-func printTeamUncouthly(teams Franchises) string {
+func printScoringTableUncouthly(teams Franchises) string {
 	t := table.NewWriter()
 	t.SetOutputMirror(&bytes.Buffer{})
 	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", FantasyPts, "Points", Record, TotalPts,
@@ -243,7 +243,7 @@ func printTeamUncouthly(teams Franchises) string {
 }
 
 // Hide uncouth team names for professional project.
-func printTeamCouthly(teams Franchises) string {
+func printScoringTableCouthly(teams Franchises) string {
 	t := table.NewWriter()
 	t.SetOutputMirror(&bytes.Buffer{})
 	t.AppendHeader(table.Row{"Team ID", "Wins", "Losses", "Ties", "Fantasy Pts", "Points", Record, TotalPts,
