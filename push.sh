@@ -2,7 +2,11 @@
 
 set -euxo pipefail
 
-git clone https://github.com/docker/docker-credential-helpers.git
+TARGET_DIR='docker-credential-helpers'
+# git clone https://github.com/docker/docker-credential-helpers.git
+
+git -C "${TARGET_DIR}" pull || git clone "https://github.com/${TARGET_DIR}.git" "${TARGET_DIR}"
+
 cd docker-credential-helpers
 docker buildx create --use
 docker buildx bake
