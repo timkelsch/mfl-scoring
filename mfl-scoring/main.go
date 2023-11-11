@@ -98,8 +98,6 @@ const (
 	LeagueOutputSortQuery   string = "SORT=ALLPLAY"
 	LeagueIDQuery           string = "L=15781"
 	APIOutputTypeQuery      string = "JSON=1"
-	APIKeySecretARN         string = "MflScoringApiKeySecret-cB3KIsJ4cyEv" //nolint:gosec // Not credentials
-	// Fix this bullshit ^.
 )
 
 type Franchises []Franchise
@@ -107,8 +105,6 @@ type Franchises []Franchise
 type ByPointsFor struct{ Franchises }
 type ByRecordMagic struct{ Franchises }
 type ByTotalScore struct{ Franchises }
-
-// type Request = events.APIGatewayProxyRequest
 
 type AllPlayTeamStats struct {
 	FranchiseName     string
@@ -143,7 +139,8 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		log.Fatal(err)
 	}
 
-	apiKey, err := secretCache.GetSecretString(APIKeySecretARN)
+	var APIKeySecretID = os.Getenv("API_KEY_SECRET_ID")
+	apiKey, err := secretCache.GetSecretString(APIKeySecretID)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -195,7 +192,6 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		Body:       printScoringTableUncouthly(franchisesWithStandingsAndAllplay),
 		StatusCode: 200,
 	}, nil
-
 }
 
 const (

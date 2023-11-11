@@ -63,6 +63,9 @@ Resources:
            - arm64
       MemorySize: 128
       Timeout: 5
+      Environment:
+        Variables:
+          API_KEY_SECRET_ID: !GetAtt MflScoringApiKeySecret.Id
 
   MflScoringFunctionIamRole:
     Type: AWS::IAM::Role
