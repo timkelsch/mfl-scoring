@@ -57,7 +57,7 @@ Resources:
     Properties:
       Role: !GetAtt MflScoringFunctionIamRole.Arn
       Code: 
-        ImageUri: 287140326780.dkr.ecr.us-east-1.amazonaws.com/mfl-score:0.35
+        ImageUri: 287140326780.dkr.ecr.us-east-1.amazonaws.com/mfl-score:0.9
       PackageType: Image
       Architectures:
            - arm64
@@ -75,7 +75,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: 'sts:AssumeRole'
       Path: /
-      ManagedPolicyArns: 
+      ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
   MflScoringFunctionIamRolePolicy:
@@ -237,7 +237,8 @@ Resources:
     Type: AWS::Lambda::Alias
     Properties:
       FunctionName: !Ref MflScoringFunction
-      FunctionVersion: $LATEST # This isn't enforced on stack updates. It needs to be updated to a static release after the stack is created
+      FunctionVersion: $LATEST # This isn't enforced on stack updates. 
+      # It needs to be updated to a static release manually after the stack is created
       Name: PROD
 
   MflScoringApiStageStage:
@@ -300,12 +301,7 @@ Outputs:
 
   CustomProdUrl:
     Description: Custom prod URL
-    Value: !Join
-      - ''
-      - - "https://"
-        - !Ref MflScoringCustomDomain
-        - "/"
-        - !Ref ApiPath
+    Value: !Join [ "", [ "https://", !Ref MflScoringCustomDomain, "/", !Ref ApiPath ] ]
 
   MflScoringFunctionArn:
     Value: !GetAtt MflScoringFunction.Arn
