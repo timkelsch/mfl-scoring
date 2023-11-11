@@ -4,10 +4,11 @@ set -euxo pipefail
 
 git clone https://github.com/docker/docker-credential-helpers.git
 cd docker-credential-helpers
+docker buildx create --use
+docker buildx bake
 
 REGISTRY="${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com"
 REPO="mfl-score"
-docker buildx bake
 
 # Login
 aws ecr get-login-password --region us-east-1 | docker login --username AWS \
