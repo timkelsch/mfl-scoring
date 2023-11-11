@@ -201,7 +201,7 @@ const (
 	TotalPts   string = "Total Pts"
 	AllPlayPct string = "AllPlay %"
 	Record     string = "Record"
-	FantasyPts string = "FantasyPts"
+	FantasyPts string = "Fantasy Pts"
 	AllPlayW   string = "AllPlay W"
 	AllPlayL   string = "AllPlay L"
 	AllPlayT   string = "AllPlay T"

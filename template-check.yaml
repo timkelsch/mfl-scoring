@@ -11,7 +11,6 @@ Parameters:
   DomainName:
     Description: Domain name for API Gateway API
     Type: String
-    Default: 'spankme.timismydaddy.com'
   ApiPath:
     Description: API path IE https://abc.example.com/stage/<ApiPath>
     Type: String
@@ -58,7 +57,7 @@ Resources:
     Properties:
       Role: !GetAtt MflScoringFunctionIamRole.Arn
       Code: 
-        ImageUri: 287140326780.dkr.ecr.us-east-1.amazonaws.com/mfl-score:0.8
+        ImageUri: 287140326780.dkr.ecr.us-east-1.amazonaws.com/mfl-score:0.35
       PackageType: Image
       Architectures:
            - arm64

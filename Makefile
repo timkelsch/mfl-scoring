@@ -21,11 +21,13 @@ export AWS_ACCOUNT
 
 createstack:
 	aws cloudformation create-stack --stack-name ${STACK_NAME} --template-body ${TEMPLATE_FILE} \
-		#--capabilities CAPABILITY_IAM --region ${AWS_REGION}
+		--capabilities CAPABILITY_IAM --parameters ParameterKey=DomainName,ParameterValue=${MFL_UNCOUTH_DOMAIN} \
+		--region ${AWS_REGION}
 
 updatestack:
 	aws cloudformation update-stack --stack-name ${STACK_NAME} --template-body ${TEMPLATE_FILE} \
-		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
+		--capabilities CAPABILITY_IAM --parameters ParameterKey=DomainName,ParameterValue=${MFL_UNCOUTH_DOMAIN} \
+		--region ${AWS_REGION}
 
 test:
 	cd ${CODE_DIR} && go test -cover
