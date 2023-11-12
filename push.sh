@@ -5,9 +5,9 @@ set -euxo pipefail
 REGISTRY="${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com"
 REPO="mfl-score"
 
-# Login
-aws ecr get-login-password --region us-east-1 | docker login --username AWS \
-  --password-stdin "${REGISTRY}"
+# Login - not necessary with credential helper
+# aws ecr get-login-password --region us-east-1 | docker login --username AWS \
+#   --password-stdin "${REGISTRY}"
 
 # Only works if there is one tag per image
 CURRENT_VERSION=$(aws ecr describe-images --region "${AWS_REGION}" --output json --repository-name mfl-score \
