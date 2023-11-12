@@ -3,7 +3,7 @@ WORKDIR /app
 COPY mfl-scoring/go.mod mfl-scoring/go.sum ./
 RUN ls -al && which go 
 RUN go mod download
-COPY mfl-scoring/*.go .
+COPY mfl-scoring/*.go ./
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -tags lambda.norpc -o main main.go
 
 # Copy artifacts to a clean image
