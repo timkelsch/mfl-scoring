@@ -65,9 +65,11 @@ pipeline {
                     }
                 }
                 stage('test') {
-                    withEnv(["PATH+GO=${GOPATH}/bin"]){
-                        echo 'Running unit tests'
-                        sh 'make test'
+                    steps {
+                        withEnv(["PATH+GO=${GOPATH}/bin"]){
+                            echo 'Running unit tests'
+                            sh 'make test'
+                        }
                     }
                 }
             }
