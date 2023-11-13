@@ -54,7 +54,7 @@ pipeline {
         //     }
         // }
 
-        stage('Test') {
+        stage('Lint/Test') {
             steps {
                 withEnv(["PATH+GO=${GOPATH}/bin"]){
                     echo 'installing golangci-lint'
@@ -68,7 +68,7 @@ pipeline {
             }
         }
 
-        stage('Build, Push, Update Lambda') {
+        stage('Build, Push, Add Lambda Version') {
             steps {
                 script {
                     RETURN_CODE = sh (
@@ -84,7 +84,7 @@ pipeline {
             }
         }
 
-        stage('Deploy'){
+        stage('Deploy to Stage'){
             steps{
                 echo 'Deploying to stage'
                 sh 'make updatestagealias'
