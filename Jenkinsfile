@@ -10,10 +10,12 @@ pipeline {
         CGO_ENABLED=0 
         GOPATH="${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
         GOCACHE="${WORKSPACE}"
-        SAM_CLI_TELEMETRY=0
     }
 
     stages {        
+        // Too annoying to block on code / lambda changes here
+        // Already blocking duplicates at push to ECR stage 
+
         // stage('Check for Modified Files') {
         //     steps {
         //         script {
@@ -52,15 +54,21 @@ pipeline {
         // }
 
         stage('Test') {
-            steps {
-                withEnv(["PATH+GO=${GOPATH}/bin"]){
-                    echo 'installing golangci-lint'
-                    sh 'curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
-                        sh -s -- -b $(go env GOPATH)/bin v1.54.2'
-                    echo 'Running test'
-                    sh 'make test'
-                    echo 'Running lint'
-                    sh 'make lint'
+            parallel {
+                stage('lint') {
+                    steps {
+                        echo 'installing golangci-lint'
+                        sh 'curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
+                            sh -s -- -b $(go env GOPATH)/bin v1.54.2'
+                        echo 'Running golangci-lint'
+                        sh 'make lint'
+                    }
+                }
+                stage('test') {
+                    withEnv(["PATH+GO=${GOPATH}/bin"]){
+                        echo 'Running unit tests'
+                        sh 'make test'
+                    }
                 }
             }
         }
@@ -83,18 +91,19 @@ pipeline {
 
         stage('Deploy'){
             steps{
+                echo 'Deploying to stage'
                 sh 'make updatestagealias'
-            }        
+            }
         }
 
         stage('Clean Up') {
             steps {
                 script {
+                    echo 'Running Docker prune'
                     RETURN_CODE = sh (
-                        script: 'docker system prune -a -f', 
+                        script: 'docker system prune -a -f',
                         returnStatus: true
                     )
-
                     echo "returnStatus: ${RETURN_CODE}"
                 }
             }
