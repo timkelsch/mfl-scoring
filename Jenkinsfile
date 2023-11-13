@@ -13,8 +13,9 @@ pipeline {
     }
 
     stages {        
-        // Too annoying to block on code / lambda changes here
-        // Already blocking duplicates at push to ECR stage 
+        // Blocking on code / lambda changes here prevents us from testing any other part
+        // of the pipeline without making a dummy code change.
+        // Already blocking duplicates at push to ECR stage
 
         // stage('Check for Modified Files') {
         //     steps {
