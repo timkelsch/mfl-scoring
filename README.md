@@ -1,7 +1,36 @@
+Stage: https://3xi97uokw5.execute-api.us-east-1.amazonaws.com/stage/mfl-scoring
+Prod: https://3xi97uokw5.execute-api.us-east-1.amazonaws.com/prod/mfl-scoring
+
+## My Fantasy League Custom Fantasy Football Scoring
+
+Provides a custom scoring solution to calculate live league championship scoring based on the following rules:
+- Points are awarded for "total fantasy points scored" and "head to head record".
+- The team with the most fantasy points gets [# of teams] points. The team with the next best record gets [(# of teams) - 1] points, and so on until all teams' points have been allocated.
+- The same logic applies to calculating score based on fantasy points.
+- If two or more teams have the same record or total fantasy points, tied teams equally share the points that would have been allocated to those places. For example, if there are 10 teams and the top three teams have the same record, each team would receive 9 points (10 points for best record + 9 points for second best record + 8 points for the third best record, divided by three teams = 9 points)
+- If there is a tie in total championship points, there are currently two tiebreakers:
+  - First, the team with the greatest total fantasy points wins
+  - Second, the team with the better AllPlay percentage wins (see AllPlay explanation below)
+- The team with the most total championship points wins.
+
+What is AllPlay percentage? 
+
+First, we'll start with explaining what AllPlay record is: AllPlay is calculated by comparing each team's fantasy points to every other team's fantasy points each week of the season. An AllPlay win is accumulated when your team has a greater number of fantasy points than another team on any given week of the season. The same goes for ties and losses. The AllPlay records for the year are calculated across all weeks of the season. 
+
+Example: if my team was tied for the 4th most points in week 1 of this season, my AllPlay record would be 5 wins (I had more points than teams with 6th to 10th most points), 3 losses (I had less points than teams with 1st to 3rd most points), and 1 tie (I had the same number of points as one team).
+
+AllPlay percentage for each team is calculated as follows:
+(1 * AllPlay wins) + (0.5 * AllPlay Ties) / (AllPlay wins + AllPlay ties + AllPlay losses)
+
+
+## Disclaimer
+I am not responsible for creation of this rule set - I merely automated the calculation of it.
+
+
 ## To Do:
 - [ ] Finish unit tests
 - [ ] Find a better way of dealing with int/float issue in structs
-- [ ] Consolidate standard and allplay w/l/t into single fields
+- [ ] Consolidate standard and AllPlay w/l/t into single fields
 - [ ] Build minimal front end
 - [ ] Add year selector on front end that defaults to current year but allows checking scores for earlier years
 - [x] Dockerize this app  
@@ -16,11 +45,12 @@
 - [x] Migrate runtime from go1.x to provided.al2
 - [x] Move API key to secretsmanager protected by KMS
 - [x] Implement tie break with all-play record percentage
-- [x] Scrape allplay data from front end instead of schedule API
+- [x] Scrape AllPlay data from front end instead of schedule API
 - [x] Standardize decimal format per column
 - [x] Horizontally center column values
 - [x] Add golangci-lint
 - [x] Fix manual formatting - use github.com/jedib0t/go-pretty/v6/table to automate
+
 
 ## Requirements
 
@@ -31,11 +61,10 @@
 
 ### Testing
 
-We use `testing` package that is built-in in Golang and you can simply run the following command to run our tests:
-
 ```shell
-go test -v ./hello-world/
+make test
 ```
+
 # Appendix
 
 ### Golang installation
