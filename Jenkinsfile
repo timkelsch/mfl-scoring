@@ -54,25 +54,15 @@ pipeline {
         // }
 
         stage('Test') {
-            parallel {
-                stage('lint') {
-                    steps {
-                        withEnv(["PATH+GO=${GOPATH}/bin"]){
-                            echo 'installing golangci-lint'
-                            sh 'curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
-                                sh -s -- -b $(go env GOPATH)/bin v1.54.2'
-                            echo 'Running golangci-lint'
-                            sh 'make lint'
-                        }
-                    }
-                }
-                stage('test') {
-                    steps {
-                        //withEnv(["PATH+GO=${GOPATH}/bin"]){
-                            echo 'Running unit tests'
-                            sh 'make test'
-                        //}
-                    }
+            steps {
+                withEnv(["PATH+GO=${GOPATH}/bin"]){
+                    echo 'installing golangci-lint'
+                    sh 'curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
+                        sh -s -- -b $(go env GOPATH)/bin v1.54.2'
+                    echo 'Running test'
+                    sh 'make test'
+                    echo 'Running lint'
+                    sh 'make lint'
                 }
             }
         }
