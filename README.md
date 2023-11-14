@@ -30,10 +30,9 @@ I am not responsible for creation of this rule set - I merely automated the calc
 
 ## To Do:
 - [ ] Finish unit tests
-- [ ] Find a better way of dealing with int/float issue in structs
 - [ ] Consolidate standard and AllPlay w/l/t into single fields
+- [ ] Find a better way of dealing with int/float issue in structs
 - [ ] Build minimal front end
-- [ ] Add year selector on front end that defaults to current year but allows checking scores for earlier years
 - [x] Dockerize this app  
 - [x] Add points tie breaker
 - [x] Implement golangci-lint
