@@ -29,6 +29,152 @@ func TestRoundFloat(t *testing.T) {
 	}
 }
 
+func TestCalculateRecordMagic(t *testing.T) {
+	testCases := []struct {
+		name       string
+		franchises Franchises
+		expected   Franchises
+	}{
+		{
+			name: "one",
+			franchises: Franchises{
+				{RecordWins: 6, RecordTies: 1},
+				{RecordWins: 3, RecordTies: 7},
+				{RecordWins: 1, RecordTies: 0},
+			},
+			expected: Franchises{
+				{RecordWins: 6, RecordTies: 1, RecordMagic: 6.5},
+				{RecordWins: 3, RecordTies: 7, RecordMagic: 6.5},
+				{RecordWins: 1, RecordTies: 0, RecordMagic: 1},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := calculateRecordMagic(tc.franchises)
+			for i := range result {
+				if result[i].RecordMagic != tc.expected[i].RecordMagic {
+					t.Errorf("Mismatch in test case %s for franchise %d: Expected %f, got %f",
+						tc.name, i, tc.expected[i].RecordMagic, result[i].RecordMagic)
+				}
+			}
+		})
+	}
+}
+
+func TestCalculateTotalScore(t *testing.T) {
+	testCases := []struct {
+		name       string
+		franchises Franchises
+		expected   Franchises
+	}{
+		{
+			name: "one",
+			franchises: Franchises{
+				{PointScore: 3, RecordScore: 4.5},
+				{PointScore: 7, RecordScore: 9},
+				{PointScore: 2, RecordScore: 1.5},
+			},
+			expected: Franchises{
+				Franchise{PointScore: 3, RecordScore: 4.5, TotalScore: "7.5"},
+				Franchise{PointScore: 7, RecordScore: 9, TotalScore: "16.0"},
+				Franchise{PointScore: 2, RecordScore: 1.5, TotalScore: "3.5"},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := calculateTotalScore(tc.franchises)
+			for i := range result {
+				if result[i].TotalScore != tc.expected[i].TotalScore {
+					t.Errorf("Mismatch in test case %s for franchise %d: Expected %s, got %s",
+						tc.name, i, tc.expected[i].TotalScore, result[i].TotalScore)
+				}
+			}
+		})
+	}
+}
+
+func TestCalculateRecordScore(t *testing.T) {
+	testCases := []struct {
+		name       string
+		franchises Franchises
+		expected   Franchises
+	}{
+		{
+			name: "Test with ties",
+			franchises: Franchises{
+				{RecordMagic: 8.5},
+				{RecordMagic: 8.5},
+				{RecordMagic: 7},
+				{RecordMagic: 5},
+			},
+			expected: Franchises{
+				{RecordMagic: 8.5, RecordScore: 3.5, RecordScoreString: "3.5"},
+				{RecordMagic: 8.5, RecordScore: 3.5, RecordScoreString: "3.5"},
+				{RecordMagic: 7, RecordScore: 2, RecordScoreString: "2.0"},
+				{RecordMagic: 5, RecordScore: 1, RecordScoreString: "1.0"},
+			},
+		},
+		// Add more test cases as needed
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := calculateRecordScore(tc.franchises)
+			for i := range result {
+				if result[i].RecordScore != tc.expected[i].RecordScore {
+					t.Errorf("Mismatch in test case %s for franchise %d in field %s: Expected %f, got %f",
+						tc.name, i, "RecordScore", tc.expected[i].RecordScore, result[i].RecordScore)
+				}
+				if result[i].RecordScoreString != tc.expected[i].RecordScoreString {
+					t.Errorf("Mismatch in test case %s for franchise %d in field %s: Expected %s, got %s",
+						tc.name, i, "RecordScoreString", tc.expected[i].RecordScoreString, result[i].RecordScoreString)
+				}
+			}
+		})
+	}
+}
+
+func TestCalculatePointsScore(t *testing.T) {
+	testCases := []struct {
+		name       string
+		franchises Franchises
+		expected   Franchises
+	}{
+		{
+			name: "Test with ties",
+			franchises: Franchises{
+				{PointsFor: 15},
+				{PointsFor: 15},
+				{PointsFor: 10},
+				{PointsFor: 5},
+			},
+			expected: Franchises{
+				{PointsFor: 15, PointScore: 3.5, PointScoreString: "3.5"},
+				{PointsFor: 15, PointScore: 3.5, PointScoreString: "3.5"},
+				{PointsFor: 10, PointScore: 2, PointScoreString: "2.0"},
+				{PointsFor: 5, PointScore: 1, PointScoreString: "1.0"},
+			},
+		},
+		// Add more test cases as needed
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := calculatePointsScore(tc.franchises)
+			for i := range result {
+				if result[i].PointScore != tc.expected[i].PointScore {
+					t.Errorf("Mismatch in test case %s for franchise %d: Expected %f, got %f",
+						tc.name, i, tc.expected[i].PointScore, result[i].PointScore)
+				}
+			}
+		})
+	}
+}
+
 func TestCalculatePointsScoreBasic(t *testing.T) {
 	in := Franchises{
 		{
