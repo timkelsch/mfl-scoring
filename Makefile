@@ -10,10 +10,10 @@ VERSION=$(shell aws ecr get-login-password --region us-east-1 | docker login --u
   --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' | jq . -r)
 IMAGE_URI=${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/mfl-score:${VERSION}
 
-FUNCTION_NAME=mfl-scoring-check-MflScoringFunction-jsrPurkbiCjK
-FUNCTION_VERSION_PROD=6
-STACK_NAME=mfl-scoring-check
-TEMPLATE_FILE=file://template-check.yaml
+FUNCTION_NAME=mfl-scoring-MflScoringFunction-1ZmFtx9UqLKk
+FUNCTION_VERSION_PROD=5
+STACK_NAME=mfl-scoring
+TEMPLATE_FILE=file://mfl-scoring.yaml
 
 export FUNCTION_NAME
 export AWS_REGION
@@ -21,11 +21,16 @@ export AWS_ACCOUNT
 
 createstack:
 	aws cloudformation create-stack --stack-name ${STACK_NAME} --template-body ${TEMPLATE_FILE} \
-		#--capabilities CAPABILITY_IAM --region ${AWS_REGION}
+		--capabilities CAPABILITY_IAM --parameters ParameterKey=DomainName,ParameterValue=${MFL_UNCOUTH_DOMAIN} \
+		--region ${AWS_REGION}
 
 updatestack:
 	aws cloudformation update-stack --stack-name ${STACK_NAME} --template-body ${TEMPLATE_FILE} \
-		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
+		--capabilities CAPABILITY_IAM --parameters ParameterKey=DomainName,ParameterValue=${MFL_UNCOUTH_DOMAIN} \
+		--region ${AWS_REGION}
+
+deletestack:
+	aws cloudformation delete-stack --stack-name ${STACK_NAME} --region ${AWS_REGION}
 
 test:
 	cd ${CODE_DIR} && go test -cover

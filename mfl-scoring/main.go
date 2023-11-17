@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -97,7 +98,6 @@ const (
 	LeagueOutputSortQuery   string = "SORT=ALLPLAY"
 	LeagueIDQuery           string = "L=15781"
 	APIOutputTypeQuery      string = "JSON=1"
-	APIKeySecretARN         string = "MflScoringApiKeySecret-enC9xWtZjXpH" //nolint:gosec // Not credentials
 )
 
 type Franchises []Franchise
@@ -105,8 +105,6 @@ type Franchises []Franchise
 type ByPointsFor struct{ Franchises }
 type ByRecordMagic struct{ Franchises }
 type ByTotalScore struct{ Franchises }
-
-type Request = events.APIGatewayProxyRequest
 
 type AllPlayTeamStats struct {
 	FranchiseName     string
@@ -135,13 +133,14 @@ func main() {
 	lambda.Start(handler)
 }
 
-func handler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	secretCache, err := secretcache.New()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	apiKey, err := secretCache.GetSecretString(APIKeySecretARN)
+	var APIKeySecretID = os.Getenv("API_KEY_SECRET_ID")
+	apiKey, err := secretCache.GetSecretString(APIKeySecretID)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -181,8 +180,16 @@ func handler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, e
 	franchisesWithStandingsAndAllplay := appendAllPlay(franchisesWithStandings, allPlayTeamData)
 	// fmt.Print(franchisesWithStandingsAndAllplay)
 
+	fmt.Printf("requestContext.DomainName: %v\n", request.RequestContext.DomainName)
+	if strings.Contains(request.RequestContext.DomainName, "execute-api") {
+		return events.APIGatewayProxyResponse{
+			Body:       printScoringTableCouthly(franchisesWithStandingsAndAllplay),
+			StatusCode: 200,
+		}, nil
+	}
+
 	return events.APIGatewayProxyResponse{
-		Body:       printTeam(franchisesWithStandingsAndAllplay),
+		Body:       printScoringTableUncouthly(franchisesWithStandingsAndAllplay),
 		StatusCode: 200,
 	}, nil
 }
@@ -191,13 +198,17 @@ const (
 	TotalPts   string = "Total Pts"
 	AllPlayPct string = "AllPlay %"
 	Record     string = "Record"
+	FantasyPts string = "Fantasy Pts"
+	AllPlayW   string = "AllPlay W"
+	AllPlayL   string = "AllPlay L"
+	AllPlayT   string = "AllPlay T"
 )
 
-func printTeam(teams Franchises) string {
+func printScoringTableUncouthly(teams Franchises) string {
 	t := table.NewWriter()
 	t.SetOutputMirror(&bytes.Buffer{})
-	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", "Fantasy Pts", "Points", Record, TotalPts,
-		"AllPlay W", "AllPlay L", "AllPlay T", AllPlayPct})
+	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", FantasyPts, "Points", Record, TotalPts,
+		AllPlayW, AllPlayL, AllPlayT, AllPlayPct})
 	for _, o := range teams {
 		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsForString, o.PointScore,
 			o.RecordScoreString, o.TotalScore, o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
@@ -207,13 +218,13 @@ func printTeam(teams Franchises) string {
 		{Name: "Wins", Align: text.AlignCenter},
 		{Name: "Losses", Align: text.AlignCenter},
 		{Name: "Ties", Align: text.AlignCenter},
-		{Name: "Fantasy Pts", Align: text.AlignCenter},
+		{Name: FantasyPts, Align: text.AlignCenter},
 		{Name: "Points", Align: text.AlignCenter},
 		{Name: "Record", Align: text.AlignCenter},
 		{Name: TotalPts, Align: text.AlignCenter},
-		{Name: "AllPlay W", Align: text.AlignCenter},
-		{Name: "AllPlay L", Align: text.AlignCenter},
-		{Name: "AllPlay T", Align: text.AlignCenter},
+		{Name: AllPlayW, Align: text.AlignCenter},
+		{Name: AllPlayL, Align: text.AlignCenter},
+		{Name: AllPlayT, Align: text.AlignCenter},
 		{Name: "AllPlay %", Align: text.AlignCenter},
 	}
 
@@ -226,6 +237,42 @@ func printTeam(teams Franchises) string {
 	t.SetColumnConfigs(fantasyPoints)
 	t.SortBy(sortBy)
 	return t.Render()
+}
+
+// Hide uncouth team names for professional project.
+func printScoringTableCouthly(teams Franchises) string {
+	t := table.NewWriter()
+	t.SetOutputMirror(&bytes.Buffer{})
+	t.AppendHeader(table.Row{"Team ID", "Wins", "Losses", "Ties", FantasyPts, "Points", Record, TotalPts,
+		AllPlayW, AllPlayL, AllPlayT, AllPlayPct})
+	for _, o := range teams {
+		t.AppendRow([]interface{}{o.TeamID, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsForString, o.PointScore,
+			o.RecordScoreString, o.TotalScore, o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
+	}
+
+	fantasyPoints := []table.ColumnConfig{
+		{Name: "Wins", Align: text.AlignCenter},
+		{Name: "Losses", Align: text.AlignCenter},
+		{Name: "Ties", Align: text.AlignCenter},
+		{Name: FantasyPts, Align: text.AlignCenter},
+		{Name: "Points", Align: text.AlignCenter},
+		{Name: "Record", Align: text.AlignCenter},
+		{Name: TotalPts, Align: text.AlignCenter},
+		{Name: AllPlayW, Align: text.AlignCenter},
+		{Name: AllPlayL, Align: text.AlignCenter},
+		{Name: AllPlayT, Align: text.AlignCenter},
+		{Name: AllPlayPct, Align: text.AlignCenter},
+	}
+
+	sortBy := []table.SortBy{
+		{Name: TotalPts, Mode: table.DscNumeric},
+		{Name: Record, Mode: table.DscNumeric},
+		{Name: AllPlayPct, Mode: table.DscNumeric},
+	}
+
+	t.SetColumnConfigs(fantasyPoints)
+	t.SortBy(sortBy)
+	return t.Render() + "\n\nTeam names are hidden to protect the eyes and minds of the pure of soul."
 }
 
 func calculateTotalScore(franchises Franchises) Franchises {
@@ -370,7 +417,7 @@ func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse 
 
 	if numFranchises != numLeagueFranchises || numFranchises != numLeagueStandingsFranchises {
 		fmt.Printf(
-			"stevexResponses don't have the same number of franchises:\n League API Franchises.Count: %d\n League API: %d\n LeagueStandings API: %d\n",
+			"Responses don't have the same number of franchises:\n League API Franchises.Count: %d\n League API: %d\n LeagueStandings API: %d\n",
 			numFranchises, numLeagueFranchises, numLeagueStandingsFranchises)
 		os.Exit(3)
 	}

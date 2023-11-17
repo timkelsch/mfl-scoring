@@ -10,48 +10,51 @@ pipeline {
         CGO_ENABLED=0 
         GOPATH="${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
         GOCACHE="${WORKSPACE}"
-        SAM_CLI_TELEMETRY=0
     }
 
     stages {        
-        stage('Check for Modified Files') {
-            steps {
-                script {
-                    def changeLogSets = currentBuild.changeSets
-                    if (changeLogSets.isEmpty()) {
-                        currentBuild.result = 'ABORTED'
-                        error("No changes detected. Pipeline aborted.")
-                    }
+        // Blocking on code / lambda changes here prevents us from testing any other part
+        // of the pipeline without making a dummy code change.
+        // Already blocking duplicates at push to ECR stage
 
-                    // Define the list of files you want to check for changes
-                    def filesToCheck = ['Dockerfile', 'mfl-scoring/main.go', 'mfl-scoring/main_test.go',
-                        'mfl-scoring/go.mod', 'mfl-scoring/go.sum']
+        // stage('Check for Modified Files') {
+        //     steps {
+        //         script {
+        //             def changeLogSets = currentBuild.changeSets
+        //             if (changeLogSets.isEmpty()) {
+        //                 currentBuild.result = 'ABORTED'
+        //                 error("ChangeLogSets is empty. Pipeline aborted.")
+        //             }
+
+        //             // Define the list of files you want to check for changes
+        //             def filesToCheck = ['Dockerfile', 'mfl-scoring/main.go', 'mfl-scoring/main_test.go',
+        //                 'mfl-scoring/go.mod', 'mfl-scoring/go.sum']
                     
-                    def numFilesToCheckChanged = 0
-                    for (changeLogSet in changeLogSets) {
-                        for (entry in changeLogSet) {
-                            for (file in filesToCheck) {
-                                echo "File: " + file
-                                echo "AffectedPaths: " + entry.getAffectedPaths()
-                                if (entry.getAffectedPaths().contains(file)) {
-                                    echo "${file} was modified"
-                                    numFilesToCheckChanged++
-                                }
-                            }
-                        }
-                    }
+        //             def numFilesToCheckChanged = 0
+        //             for (changeLogSet in changeLogSets) {
+        //                 for (entry in changeLogSet) {
+        //                     for (file in filesToCheck) {
+        //                         echo "File: " + file
+        //                         echo "AffectedPaths: " + entry.getAffectedPaths()
+        //                         if (entry.getAffectedPaths().contains(file)) {
+        //                             echo "${file} was modified"
+        //                             numFilesToCheckChanged++
+        //                         }
+        //                     }
+        //                 }
+        //             }
 
-                    if (numFilesToCheckChanged > 0) {
-                        echo "Found changes. Proceeding with the pipeline."
-                    } else {
-                        currentBuild.result = 'ABORTED'
-                        error("No changes detected. Pipeline aborted.")
-                    }                
-                }
-            }
-        }
+        //             if (numFilesToCheckChanged > 0) {
+        //                 echo "Found changes. Proceeding with the pipeline."
+        //             } else {
+        //                 currentBuild.result = 'ABORTED'
+        //                 error("No changes detected. Pipeline aborted.")
+        //             }                
+        //         }
+        //     }
+        // }
 
-        stage('Test') {
+        stage('Lint/Test') {
             steps {
                 withEnv(["PATH+GO=${GOPATH}/bin"]){
                     echo 'installing golangci-lint'
@@ -65,7 +68,7 @@ pipeline {
             }
         }
 
-        stage('Build, Push, Update Lambda') {
+        stage('Build, Push, Add Lambda Version') {
             steps {
                 script {
                     RETURN_CODE = sh (
@@ -81,10 +84,24 @@ pipeline {
             }
         }
 
-        stage('Deploy'){
+        stage('Deploy to Stage'){
             steps{
+                echo 'Deploying to stage'
                 sh 'make updatestagealias'
-            }        
+            }
+        }
+
+        stage('Clean Up') {
+            steps {
+                script {
+                    echo 'Running Docker prune'
+                    RETURN_CODE = sh (
+                        script: 'docker system prune -a -f',
+                        returnStatus: true
+                    )
+                    echo "returnStatus: ${RETURN_CODE}"
+                }
+            }
         }
     }
 }
