@@ -1,7 +1,7 @@
 pipeline {
     agent any
     options {
-        buildDiscarder(logRotator(numToKeepStr: '3', artifactNumToKeepStr: '3'))
+        buildDiscarder(logRotator(numToKeepStr: '2', artifactNumToKeepStr: '2'))
     }    
 
     tools { go 'go1.21' } 
@@ -91,8 +91,8 @@ pipeline {
             }
         }
 
-        stage('Clean Up') {
-            steps {
+        post {
+            always {
                 script {
                     echo 'Running Docker prune'
                     RETURN_CODE = sh (
