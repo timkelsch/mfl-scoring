@@ -181,6 +181,8 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	// fmt.Print(franchisesWithStandingsAndAllplay)
 
 	fmt.Printf("requestContext.DomainName: %v\n", request.RequestContext.DomainName)
+	fmt.Printf("requestContext.QueryStringParameters: %v\n", request.QueryStringParameters)
+	fmt.Printf("requestContext.PathParameters: %v\n", request.PathParameters)
 	if strings.Contains(request.RequestContext.DomainName, "execute-api") {
 		return events.APIGatewayProxyResponse{
 			Body:       printScoringTableCouthly(franchisesWithStandingsAndAllplay),
