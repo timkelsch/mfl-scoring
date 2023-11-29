@@ -42,5 +42,3 @@ require (
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/sys v0.13.0 // indirect
 )
-
-replace github.com/aws/aws-sdk-go => github.com/aws/aws-sdk-go v1.46.7
