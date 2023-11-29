@@ -33,6 +33,7 @@ I am not responsible for creation of this rule set - I merely automated the calc
 - [ ] Consolidate standard and AllPlay w/l/t into single fields
 - [ ] Find a better way of dealing with int/float issue in structs
 - [ ] Build minimal front end
+- [x] Enable JSON output based on queryStringParameters
 - [x] Dockerize this app  
 - [x] Add points tie breaker
 - [x] Implement golangci-lint
