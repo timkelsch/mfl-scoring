@@ -91,16 +91,17 @@ pipeline {
             }
         }
 
-        post {
-            always {
-                script {
-                    echo 'Running Docker prune'
-                    RETURN_CODE = sh (
-                        script: 'docker system prune -a -f',
-                        returnStatus: true
-                    )
-                    echo "returnStatus: ${RETURN_CODE}"
-                }
+    }
+    
+    post {
+        always {
+            script {
+                echo 'Running Docker prune'
+                RETURN_CODE = sh (
+                    script: 'docker system prune -a -f',
+                    returnStatus: true
+                )
+                echo "returnStatus: ${RETURN_CODE}"
             }
         }
     }
