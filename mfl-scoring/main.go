@@ -290,7 +290,7 @@ func printScoringTableCouthly(teams Franchises) string {
 	t.SetColumnConfigs(columnConfigs)
 	t.SortBy(sortBy)
 	return t.Render() +
-		"\n\nTeam names are hidden to protect the eyes and minds of the pure of soul."
+		"\n\nTeam names are hidden. There are some weirdos in this league."
 }
 
 func calculateTotalScore(franchises Franchises) Franchises {
