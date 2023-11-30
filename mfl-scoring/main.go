@@ -102,33 +102,12 @@ const (
 	APIOutputTypeQuery      string = "JSON=1"
 )
 
-type Franchises []Franchise
-
-type ByPointsFor struct{ Franchises }
-type ByRecordMagic struct{ Franchises }
-type ByTotalScore struct{ Franchises }
-
 type AllPlayTeamStats struct {
 	FranchiseName     string
 	AllPlayWins       string
 	AllPlayLosses     string
 	AllPlayTies       string
 	AllPlayPercentage string
-}
-
-func (f Franchises) Len() int      { return len(f) }
-func (f Franchises) Swap(i, j int) { f[i], f[j] = f[j], f[i] }
-
-func (f ByPointsFor) Less(i, j int) bool {
-	return f.Franchises[i].PointsFor > f.Franchises[j].PointsFor
-}
-
-func (f ByRecordMagic) Less(i, j int) bool {
-	return f.Franchises[i].RecordMagic > f.Franchises[j].RecordMagic
-}
-
-func (f ByTotalScore) Less(i, j int) bool {
-	return f.Franchises[i].TotalScore > f.Franchises[j].TotalScore
 }
 
 func main() {
@@ -229,6 +208,27 @@ const (
 	AllPlayPct    string = "AllPlay %"
 )
 
+type Franchises []Franchise
+
+type ByPointsFor struct{ Franchises }
+type ByRecordMagic struct{ Franchises }
+type ByTotalScore struct{ Franchises }
+
+func (f Franchises) Len() int      { return len(f) }
+func (f Franchises) Swap(i, j int) { f[i], f[j] = f[j], f[i] }
+
+func (f ByPointsFor) Less(i, j int) bool {
+	return f.Franchises[i].PointsFor > f.Franchises[j].PointsFor
+}
+
+func (f ByRecordMagic) Less(i, j int) bool {
+	return f.Franchises[i].RecordMagic > f.Franchises[j].RecordMagic
+}
+
+func (f ByTotalScore) Less(i, j int) bool {
+	return f.Franchises[i].TotalScore > f.Franchises[j].TotalScore
+}
+
 func printScoringTableUncouthly(teams Franchises) string {
 	t := table.NewWriter()
 	t.SetOutputMirror(&bytes.Buffer{})
@@ -294,7 +294,8 @@ func printScoringTableCouthly(teams Franchises) string {
 }
 
 func calculateTotalScore(franchises Franchises) Franchises {
-	for i := 0; i < len(franchises); i++ {
+	for i := range franchises {
+		// for i := 0; i < len(franchises); i++ {
 		franchises[i].TotalScore = strconv.FormatFloat(franchises[i].PointScore+franchises[i].RecordScore, 'f', 1, 64)
 	}
 
@@ -332,7 +333,7 @@ func calculatePointsScore(franchises Franchises) Franchises {
 }
 
 func calculateRecordMagic(franchises Franchises) Franchises {
-	for i := 0; i < len(franchises); i++ {
+	for i := range franchises {
 		franchises[i].RecordMagic = float64(franchises[i].RecordWins*1) +
 			(float64(franchises[i].RecordTies) * 0.5)
 	}

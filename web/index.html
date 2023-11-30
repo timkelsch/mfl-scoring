@@ -3,41 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <title>MFL Scoring</title>
-    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
     <div class="container">
         <table class="table" aria-describedby="Scoring Table">
-            <colgroup>
-                <col span="1" id="team_name" ></col>
-                <col span="1" id="owner_name" ></col>
-                <col span="1" id="record" ></col>
-                <col span="1" id="fantasy_points" ></col>
-                <col span="1" id="points_score" ></col>
-                <col span="1" id="record_score" ></col>
-                <col span="1" id="total_score" ></col>
-                <col span="1" id="allplay_record" ></col>
-                <col span="1" id="allplay_pct" ></col>
-            </colgroup>
             <thead class="table-header">
                 <tr>
-                    <th scope="col" title="Franchise Name" class="header__item">
+                    <th id="team_name" title="Franchise Name" class="header__item">
                         <a class="filter__link" href="#">Team Name</a></th>
-                    <th scope="col" title="Owner Name" class="header__item">
+                    <th id="owner_name" title="Owner Name" class="header__item">
                         <a class="filter__link" href="#">Owner</a></th>
-                    <th scope="col" title="Overall Wins-Losses-Ties" class="header__item">
+                    <th id="record" title="Overall Wins-Losses-Ties" class="header__item">
                         <a class="filter__link filter__link--number" href="#">Record</a></th>
-                    <th scope="col" title="Points For (Total Year-to-Date Points Scored)" class="header__item">
+                    <th id="fantasy_points" title="Points For (Total Year-to-Date Points Scored)" class="header__item">
                         <a class="filter__link filter__link--number" href="#">Fantasy Points</a></th>
-                    <th scope="col" title="Championship points awarded based on fantasy points" class="header__item">
+                    <th id="points_score" title="Championship points awarded based on fantasy points" class="header__item">
                         <a class="filter__link filter__link--number" href="#">Points Score</a></th>
-                    <th scope="col" title="Championship points awarded based on record" class="header__item">
+                    <th id="record_score" title="Championship points awarded based on record" class="header__item">
                         <a class="filter__link filter__link--number" href="#">Record Score</a></th>
-                    <th scope="col" title="Total Championship Points" class="header__item">
+                    <th id="total_score" title="Total Championship Points" class="header__item">
                         <a class="filter__link filter__link--number" href="#">Total Score</a></th>
-                    <th scope="col" title="AllPlay Record" class="header__item">
+                    <th id="allplay_record" title="AllPlay Record" class="header__item">
                         <a class="filter__link filter__link--number" href="#">AllPlay Record</a></th>
-                    <th scope="col" title="AllPlay Percentage" class="header__item">
+                    <th id="allplay_pct" title="AllPlay Percentage" class="header__item">
                         <a class="filter__link filter__link--number" href="#">AllPlay %</a></th>
                 </tr>
             </thead>
