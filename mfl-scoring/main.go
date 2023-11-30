@@ -251,7 +251,9 @@ func sortFranchises(teams Franchises) Franchises {
 	// sort.Sort(ByPointsFor1(teams))
 	sort.Sort(ByTotalScore1(teams))
 	for _, team := range teams {
-		fmt.Printf("totalScore: %s, recordScore: %g, allPlayPct: %s  \n", team.TotalScore, team.RecordScore, team.AllPlayPercentage)
+		fmt.Printf("totalScore: %s, recordScore: %g, allPlayPct: %s \n",
+			team.TotalScore, team.RecordScore, team.AllPlayPercentage)
+		fmt.Println("")
 	}
 	return teams
 }
