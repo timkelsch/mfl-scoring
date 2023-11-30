@@ -626,14 +626,10 @@ func appendAllPlay(franchises []Franchise, allPlayTeamData []AllPlayTeamStats) [
 			if franchises[franchise].TeamName != allPlayTeamData[team].FranchiseName {
 				continue
 			}
-			franchises[franchise].AllPlayWins =
-				convertStringToInteger(allPlayTeamData[team].AllPlayWins)
-			franchises[franchise].AllPlayLosses =
-				convertStringToInteger(allPlayTeamData[team].AllPlayLosses)
-			franchises[franchise].AllPlayTies =
-				convertStringToInteger(allPlayTeamData[team].AllPlayTies)
-			franchises[franchise].AllPlayPercentageString =
-				allPlayTeamData[team].AllPlayPercentage
+			franchises[franchise].AllPlayWins = convertStringToInteger(allPlayTeamData[team].AllPlayWins)
+			franchises[franchise].AllPlayLosses = convertStringToInteger(allPlayTeamData[team].AllPlayLosses)
+			franchises[franchise].AllPlayTies = convertStringToInteger(allPlayTeamData[team].AllPlayTies)
+			franchises[franchise].AllPlayPercentageString = allPlayTeamData[team].AllPlayPercentage
 			allPlayPct, err := strconv.ParseFloat(allPlayTeamData[team].AllPlayPercentage, 64)
 			if err != nil {
 				log.Fatal(err)
@@ -641,8 +637,10 @@ func appendAllPlay(franchises []Franchise, allPlayTeamData []AllPlayTeamStats) [
 			franchises[franchise].AllPlayPercentage = allPlayPct
 			fmt.Printf("Franchise: %d - Team: %d - FALP: %d - TALP: %s\n",
 				franchise, team, franchises[franchise].AllPlayWins, allPlayTeamData[team].AllPlayWins)
+			// Here everything is correct
+			fmt.Println("franchisest: ", franchises)
 		}
 	}
-	fmt.Println("franchises: ", franchises)
+	// Here everything is gone. WTF
 	return franchises
 }
