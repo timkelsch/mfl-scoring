@@ -619,6 +619,7 @@ func scrape() []AllPlayTeamStats {
 }
 
 func appendAllPlay(franchises []Franchise, allPlayTeamData []AllPlayTeamStats) []Franchise {
+	fmt.Println("allPlayTeamData: ", allPlayTeamData)
 	for franchise := range franchises {
 		for team := range allPlayTeamData {
 			if franchises[franchise].TeamName != allPlayTeamData[team].FranchiseName {
