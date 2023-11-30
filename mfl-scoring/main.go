@@ -163,7 +163,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	franchisesWithStandingsAndAllplay := appendAllPlay(franchisesWithStandings, allPlayTeamData)
 	// fmt.Print(franchisesWithStandingsAndAllplay)
 
-	sortFranchises()
+	sortedFranchises := sortFranchises(franchisesWithStandingsAndAllplay)
 
 	fmt.Printf("requestContext.DomainName: %v\n", request.RequestContext.DomainName)
 	fmt.Printf("requestContext.QueryStringParameters: %v\n", request.QueryStringParameters)
@@ -175,7 +175,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 				"Access-Control-Allow-Credentials": "true",
 			}
 			fmt.Println("headers: ", headers)
-			body, err := json.Marshal(franchisesWithStandingsAndAllplay)
+			body, err := json.Marshal(sortedFranchises)
 			if err != nil {
 				panic(err)
 			}
@@ -189,13 +189,13 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	if strings.Contains(request.RequestContext.DomainName, "execute-api") {
 		return events.APIGatewayProxyResponse{
-			Body:       printScoringTableCouthly(franchisesWithStandingsAndAllplay),
+			Body:       printScoringTableCouthly(sortedFranchises),
 			StatusCode: 200,
 		}, nil
 	}
 
 	return events.APIGatewayProxyResponse{
-		Body:       printScoringTableUncouthly(franchisesWithStandingsAndAllplay),
+		Body:       printScoringTableUncouthly(sortedFranchises),
 		StatusCode: 200,
 	}, nil
 }
@@ -245,21 +245,15 @@ func (o ByTotalScore1) Less(i, j int) bool {
 	return o[i].TotalScore < o[j].TotalScore
 }
 
-func sortFranchises() {
-	teams := []Franchise{
-		{TotalScore: "6", RecordScore: 5, AllPlayPercentage: ".234"},
-		{TotalScore: "5", RecordScore: 6, AllPlayPercentage: ".237"},
-		{TotalScore: "5", RecordScore: 6, AllPlayPercentage: ".236"},
-		{TotalScore: "5", RecordScore: 5, AllPlayPercentage: ".234"},
-		{TotalScore: "5", RecordScore: 5, AllPlayPercentage: ".235"},
-	}
+func sortFranchises(teams Franchises) Franchises {
 	fmt.Println(teams)
 	sort.Sort(ByAllPlayPercentage(teams))
 	sort.Sort(ByPointsFor1(teams))
 	sort.Sort(ByTotalScore1(teams))
 	for _, team := range teams {
-		fmt.Printf("totalScore: %s, recordScore: %g, allPlayPct: %s", team.TotalScore, team.RecordScore, team.AllPlayPercentage)
+		fmt.Printf("totalScore: %s, recordScore: %g, allPlayPct: %s \n", team.TotalScore, team.RecordScore, team.AllPlayPercentage)
 	}
+	return teams
 }
 
 const (
@@ -292,14 +286,14 @@ func printScoringTableUncouthly(teams Franchises) string {
 		{Name: AllPlayPct, Align: text.AlignCenter},
 	}
 
-	sortBy := []table.SortBy{
-		{Name: TotalPts, Mode: table.DscNumeric},
-		{Name: RecScore, Mode: table.DscNumeric},
-		{Name: AllPlayPct, Mode: table.DscNumeric},
-	}
+	// sortBy := []table.SortBy{
+	// 	{Name: TotalPts, Mode: table.DscNumeric},
+	// 	{Name: RecScore, Mode: table.DscNumeric},
+	// 	{Name: AllPlayPct, Mode: table.DscNumeric},
+	// }
 
 	t.SetColumnConfigs(columnConfigs)
-	t.SortBy(sortBy)
+	// t.SortBy(sortBy)
 	return t.Render()
 }
 
@@ -324,14 +318,14 @@ func printScoringTableCouthly(teams Franchises) string {
 		{Name: AllPlayPct, Align: text.AlignCenter},
 	}
 
-	sortBy := []table.SortBy{
-		{Name: TotalPts, Mode: table.DscNumeric},
-		{Name: RecScore, Mode: table.DscNumeric},
-		{Name: AllPlayPct, Mode: table.DscNumeric},
-	}
+	// sortBy := []table.SortBy{
+	// 	{Name: TotalPts, Mode: table.DscNumeric},
+	// 	{Name: RecScore, Mode: table.DscNumeric},
+	// 	{Name: AllPlayPct, Mode: table.DscNumeric},
+	// }
 
 	t.SetColumnConfigs(columnConfigs)
-	t.SortBy(sortBy)
+	// t.SortBy(sortBy)
 	return t.Render() +
 		"\n\nTeam names are hidden. There are some weirdos in this league."
 }
