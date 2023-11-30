@@ -226,7 +226,7 @@ type ByAllPlayPercentage []Franchise
 func (o ByAllPlayPercentage) Len() int      { return len(o) }
 func (o ByAllPlayPercentage) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
 func (o ByAllPlayPercentage) Less(i, j int) bool {
-	return o[i].AllPlayPercentage < o[j].AllPlayPercentage
+	return o[i].AllPlayPercentage > o[j].AllPlayPercentage
 }
 
 type ByPointsFor1 []Franchise
@@ -234,7 +234,7 @@ type ByPointsFor1 []Franchise
 func (o ByPointsFor1) Len() int      { return len(o) }
 func (o ByPointsFor1) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
 func (o ByPointsFor1) Less(i, j int) bool {
-	return o[i].PointsFor < o[j].PointsFor
+	return o[i].PointsFor > o[j].PointsFor
 }
 
 type ByTotalScore1 []Franchise
@@ -242,7 +242,7 @@ type ByTotalScore1 []Franchise
 func (o ByTotalScore1) Len() int      { return len(o) }
 func (o ByTotalScore1) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
 func (o ByTotalScore1) Less(i, j int) bool {
-	return o[i].TotalScore < o[j].TotalScore
+	return o[i].TotalScore > o[j].TotalScore
 }
 
 func sortFranchises(teams Franchises) Franchises {
