@@ -226,7 +226,7 @@ type ByAllPlayPercentage []Franchise
 func (o ByAllPlayPercentage) Len() int      { return len(o) }
 func (o ByAllPlayPercentage) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
 func (o ByAllPlayPercentage) Less(i, j int) bool {
-	return o[i].AllPlayPercentage > o[j].AllPlayPercentage
+	return o[j].AllPlayPercentage < o[i].AllPlayPercentage
 }
 
 type ByPointsFor1 []Franchise
@@ -234,7 +234,7 @@ type ByPointsFor1 []Franchise
 func (o ByPointsFor1) Len() int      { return len(o) }
 func (o ByPointsFor1) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
 func (o ByPointsFor1) Less(i, j int) bool {
-	return o[i].PointsFor > o[j].PointsFor
+	return o[j].PointsFor < o[i].PointsFor
 }
 
 type ByTotalScore1 []Franchise
@@ -242,13 +242,13 @@ type ByTotalScore1 []Franchise
 func (o ByTotalScore1) Len() int      { return len(o) }
 func (o ByTotalScore1) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
 func (o ByTotalScore1) Less(i, j int) bool {
-	return o[i].TotalScore > o[j].TotalScore
+	return o[j].TotalScore < o[i].TotalScore
 }
 
 func sortFranchises(teams Franchises) Franchises {
 	fmt.Println(teams)
-	sort.Sort(ByAllPlayPercentage(teams))
-	sort.Sort(ByPointsFor1(teams))
+	// sort.Sort(ByAllPlayPercentage(teams))
+	// sort.Sort(ByPointsFor1(teams))
 	sort.Sort(ByTotalScore1(teams))
 	for _, team := range teams {
 		fmt.Printf("totalScore: %s, recordScore: %g, allPlayPct: %s \n", team.TotalScore, team.RecordScore, team.AllPlayPercentage)
