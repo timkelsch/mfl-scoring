@@ -163,6 +163,8 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	franchisesWithStandingsAndAllplay := appendAllPlay(franchisesWithStandings, allPlayTeamData)
 	// fmt.Print(franchisesWithStandingsAndAllplay)
 
+	sortFranchises()
+
 	fmt.Printf("requestContext.DomainName: %v\n", request.RequestContext.DomainName)
 	fmt.Printf("requestContext.QueryStringParameters: %v\n", request.QueryStringParameters)
 	if outputFormat, exists := request.QueryStringParameters["output"]; exists {
@@ -198,16 +200,6 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	}, nil
 }
 
-const (
-	TotalPts      string = "Total Pts"
-	Record        string = "W-L-T"
-	FantasyPts    string = "Fantasy Pts"
-	PtsScore      string = "Pts Score"
-	RecScore      string = "Rcrd Score"
-	AllPlayRecord string = "AllPlay W-L-T"
-	AllPlayPct    string = "AllPlay %"
-)
-
 type Franchises []Franchise
 
 type ByPointsFor struct{ Franchises }
@@ -228,6 +220,55 @@ func (f ByRecordMagic) Less(i, j int) bool {
 func (f ByTotalScore) Less(i, j int) bool {
 	return f.Franchises[i].TotalScore > f.Franchises[j].TotalScore
 }
+
+type ByAllPlayPercentage []Franchise
+
+func (o ByAllPlayPercentage) Len() int      { return len(o) }
+func (o ByAllPlayPercentage) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
+func (o ByAllPlayPercentage) Less(i, j int) bool {
+	return o[i].AllPlayPercentage < o[j].AllPlayPercentage
+}
+
+type ByPointsFor1 []Franchise
+
+func (o ByPointsFor1) Len() int      { return len(o) }
+func (o ByPointsFor1) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
+func (o ByPointsFor1) Less(i, j int) bool {
+	return o[i].PointsFor < o[j].PointsFor
+}
+
+type ByTotalScore1 []Franchise
+
+func (o ByTotalScore1) Len() int      { return len(o) }
+func (o ByTotalScore1) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
+func (o ByTotalScore1) Less(i, j int) bool {
+	return o[i].TotalScore < o[j].TotalScore
+}
+
+func sortFranchises() {
+	teams := []Franchise{
+		{TotalScore: "6", RecordScore: 5, AllPlayPercentage: ".234"},
+		{TotalScore: "5", RecordScore: 6, AllPlayPercentage: ".237"},
+		{TotalScore: "5", RecordScore: 6, AllPlayPercentage: ".236"},
+		{TotalScore: "5", RecordScore: 5, AllPlayPercentage: ".234"},
+		{TotalScore: "5", RecordScore: 5, AllPlayPercentage: ".235"},
+	}
+	fmt.Println(teams)
+	sort.Sort(ByAllPlayPercentage(teams))
+	sort.Sort(ByPointsFor1(teams))
+	sort.Sort(ByTotalScore1(teams))
+	fmt.Println(teams)
+}
+
+const (
+	TotalPts      string = "Total Pts"
+	Record        string = "W-L-T"
+	FantasyPts    string = "Fantasy Pts"
+	PtsScore      string = "Pts Score"
+	RecScore      string = "Rcrd Score"
+	AllPlayRecord string = "AllPlay W-L-T"
+	AllPlayPct    string = "AllPlay %"
+)
 
 func printScoringTableUncouthly(teams Franchises) string {
 	t := table.NewWriter()
