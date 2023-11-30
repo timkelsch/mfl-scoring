@@ -73,6 +73,7 @@ type Franchise struct {
 	RecordWins        int
 	RecordLosses      int
 	RecordTies        int
+	Record            string
 	PointsFor         float64
 	PointsForString   string
 	PointScore        float64
@@ -84,6 +85,7 @@ type Franchise struct {
 	AllPlayWins       int
 	AllPlayLosses     int
 	AllPlayTies       int
+	AllPlayRecord     string
 	AllPlayPercentage string
 }
 
@@ -152,9 +154,11 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	// Populate the slice of Franchise objects with league standing data
 	franchisesWithStandings := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
+	populatedRecords := populateRecords(franchisesWithStandings)
+	populatedAllPlayRecords := populateAllPlayRecords(populatedRecords)
 
 	// Put teams in order of most fantasy points scored
-	sort.Sort(ByPointsFor{franchisesWithStandings})
+	sort.Sort(ByPointsFor{populatedAllPlayRecords})
 	// fmt.Printf("%+v \n", franchisesWithStandings)
 
 	// Assign points to teams based on fantasy points scored, sharing points as necessary when teams tie
@@ -216,46 +220,42 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 }
 
 const (
-	TotalPts   string = "Total Pts"
-	AllPlayPct string = "AllPlay %"
-	Record     string = "Record"
-	FantasyPts string = "Fantasy Pts"
-	AllPlayW   string = "AllPlay W"
-	AllPlayL   string = "AllPlay L"
-	AllPlayT   string = "AllPlay T"
+	TotalPts      string = "Total Pts"
+	Record        string = "W-L-T"
+	FantasyPts    string = "Fantasy Pts"
+	PtsScore      string = "Pts Score"
+	RecScore      string = "Rcrd Score"
+	AllPlayRecord string = "AllPlay W-L-T"
+	AllPlayPct    string = "AllPlay %"
 )
 
 func printScoringTableUncouthly(teams Franchises) string {
 	t := table.NewWriter()
 	t.SetOutputMirror(&bytes.Buffer{})
-	t.AppendHeader(table.Row{"Team Name", "Owner", "Wins", "Losses", "Ties", FantasyPts, "Points", Record, TotalPts,
-		AllPlayW, AllPlayL, AllPlayT, AllPlayPct})
+	t.AppendHeader(table.Row{"Team Name", "Owner", Record, FantasyPts, PtsScore, RecScore, TotalPts,
+		AllPlayRecord, AllPlayPct})
 	for _, o := range teams {
-		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsForString, o.PointScore,
-			o.RecordScoreString, o.TotalScore, o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
+		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.Record, o.PointsForString, o.PointScore,
+			o.RecordScoreString, o.TotalScore, o.AllPlayRecord, o.AllPlayPercentage})
 	}
 
-	fantasyPoints := []table.ColumnConfig{
-		{Name: "Wins", Align: text.AlignCenter},
-		{Name: "Losses", Align: text.AlignCenter},
-		{Name: "Ties", Align: text.AlignCenter},
+	columnConfigs := []table.ColumnConfig{
+		{Name: Record, Align: text.AlignCenter},
 		{Name: FantasyPts, Align: text.AlignCenter},
-		{Name: "Points", Align: text.AlignCenter},
-		{Name: "Record", Align: text.AlignCenter},
+		{Name: PtsScore, Align: text.AlignCenter},
+		{Name: RecScore, Align: text.AlignCenter},
 		{Name: TotalPts, Align: text.AlignCenter},
-		{Name: AllPlayW, Align: text.AlignCenter},
-		{Name: AllPlayL, Align: text.AlignCenter},
-		{Name: AllPlayT, Align: text.AlignCenter},
-		{Name: "AllPlay %", Align: text.AlignCenter},
+		{Name: AllPlayRecord, Align: text.AlignCenter},
+		{Name: AllPlayPct, Align: text.AlignCenter},
 	}
 
 	sortBy := []table.SortBy{
 		{Name: TotalPts, Mode: table.DscNumeric},
-		{Name: Record, Mode: table.DscNumeric},
+		{Name: RecScore, Mode: table.DscNumeric},
 		{Name: AllPlayPct, Mode: table.DscNumeric},
 	}
 
-	t.SetColumnConfigs(fantasyPoints)
+	t.SetColumnConfigs(columnConfigs)
 	t.SortBy(sortBy)
 	return t.Render()
 }
@@ -264,34 +264,30 @@ func printScoringTableUncouthly(teams Franchises) string {
 func printScoringTableCouthly(teams Franchises) string {
 	t := table.NewWriter()
 	t.SetOutputMirror(&bytes.Buffer{})
-	t.AppendHeader(table.Row{"Team ID", "Wins", "Losses", "Ties", FantasyPts, "Points", Record, TotalPts,
-		AllPlayW, AllPlayL, AllPlayT, AllPlayPct})
+	t.AppendHeader(table.Row{"Team ID", Record, FantasyPts, PtsScore, RecScore, TotalPts,
+		AllPlayRecord, AllPlayPct})
 	for _, o := range teams {
-		t.AppendRow([]interface{}{o.TeamID, o.RecordWins, o.RecordLosses, o.RecordTies, o.PointsForString, o.PointScore,
-			o.RecordScoreString, o.TotalScore, o.AllPlayWins, o.AllPlayLosses, o.AllPlayTies, o.AllPlayPercentage})
+		t.AppendRow([]interface{}{o.TeamID, o.Record, o.PointsForString, o.PointScore,
+			o.RecordScoreString, o.TotalScore, o.AllPlayRecord, o.AllPlayPercentage})
 	}
 
-	fantasyPoints := []table.ColumnConfig{
-		{Name: "Wins", Align: text.AlignCenter},
-		{Name: "Losses", Align: text.AlignCenter},
-		{Name: "Ties", Align: text.AlignCenter},
+	columnConfigs := []table.ColumnConfig{
+		{Name: Record, Align: text.AlignCenter},
 		{Name: FantasyPts, Align: text.AlignCenter},
-		{Name: "Points", Align: text.AlignCenter},
-		{Name: "Record", Align: text.AlignCenter},
+		{Name: PtsScore, Align: text.AlignCenter},
+		{Name: RecScore, Align: text.AlignCenter},
 		{Name: TotalPts, Align: text.AlignCenter},
-		{Name: AllPlayW, Align: text.AlignCenter},
-		{Name: AllPlayL, Align: text.AlignCenter},
-		{Name: AllPlayT, Align: text.AlignCenter},
+		{Name: AllPlayRecord, Align: text.AlignCenter},
 		{Name: AllPlayPct, Align: text.AlignCenter},
 	}
 
 	sortBy := []table.SortBy{
 		{Name: TotalPts, Mode: table.DscNumeric},
-		{Name: Record, Mode: table.DscNumeric},
+		{Name: RecScore, Mode: table.DscNumeric},
 		{Name: AllPlayPct, Mode: table.DscNumeric},
 	}
 
-	t.SetColumnConfigs(fantasyPoints)
+	t.SetColumnConfigs(columnConfigs)
 	t.SortBy(sortBy)
 	return t.Render() + "\n\nTeam names are hidden to protect the eyes and minds of the pure of soul."
 }
@@ -471,6 +467,28 @@ func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, l
 	}
 
 	return franchiseStore
+}
+
+func populateRecords(franchises []Franchise) []Franchise {
+	for index := range franchises {
+		franchises[index].Record =
+			strconv.Itoa(franchises[index].RecordWins) + " " +
+				strconv.Itoa(franchises[index].RecordLosses) + " " +
+				strconv.Itoa(franchises[index].RecordTies)
+	}
+
+	return franchises
+}
+
+func populateAllPlayRecords(franchises []Franchise) []Franchise {
+	for index := range franchises {
+		franchises[index].AllPlayRecord =
+			strconv.Itoa(franchises[index].AllPlayWins) + " " +
+				strconv.Itoa(franchises[index].AllPlayLosses) + " " +
+				strconv.Itoa(franchises[index].AllPlayTies)
+	}
+
+	return franchises
 }
 
 func convertStringToInteger(str string) int {

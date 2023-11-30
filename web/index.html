@@ -1,12 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MFL Scoring</title>
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-    <script src="script.js"></script>
+    <table
+      class="homepagemodule report"
+      id="standings"
+    >
+      <caption>
+<span>League Standings</span>
+      </caption>
+      <tbody>
+        <tr>
+          <th class="fname" title="Franchise Name">Franchise</th>
+          <th class="oname" title="Owner Name">Owner</th>
+          <th class="h2hw" title="Overall Wins-Losses-Ties">W-L-T</th>
+          <th class="pf" title="Points For (Total Year-to-Date Points Scored)">
+            PF
+          </th>
+          <th
+            class="champfntsypts"
+            title="Championship points awarded based on fantasy points"
+          >
+            Points Score
+          </th>
+          <th
+            class="champrcrdpts"
+            title="Championship points awarded based on record"
+          >
+            Record Score
+          </th>
+          <th class="ttlscore" title="Total Championship Points">
+            Total Score
+          </th>
+          <th class="apr" title="AllPlay Record">AllPlay W-L-T</th>
+          <th class="eff" title="AllPlay Percentage">AllPlay %</th>
+        </tr>
+        <tr class="oddtablerow">
+          <td class="fname">
+            <b><a
+                title="Owner: Ian, Record: 10-4-0, PF: 1437.5"
+                class="franchise_0010"
+                href="https://www46.myfantasyleague.com/2023/options?L=15781&amp;F=0010&amp;O=01"
+                >FUN is a 3-letter Word</a
+              ></b>
+          </td>
+          <td class="h2hwlt">10-4-0</td>
+          <td class="h2hpct">.714</td>
+          <td class="strk">W3</td>
+          <td class="pf">1437.5</td>
+          <td class="avgpf">119.8</td>
+          <td class="pa">1504.0</td>
+          <td class="avgpa">107.4</td>
+          <td class="eff">87.5</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>Sort Table Rows by Clicking on the Table Headers - Ascending and Descending (jQuery)</p>
+<div class="container">
+	
+	<div class="table">
+		<div class="table-header">
+			<div class="header__item">
+                <a id="name" class="filter__link" href="#">Team Name</a></div>
+			<div class="header__item">
+                <a id="wins" class="filter__link filter__link--number" href="#">Wins</a></div>
+			<div class="header__item">
+                <a id="draws" class="filter__link filter__link--number" href="#">Draws</a></div>
+			<div class="header__item">
+                <a id="losses" class="filter__link filter__link--number" href="#">Losses</a></div>
+			<div class="header__item">
+                <a id="total" class="filter__link filter__link--number" href="#">Total</a></div>
+		</div>
+		<div class="table-content">	
+			<div class="table-row">		
+				<div class="table-data">Tom</div>
+				<div class="table-data">2</div>
+				<div class="table-data">0</div>
+				<div class="table-data">1</div>
+				<div class="table-data">5</div>
+			</div>
+			<div class="table-row">
+				<div class="table-data">Dick</div>
+				<div class="table-data">1</div>
+				<div class="table-data">1</div>
+				<div class="table-data">2</div>
+				<div class="table-data">3</div>
+			</div>
+			<div class="table-row">
+				<div class="table-data">Harry</div>
+				<div class="table-data">0</div>
+				<div class="table-data">2</div>
+				<div class="table-data">2</div>
+				<div class="table-data">2</div>
+			</div>
+		</div>	
+	</div>
+</div>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>
+<script src="script.js"></script>
+<script src="table.js"></script>
 </body>
 </html>
