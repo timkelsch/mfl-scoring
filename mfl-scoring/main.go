@@ -289,7 +289,8 @@ func printScoringTableCouthly(teams Franchises) string {
 
 	t.SetColumnConfigs(columnConfigs)
 	t.SortBy(sortBy)
-	return t.Render() + "\n\nTeam names are hidden to protect the eyes and minds of the pure of soul."
+	return t.Render() +
+		"\n\nTeam names are hidden to protect the eyes and minds of the pure of soul."
 }
 
 func calculateTotalScore(franchises Franchises) Franchises {
@@ -312,7 +313,8 @@ func calculatePointsScore(franchises Franchises) Franchises {
 		var teamsTied float64 = 1
 		for j := i + 1; j < len(franchises); j++ {
 			if franchises[j].PointsFor == currentFantasyPoints {
-				currentPointsForGrabs = currentPointsForGrabs + float64(len(franchises)) - float64(i) - teamsTied
+				currentPointsForGrabs = currentPointsForGrabs + float64(len(franchises)) -
+					float64(i) - teamsTied
 				teamsTied++
 			} else {
 				break
@@ -331,7 +333,8 @@ func calculatePointsScore(franchises Franchises) Franchises {
 
 func calculateRecordMagic(franchises Franchises) Franchises {
 	for i := 0; i < len(franchises); i++ {
-		franchises[i].RecordMagic = float64(franchises[i].RecordWins*1) + (float64(franchises[i].RecordTies) * 0.5)
+		franchises[i].RecordMagic = float64(franchises[i].RecordWins*1) +
+			(float64(franchises[i].RecordTies) * 0.5)
 	}
 
 	return franchises
@@ -344,7 +347,8 @@ func calculateRecordScore(franchises Franchises) Franchises {
 		var teamsTied float64 = 1
 		for j := i + 1; j < len(franchises); j++ {
 			if franchises[j].RecordMagic == currentMagicPoints {
-				currentPointsForGrabs = currentPointsForGrabs + float64(len(franchises)) - float64(i) - teamsTied
+				currentPointsForGrabs = currentPointsForGrabs + float64(len(franchises)) -
+					float64(i) - teamsTied
 				teamsTied++
 			} else {
 				break
@@ -362,7 +366,8 @@ func calculateRecordScore(franchises Franchises) Franchises {
 }
 
 func getFranchiseDetails(apiKey string) LeagueResponse {
-	LeagueAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueAPIQuery + "&" + LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
+	LeagueAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueAPIQuery + "&" +
+		LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
 	// fmt.Println("LeagueApiURL: " + LeagueAPIURL) asdf
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -395,7 +400,8 @@ func getFranchiseDetails(apiKey string) LeagueResponse {
 }
 
 func getLeagueStandings(apiKey string) LeagueStandingsResponse {
-	LeagueStandingsAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueStandingsAPIQuery + "&" + LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
+	LeagueStandingsAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueStandingsAPIQuery + "&" +
+		LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
 	// fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsAPIURL)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -472,8 +478,8 @@ func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, l
 func populateRecords(franchises []Franchise) []Franchise {
 	for index := range franchises {
 		franchises[index].Record =
-			strconv.Itoa(franchises[index].RecordWins) + " " +
-				strconv.Itoa(franchises[index].RecordLosses) + " " +
+			strconv.Itoa(franchises[index].RecordWins) + "-" +
+				strconv.Itoa(franchises[index].RecordLosses) + "-" +
 				strconv.Itoa(franchises[index].RecordTies)
 	}
 
@@ -483,8 +489,8 @@ func populateRecords(franchises []Franchise) []Franchise {
 func populateAllPlayRecords(franchises []Franchise) []Franchise {
 	for index := range franchises {
 		franchises[index].AllPlayRecord =
-			strconv.Itoa(franchises[index].AllPlayWins) + " " +
-				strconv.Itoa(franchises[index].AllPlayLosses) + " " +
+			strconv.Itoa(franchises[index].AllPlayWins) + "-" +
+				strconv.Itoa(franchises[index].AllPlayLosses) + "-" +
 				strconv.Itoa(franchises[index].AllPlayTies)
 	}
 
