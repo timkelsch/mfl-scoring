@@ -184,7 +184,10 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	fmt.Printf("requestContext.QueryStringParameters: %v\n", request.QueryStringParameters)
 	if outputFormat, exists := request.QueryStringParameters["output"]; exists {
 		if outputFormat == "json" {
-			headers := map[string]string{"content-type": "application/json"}
+			headers := map[string]string{
+				"content-type":                "application/json",
+				"Access-Control-Allow-Origin": "*",
+			}
 			body, err := json.Marshal(franchisesWithStandingsAndAllplay)
 			if err != nil {
 				panic(err)
