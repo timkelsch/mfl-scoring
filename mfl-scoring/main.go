@@ -639,7 +639,7 @@ func appendAllPlay(franchises []Franchise, allPlayTeamData []AllPlayTeamStats) [
 				log.Fatal(err)
 			}
 			franchises[franchise].AllPlayPercentage = allPlayPct
-			fmt.Printf("Franchise: %d - Team: %d - FALP: %d - TALP: %s",
+			fmt.Printf("Franchise: %d - Team: %d - FALP: %d - TALP: %s\n",
 				franchise, team, franchises[franchise].AllPlayWins, allPlayTeamData[team].AllPlayWins)
 		}
 	}
