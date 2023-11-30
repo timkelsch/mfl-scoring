@@ -547,6 +547,7 @@ func convertStringToInteger(str string) int {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Printf("CSTI - str: %s - int: %d\n", str, integer)
 
 	return integer
 }
