@@ -621,22 +621,22 @@ func scrape() []AllPlayTeamStats {
 
 func appendAllPlay(franchises []Franchise, allPlayTeamData []AllPlayTeamStats) []Franchise {
 	fmt.Println("allPlayTeamData: ", allPlayTeamData)
-	for franchise := range franchises {
-		for team := range allPlayTeamData {
-			if franchises[franchise].TeamName != allPlayTeamData[team].FranchiseName {
+	for indexA, franchiseObj := range franchises {
+		for indexB, teamObj := range allPlayTeamData {
+			if franchises[indexA].TeamName != allPlayTeamData[indexB].FranchiseName {
 				continue
 			}
-			franchises[franchise].AllPlayWins = convertStringToInteger(allPlayTeamData[team].AllPlayWins)
-			franchises[franchise].AllPlayLosses = convertStringToInteger(allPlayTeamData[team].AllPlayLosses)
-			franchises[franchise].AllPlayTies = convertStringToInteger(allPlayTeamData[team].AllPlayTies)
-			franchises[franchise].AllPlayPercentageString = allPlayTeamData[team].AllPlayPercentage
-			allPlayPct, err := strconv.ParseFloat(allPlayTeamData[team].AllPlayPercentage, 64)
+			franchises[indexA].AllPlayWins = convertStringToInteger(allPlayTeamData[indexB].AllPlayWins)
+			franchises[indexA].AllPlayLosses = convertStringToInteger(allPlayTeamData[indexB].AllPlayLosses)
+			franchises[indexA].AllPlayTies = convertStringToInteger(allPlayTeamData[indexB].AllPlayTies)
+			franchises[indexA].AllPlayPercentageString = allPlayTeamData[indexB].AllPlayPercentage
+			allPlayPct, err := strconv.ParseFloat(allPlayTeamData[indexB].AllPlayPercentage, 64)
 			if err != nil {
 				log.Fatal(err)
 			}
-			franchises[franchise].AllPlayPercentage = allPlayPct
-			fmt.Printf("Franchise: %d - Team: %d - FALP: %d - TALP: %s\n",
-				franchise, team, franchises[franchise].AllPlayWins, allPlayTeamData[team].AllPlayWins)
+			franchises[indexA].AllPlayPercentage = allPlayPct
+			fmt.Printf("Franchise: %s - Team: %s - FALP: %d - TALP: %s\n",
+				franchiseObj.TeamName, teamObj.FranchiseName, franchises[indexA].AllPlayWins, allPlayTeamData[indexB].AllPlayWins)
 			// Here everything is correct
 			fmt.Println("franchisest: ", franchises)
 		}
