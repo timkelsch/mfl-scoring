@@ -157,11 +157,11 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	calculateTotalScore(franchisesWithStandings)
 
 	// Sort by TotalScore, then by all-play percentage (whatever that ends up being per support case from MFL)
-	sort.Sort(ByTotalScore{franchisesWithStandings})
+	// sort.Sort(ByTotalScore{franchisesWithStandings})
 
 	allPlayTeamData := scrape()
 	franchisesWithStandingsAndAllplay := appendAllPlay(franchisesWithStandings, allPlayTeamData)
-	// fmt.Print(franchisesWithStandingsAndAllplay)
+	fmt.Print(franchisesWithStandingsAndAllplay)
 
 	sortedFranchises := sortFranchises(franchisesWithStandingsAndAllplay)
 
@@ -607,7 +607,7 @@ func scrape() []AllPlayTeamStats {
 		}
 	}
 
-	// fmt.Println("allPlayTeamsStatsReturn: ", allPlayTeamsStatsReturn)
+	fmt.Println("allPlayTeamsStatsReturn: ", allPlayTeamsStatsReturn)
 	return allPlayTeamsStatsReturn
 }
 
@@ -615,10 +615,14 @@ func appendAllPlay(franchises []Franchise, allPlayTeamData []AllPlayTeamStats) [
 	for franchise := range franchises {
 		for team := range allPlayTeamData {
 			if franchises[franchise].TeamName == allPlayTeamData[team].FranchiseName {
-				franchises[franchise].AllPlayWins = convertStringToInteger(allPlayTeamData[team].AllPlayWins)
-				franchises[franchise].AllPlayLosses = convertStringToInteger(allPlayTeamData[team].AllPlayLosses)
-				franchises[franchise].AllPlayTies = convertStringToInteger(allPlayTeamData[team].AllPlayTies)
-				franchises[franchise].AllPlayPercentage = allPlayTeamData[team].AllPlayPercentage
+				franchises[franchise].AllPlayWins =
+					convertStringToInteger(allPlayTeamData[team].AllPlayWins)
+				franchises[franchise].AllPlayLosses =
+					convertStringToInteger(allPlayTeamData[team].AllPlayLosses)
+				franchises[franchise].AllPlayTies =
+					convertStringToInteger(allPlayTeamData[team].AllPlayTies)
+				franchises[franchise].AllPlayPercentage =
+					allPlayTeamData[team].AllPlayPercentage
 			}
 		}
 	}
