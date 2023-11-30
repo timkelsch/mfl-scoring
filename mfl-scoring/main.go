@@ -643,6 +643,6 @@ func appendAllPlay(franchises []Franchise, allPlayTeamData []AllPlayTeamStats) [
 				franchise, team, franchises[franchise].AllPlayWins, allPlayTeamData[team].AllPlayWins)
 		}
 	}
-
+	fmt.Println("franchises: ", franchises)
 	return franchises
 }
