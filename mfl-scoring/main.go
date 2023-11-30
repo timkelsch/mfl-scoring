@@ -67,26 +67,28 @@ type LeagueStandingsResponse struct {
 }
 
 type Franchise struct {
-	TeamID            string
-	TeamName          string
-	OwnerName         string
-	RecordWins        int
-	RecordLosses      int
-	RecordTies        int
-	Record            string
-	PointsFor         float64
-	PointsForString   string
-	PointScore        float64
-	PointScoreString  string
-	RecordMagic       float64
-	RecordScore       float64
-	RecordScoreString string
-	TotalScore        string
-	AllPlayWins       int
-	AllPlayLosses     int
-	AllPlayTies       int
-	AllPlayRecord     string
-	AllPlayPercentage string
+	TeamID                  string
+	TeamName                string
+	OwnerName               string
+	RecordWins              int
+	RecordLosses            int
+	RecordTies              int
+	Record                  string
+	PointsFor               float64
+	PointsForString         string
+	PointScore              float64
+	PointScoreString        string
+	RecordMagic             float64
+	RecordScore             float64
+	RecordScoreString       string
+	TotalScoreString        string
+	TotalScore              float64
+	AllPlayWins             int
+	AllPlayLosses           int
+	AllPlayTies             int
+	AllPlayRecord           string
+	AllPlayPercentageString string
+	AllPlayPercentage       float64
 }
 
 const (
@@ -218,7 +220,7 @@ func (f ByRecordMagic) Less(i, j int) bool {
 }
 
 func (f ByTotalScore) Less(i, j int) bool {
-	return f.Franchises[i].TotalScore > f.Franchises[j].TotalScore
+	return f.Franchises[i].TotalScoreString > f.Franchises[j].TotalScoreString
 }
 
 type ByAllPlayPercentage []Franchise
@@ -251,7 +253,7 @@ func sortFranchises(teams Franchises) Franchises {
 	// sort.Sort(ByPointsFor1(teams))
 	sort.Sort(ByTotalScore1(teams))
 	for _, team := range teams {
-		fmt.Printf("totalScore: %s, recordScore: %g, allPlayPct: %s \n",
+		fmt.Printf("totalScore: %g, recordScore: %g, allPlayPct: %g \n",
 			team.TotalScore, team.RecordScore, team.AllPlayPercentage)
 		fmt.Println("")
 	}
@@ -275,7 +277,7 @@ func printScoringTableUncouthly(teams Franchises) string {
 		AllPlayRecord, AllPlayPct})
 	for _, o := range teams {
 		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.Record, o.PointsForString, o.PointScore,
-			o.RecordScoreString, o.TotalScore, o.AllPlayRecord, o.AllPlayPercentage})
+			o.RecordScoreString, o.TotalScoreString, o.AllPlayRecord, o.AllPlayPercentageString})
 	}
 
 	columnConfigs := []table.ColumnConfig{
@@ -307,7 +309,7 @@ func printScoringTableCouthly(teams Franchises) string {
 		AllPlayRecord, AllPlayPct})
 	for _, o := range teams {
 		t.AppendRow([]interface{}{o.TeamID, o.Record, o.PointsForString, o.PointScore,
-			o.RecordScoreString, o.TotalScore, o.AllPlayRecord, o.AllPlayPercentage})
+			o.RecordScoreString, o.TotalScoreString, o.AllPlayRecord, o.AllPlayPercentageString})
 	}
 
 	columnConfigs := []table.ColumnConfig{
@@ -335,7 +337,9 @@ func printScoringTableCouthly(teams Franchises) string {
 func calculateTotalScore(franchises Franchises) Franchises {
 	for i := range franchises {
 		// for i := 0; i < len(franchises); i++ {
-		franchises[i].TotalScore = strconv.FormatFloat(franchises[i].PointScore+franchises[i].RecordScore, 'f', 1, 64)
+		franchises[i].TotalScore = franchises[i].PointScore + franchises[i].RecordScore
+		franchises[i].TotalScoreString =
+			strconv.FormatFloat(franchises[i].PointScore+franchises[i].RecordScore, 'f', 1, 64)
 	}
 
 	return franchises
@@ -486,7 +490,8 @@ func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse 
 	}
 }
 
-func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse, leagueStandingsResponse LeagueStandingsResponse) []Franchise {
+func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse,
+	leagueStandingsResponse LeagueStandingsResponse) []Franchise {
 	numLFranchises := len(franchiseDetailsResponse.League.Franchises.Franchise)
 	numLSFranchises := len(leagueStandingsResponse.LeagueStandings.Franchise)
 
@@ -616,16 +621,22 @@ func scrape() []AllPlayTeamStats {
 func appendAllPlay(franchises []Franchise, allPlayTeamData []AllPlayTeamStats) []Franchise {
 	for franchise := range franchises {
 		for team := range allPlayTeamData {
-			if franchises[franchise].TeamName == allPlayTeamData[team].FranchiseName {
-				franchises[franchise].AllPlayWins =
-					convertStringToInteger(allPlayTeamData[team].AllPlayWins)
-				franchises[franchise].AllPlayLosses =
-					convertStringToInteger(allPlayTeamData[team].AllPlayLosses)
-				franchises[franchise].AllPlayTies =
-					convertStringToInteger(allPlayTeamData[team].AllPlayTies)
-				franchises[franchise].AllPlayPercentage =
-					allPlayTeamData[team].AllPlayPercentage
+			if franchises[franchise].TeamName != allPlayTeamData[team].FranchiseName {
+				continue
 			}
+			franchises[franchise].AllPlayWins =
+				convertStringToInteger(allPlayTeamData[team].AllPlayWins)
+			franchises[franchise].AllPlayLosses =
+				convertStringToInteger(allPlayTeamData[team].AllPlayLosses)
+			franchises[franchise].AllPlayTies =
+				convertStringToInteger(allPlayTeamData[team].AllPlayTies)
+			franchises[franchise].AllPlayPercentageString =
+				allPlayTeamData[team].AllPlayPercentage
+			allPlayPct, err := strconv.ParseFloat(allPlayTeamData[team].AllPlayPercentage, 64)
+			if err != nil {
+				log.Fatal(err)
+			}
+			franchises[franchise].AllPlayPercentage = allPlayPct
 		}
 	}
 

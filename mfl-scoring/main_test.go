@@ -75,9 +75,9 @@ func TestCalculateTotalScore(t *testing.T) {
 				{PointScore: 2, RecordScore: 1.5},
 			},
 			expected: Franchises{
-				Franchise{PointScore: 3, RecordScore: 4.5, TotalScore: "7.5"},
-				Franchise{PointScore: 7, RecordScore: 9, TotalScore: "16.0"},
-				Franchise{PointScore: 2, RecordScore: 1.5, TotalScore: "3.5"},
+				Franchise{PointScore: 3, RecordScore: 4.5, TotalScoreString: "7.5"},
+				Franchise{PointScore: 7, RecordScore: 9, TotalScoreString: "16.0"},
+				Franchise{PointScore: 2, RecordScore: 1.5, TotalScoreString: "3.5"},
 			},
 		},
 	}
@@ -86,9 +86,9 @@ func TestCalculateTotalScore(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result := calculateTotalScore(tc.franchises)
 			for i := range result {
-				if result[i].TotalScore != tc.expected[i].TotalScore {
+				if result[i].TotalScoreString != tc.expected[i].TotalScoreString {
 					t.Errorf("Mismatch in test case %s for franchise %d: Expected %s, got %s",
-						tc.name, i, tc.expected[i].TotalScore, result[i].TotalScore)
+						tc.name, i, tc.expected[i].TotalScoreString, result[i].TotalScoreString)
 				}
 			}
 		})
