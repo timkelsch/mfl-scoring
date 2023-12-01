@@ -85,7 +85,7 @@ type Franchise struct {
 	TotalScore              float64
 	AllPlayWins             int
 	AllPlayLosses           int
-	AllPlayTies             string
+	AllPlayTies             int
 	AllPlayRecord           string
 	AllPlayPercentageString string
 	AllPlayPercentage       float64
@@ -136,10 +136,9 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	// Populate the slice of Franchise objects with league standing data
 	franchisesWithStandings := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
 	populatedRecords := populateRecords(franchisesWithStandings)
-	populatedAllPlayRecords := populateAllPlayRecords(populatedRecords)
 
 	// Put teams in order of most fantasy points scored
-	sort.Sort(ByPointsFor{populatedAllPlayRecords})
+	sort.Sort(ByPointsFor{populatedRecords})
 	// fmt.Printf("%+v \n", franchisesWithStandings)
 
 	// Assign points to teams based on fantasy points scored, sharing points as necessary when teams tie
@@ -163,12 +162,13 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	allPlayTeamData := scrape()
 	franchisesWithStandingsAndAllplay := appendAllPlay(franchisesWithStandings, allPlayTeamData)
-	fmt.Print(franchisesWithStandingsAndAllplay)
+	populatedAllPlayRecords := populateAllPlayRecords(franchisesWithStandingsAndAllplay)
+	fmt.Println("populatedAllPlayRecords: ", populatedAllPlayRecords)
 
-	sortedFranchises := sortFranchises(franchisesWithStandingsAndAllplay)
+	sortedFranchises := sortFranchises(populatedAllPlayRecords)
 
-	fmt.Printf("requestContext.DomainName: %v\n", request.RequestContext.DomainName)
-	fmt.Printf("requestContext.QueryStringParameters: %v\n", request.QueryStringParameters)
+	// fmt.Printf("requestContext.DomainName: %v\n", request.RequestContext.DomainName)
+	// fmt.Printf("requestContext.QueryStringParameters: %v\n", request.QueryStringParameters)
 	if outputFormat, exists := request.QueryStringParameters["output"]; exists {
 		if outputFormat == "json" {
 			headers := map[string]string{
@@ -532,11 +532,12 @@ func populateRecords(franchises []Franchise) []Franchise {
 }
 
 func populateAllPlayRecords(franchises []Franchise) []Franchise {
+	fmt.Printf("PAPR: ")
 	for index := range franchises {
 		franchises[index].AllPlayRecord =
 			strconv.Itoa(franchises[index].AllPlayWins) + "-" +
 				strconv.Itoa(franchises[index].AllPlayLosses) + "-" +
-				franchises[index].AllPlayTies
+				strconv.Itoa(franchises[index].AllPlayTies)
 	}
 
 	return franchises
@@ -626,7 +627,7 @@ func appendAllPlay(franchises []Franchise, allPlayTeamData []AllPlayTeamStats) [
 			if franchises[indexA].TeamName == allPlayTeamData[indexB].FranchiseName {
 				franchises[indexA].AllPlayWins = convertStringToInteger(allPlayTeamData[indexB].AllPlayWins)
 				franchises[indexA].AllPlayLosses = convertStringToInteger(allPlayTeamData[indexB].AllPlayLosses)
-				franchises[indexA].AllPlayTies = allPlayTeamData[indexB].AllPlayTies
+				franchises[indexA].AllPlayTies = convertStringToInteger(allPlayTeamData[indexB].AllPlayTies)
 				franchises[indexA].AllPlayPercentageString = allPlayTeamData[indexB].AllPlayPercentage
 				allPlayPct, err := strconv.ParseFloat(allPlayTeamData[indexB].AllPlayPercentage, 64)
 				if err != nil {
