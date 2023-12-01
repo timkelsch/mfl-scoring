@@ -85,7 +85,7 @@ type Franchise struct {
 	TotalScore              float64
 	AllPlayWins             int
 	AllPlayLosses           int
-	AllPlayTies             int
+	AllPlayTies             string
 	AllPlayRecord           string
 	AllPlayPercentageString string
 	AllPlayPercentage       float64
@@ -536,7 +536,7 @@ func populateAllPlayRecords(franchises []Franchise) []Franchise {
 		franchises[index].AllPlayRecord =
 			strconv.Itoa(franchises[index].AllPlayWins) + "-" +
 				strconv.Itoa(franchises[index].AllPlayLosses) + "-" +
-				strconv.Itoa(franchises[index].AllPlayTies)
+				franchises[index].AllPlayTies
 	}
 
 	return franchises
@@ -628,19 +628,19 @@ func appendAllPlay(franchises []Franchise, allPlayTeamData []AllPlayTeamStats) [
 			}
 			franchises[indexA].AllPlayWins = convertStringToInteger(allPlayTeamData[indexB].AllPlayWins)
 			franchises[indexA].AllPlayLosses = convertStringToInteger(allPlayTeamData[indexB].AllPlayLosses)
-			franchises[indexA].AllPlayTies = convertStringToInteger(allPlayTeamData[indexB].AllPlayTies)
+			franchises[indexA].AllPlayTies = allPlayTeamData[indexB].AllPlayTies
 			franchises[indexA].AllPlayPercentageString = allPlayTeamData[indexB].AllPlayPercentage
 			allPlayPct, err := strconv.ParseFloat(allPlayTeamData[indexB].AllPlayPercentage, 64)
 			if err != nil {
 				log.Fatal(err)
 			}
 			franchises[indexA].AllPlayPercentage = allPlayPct
+			// Here AllPlay W/L/T is correct
 			fmt.Printf("Franchise: %s - Team: %s - FALP: %d - TALP: %d\n",
 				franchiseObj.TeamName, teamObj.FranchiseName, franchises[indexA].AllPlayWins, convertStringToInteger(allPlayTeamData[indexB].AllPlayWins))
-			// Here everything is correct
+			// Here AllPlay W/L/T is gone. WTF
 			fmt.Println("franchisest: ", franchises)
 		}
 	}
-	// Here everything is gone. WTF
 	return franchises
 }
