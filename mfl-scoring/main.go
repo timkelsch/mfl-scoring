@@ -636,7 +636,7 @@ func appendAllPlay(franchises []Franchise, allPlayTeamData []AllPlayTeamStats) [
 			}
 			franchises[indexA].AllPlayPercentage = allPlayPct
 			fmt.Printf("Franchise: %s - Team: %s - FALP: %d - TALP: %s\n",
-				franchiseObj.TeamName, teamObj.FranchiseName, franchises[indexA].AllPlayWins, allPlayTeamData[indexB].AllPlayWins)
+				franchiseObj.TeamName, teamObj.FranchiseName, franchises[indexA].AllPlayWins, convertStringToInteger(allPlayTeamData[indexB].AllPlayWins))
 			// Here everything is correct
 			fmt.Println("franchisest: ", franchises)
 		}
