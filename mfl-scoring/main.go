@@ -623,23 +623,22 @@ func appendAllPlay(franchises []Franchise, allPlayTeamData []AllPlayTeamStats) [
 	fmt.Println("allPlayTeamData: ", allPlayTeamData)
 	for indexA, franchiseObj := range franchises {
 		for indexB, teamObj := range allPlayTeamData {
-			if franchises[indexA].TeamName != allPlayTeamData[indexB].FranchiseName {
-				continue
+			if franchises[indexA].TeamName == allPlayTeamData[indexB].FranchiseName {
+				franchises[indexA].AllPlayWins = convertStringToInteger(allPlayTeamData[indexB].AllPlayWins)
+				franchises[indexA].AllPlayLosses = convertStringToInteger(allPlayTeamData[indexB].AllPlayLosses)
+				franchises[indexA].AllPlayTies = allPlayTeamData[indexB].AllPlayTies
+				franchises[indexA].AllPlayPercentageString = allPlayTeamData[indexB].AllPlayPercentage
+				allPlayPct, err := strconv.ParseFloat(allPlayTeamData[indexB].AllPlayPercentage, 64)
+				if err != nil {
+					log.Fatal(err)
+				}
+				franchises[indexA].AllPlayPercentage = allPlayPct
+				// Here AllPlay W/L/T is correct
+				fmt.Printf("Franchise: %s - Team: %s - FALP: %d - TALP: %d\n",
+					franchiseObj.TeamName, teamObj.FranchiseName, franchises[indexA].AllPlayWins, convertStringToInteger(allPlayTeamData[indexB].AllPlayWins))
+				// Here AllPlay W/L/T is gone. WTF
+				fmt.Println("franchisest: ", franchises)
 			}
-			franchises[indexA].AllPlayWins = convertStringToInteger(allPlayTeamData[indexB].AllPlayWins)
-			franchises[indexA].AllPlayLosses = convertStringToInteger(allPlayTeamData[indexB].AllPlayLosses)
-			franchises[indexA].AllPlayTies = allPlayTeamData[indexB].AllPlayTies
-			franchises[indexA].AllPlayPercentageString = allPlayTeamData[indexB].AllPlayPercentage
-			allPlayPct, err := strconv.ParseFloat(allPlayTeamData[indexB].AllPlayPercentage, 64)
-			if err != nil {
-				log.Fatal(err)
-			}
-			franchises[indexA].AllPlayPercentage = allPlayPct
-			// Here AllPlay W/L/T is correct
-			fmt.Printf("Franchise: %s - Team: %s - FALP: %d - TALP: %d\n",
-				franchiseObj.TeamName, teamObj.FranchiseName, franchises[indexA].AllPlayWins, convertStringToInteger(allPlayTeamData[indexB].AllPlayWins))
-			// Here AllPlay W/L/T is gone. WTF
-			fmt.Println("franchisest: ", franchises)
 		}
 	}
 	return franchises
