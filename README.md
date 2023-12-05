@@ -29,10 +29,14 @@ I am not responsible for creation of this rule set - I merely automated the calc
 
 
 ## To Do:
-- [ ] Finish unit tests
-- [ ] Consolidate standard and AllPlay w/l/t into single fields
-- [ ] Find a better way of dealing with int/float issue in structs
 - [ ] Build minimal front end
+- [ ] Finish implementing sorting for tie breakers
+- [ ] Write unit test(s) for tie breaker sorting
+- [ ] Figure out how to get alerts when prod goes down
+- [ ] Use json files for unit tests
+- [ ] Get test coverage above 80%
+- [x] Use for range where possible
+- [x] Consolidate standard and AllPlay w/l/t into single fields
 - [x] Enable JSON output based on queryStringParameters
 - [x] Dockerize this app  
 - [x] Add points tie breaker

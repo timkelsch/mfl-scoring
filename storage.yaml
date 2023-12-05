@@ -1,7 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Resources:
-
   CicdPipeline:
     Type: 'AWS::S3::Bucket'
     Properties:
