@@ -1,6 +1,5 @@
 .PHONY: build
 
-
 AWS_REGION=us-east-1
 AWS_ACCOUNT=$(shell aws sts get-caller-identity | jq -r '.Account')
 CODE_DIR=mfl-scoring
@@ -9,9 +8,10 @@ VERSION=$(shell aws ecr get-login-password --region us-east-1 | docker login --u
   --region us-east-1 --output json --repository-name mfl-score \
   --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' | jq . -r)
 IMAGE_URI=${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/mfl-score:${VERSION}
+WEB_BUCKET='mfl.timkelsch.com'
 
 FUNCTION_NAME=mfl-scoring-MflScoringFunction-1ZmFtx9UqLKk
-FUNCTION_VERSION_PROD=15
+FUNCTION_VERSION_PROD=46
 STACK_NAME=mfl-scoring
 TEMPLATE_FILE=file://mfl-scoring.yaml
 
@@ -28,6 +28,10 @@ updatestack:
 	aws cloudformation update-stack --stack-name ${STACK_NAME} --template-body ${TEMPLATE_FILE} \
 		--capabilities CAPABILITY_IAM --parameters ParameterKey=DomainName,ParameterValue=${MFL_UNCOUTH_DOMAIN} \
 		--region ${AWS_REGION}
+
+updatestoragestack:
+	aws cloudformation update-stack --stack-name storage --template-body file://storage.yaml \
+		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
 
 deletestack:
 	aws cloudformation delete-stack --stack-name ${STACK_NAME} --region ${AWS_REGION}
@@ -54,6 +58,9 @@ pushtostage: test build package push updatelambda updatestagealias
 
 pushtoprod: test build package push updatelambda updateprodalias
 
+pushwebartifacts: 
+	aws s3 cp web s3://$(WEB_BUCKET) --recursive --include "*.*"
+
 build:
 	docker build --platform linux/amd64 -t mfl-scoring-image:mod .
 
@@ -62,3 +69,11 @@ val:
 
 lint:
 	cd ${CODE_DIR} && golangci-lint run -v
+
+createwebstack:
+	aws cloudformation create-stack --stack-name mfl-website --template-body file://website.yaml \
+		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
+
+updatewebstack:
+	aws cloudformation update-stack --stack-name mfl-website --template-body file://website.yaml \
+		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
