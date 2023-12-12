@@ -29,14 +29,14 @@ I am not responsible for creation of this rule set - I merely automated the calc
 
 
 ## To Do:
-- [ ] Change front end API from stage to prod 
+- [ ] Change front end API from stage to prod and make mflstage into stage
 - [ ] Docker container move from alpine to scratch
 - [ ] Make GET requests to MFL in parallel to improve performance
 - [ ] Put team names in front of staging stage
-- [ ] Wait until API responds to render front end
 - [ ] Write unit test(s) for tie breaker sorting
 - [ ] Use json files for unit tests
 - [ ] Get test coverage above 80%
+- [x] Wait until API responds to render front end
 - [x] Build minimal front end
 - [x] Finish implementing sorting for tie breakers
 - [x] Figure out how to get alerts when prod goes down
