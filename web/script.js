@@ -38,6 +38,9 @@ async function displayTeams() {
 
       document.querySelector("#table-content").appendChild(tr);
     });
+    
+    // Show the table
+    document.querySelector('.table').style.display = 'table';
 }
 
 function initialize() {

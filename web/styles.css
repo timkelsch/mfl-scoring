@@ -4,7 +4,8 @@ body {
     font-family: "Source Sans Pro", sans-serif;
 }
 
-table {
+.table {
+    display: none;
     border-collapse: collapse;
     width: auto;
     text-align: center;
