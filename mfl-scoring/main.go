@@ -253,7 +253,7 @@ func (f ByTotalScore) Less(i, j int) bool {
 func sortFranchises(teams Franchises) Franchises {
 	fmt.Println(teams)
 	// sort.Sort(ByAllPlayPercentage(teams))
-	// sort.Sort(ByPointsFor1(teams))
+	sort.Sort(ByPointsFor{teams})
 	sort.Sort(ByTotalScore{teams})
 	for _, team := range teams {
 		fmt.Printf("totalScore: %g, recordScore: %g, allPlayPct: %g \n",
