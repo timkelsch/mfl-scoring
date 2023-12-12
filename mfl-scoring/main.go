@@ -223,7 +223,7 @@ func (f ByRecordMagic) Less(i, j int) bool {
 
 func (f ByTotalScore) Less(i, j int) bool {
 	// Sort descending so j < i
-	return f.Franchises[j].TotalScoreString < f.Franchises[i].TotalScoreString
+	return f.Franchises[j].TotalScore < f.Franchises[i].TotalScore
 }
 
 // type ByAllPlayPercentage []Franchise
