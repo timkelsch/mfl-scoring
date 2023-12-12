@@ -31,6 +31,7 @@ I am not responsible for creation of this rule set - I merely automated the calc
 ## To Do:
 - [ ] Change front end API from stage to prod 
 - [ ] Make GET requests to MFL in parallel to improve performance
+- [ ] Put team names in front of staging stage
 - [ ] Wait until API responds to render front end
 - [ ] Write unit test(s) for tie breaker sorting
 - [ ] Use json files for unit tests
