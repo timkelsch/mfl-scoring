@@ -135,33 +135,27 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	// Populate the slice of Franchise objects with league standing data
 	franchisesWithStandings := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
-	populatedRecords := populateRecords(franchisesWithStandings)
+	populatedHeadToHeadRecords := populateHeadToHeadRecords(franchisesWithStandings)
 
 	// Put teams in order of most fantasy points scored
-	sort.Sort(ByPointsFor{populatedRecords})
-	// fmt.Printf("%+v \n", franchisesWithStandings)
+	sort.Sort(ByPointsFor{populatedHeadToHeadRecords})
+	// fmt.Printf("%+v \n", populatedHeadToHeadRecords)
 
 	// Assign points to teams based on fantasy points scored, sharing points as necessary when teams tie
-	calculatePointsScore(franchisesWithStandings)
+	calculatedPointScore := calculatePointsScore(populatedHeadToHeadRecords)
 
-	// Assign points to teams based on their record (1 point per win, 0.5 point per tie)
-	// and sort by most points so we can get the tied teams next to each other
-	calculateRecordMagic(franchisesWithStandings)
-	sort.Sort(ByRecordMagic{franchisesWithStandings})
+	// Put teams in order of best head to head record
+	calculatedRecordMagic := calculateRecordMagic(calculatedPointScore)
+	sort.Sort(ByRecordMagic{calculatedRecordMagic})
 
-	// Assign points to teams based on their record. Teams with identical records share the points they
-	// collectively earned. EG: If there are two teams tied for the best record, both teams would receive
-	// 9.5 points (10 points for first place + 9 points for second place, divided by 2 teams)
-	calculateRecordScore(franchisesWithStandings)
+	// Assign points to teams based on head to head record, sharing points as necessary when teams tie
+	calculatedRecordScore := calculateRecordScore(calculatedRecordMagic)
 
-	// Add up points assigned for fantasy points and points assigned for record
-	calculateTotalScore(franchisesWithStandings)
-
-	// Sort by TotalScore, then by all-play percentage (whatever that ends up being per support case from MFL)
-	// sort.Sort(ByTotalScore{franchisesWithStandings})
+	// totalScore = points assigned for fantasy points + points assigned for record
+	calculatedTotalScore := calculateTotalScore(calculatedRecordScore)
 
 	allPlayTeamData := scrape()
-	franchisesWithStandingsAndAllplay := appendAllPlay(franchisesWithStandings, allPlayTeamData)
+	franchisesWithStandingsAndAllplay := appendAllPlay(calculatedTotalScore, allPlayTeamData)
 	populatedAllPlayRecords := populateAllPlayRecords(franchisesWithStandingsAndAllplay)
 	fmt.Println("populatedAllPlayRecords: ", populatedAllPlayRecords)
 
@@ -207,56 +201,43 @@ type Franchises []Franchise
 type ByPointsFor struct{ Franchises }
 type ByRecordMagic struct{ Franchises }
 type ByTotalScore struct{ Franchises }
+type ByAllPlayPercentage struct{ Franchises }
 
 func (f Franchises) Len() int      { return len(f) }
 func (f Franchises) Swap(i, j int) { f[i], f[j] = f[j], f[i] }
 
 func (f ByPointsFor) Less(i, j int) bool {
-	return f.Franchises[i].PointsFor > f.Franchises[j].PointsFor
+	// Sort descending so j < i
+	return f.Franchises[j].PointsFor < f.Franchises[i].PointsFor
 }
 
 func (f ByRecordMagic) Less(i, j int) bool {
-	return f.Franchises[i].RecordMagic > f.Franchises[j].RecordMagic
+	// Sort descending so j < i
+	return f.Franchises[j].RecordMagic < f.Franchises[i].RecordMagic
 }
 
 func (f ByTotalScore) Less(i, j int) bool {
-	return f.Franchises[i].TotalScoreString > f.Franchises[j].TotalScoreString
+	// Sort descending so j < i
+	return f.Franchises[j].TotalScore < f.Franchises[i].TotalScore
 }
 
-type ByAllPlayPercentage []Franchise
-
-func (o ByAllPlayPercentage) Len() int      { return len(o) }
-func (o ByAllPlayPercentage) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
-func (o ByAllPlayPercentage) Less(i, j int) bool {
-	return o[j].AllPlayPercentage < o[i].AllPlayPercentage
-}
-
-type ByPointsFor1 []Franchise
-
-func (o ByPointsFor1) Len() int      { return len(o) }
-func (o ByPointsFor1) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
-func (o ByPointsFor1) Less(i, j int) bool {
-	return o[j].PointsFor < o[i].PointsFor
-}
-
-type ByTotalScore1 []Franchise
-
-func (o ByTotalScore1) Len() int      { return len(o) }
-func (o ByTotalScore1) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
-func (o ByTotalScore1) Less(i, j int) bool {
-	return o[j].TotalScore < o[i].TotalScore
+func (f ByAllPlayPercentage) Less(i, j int) bool {
+	// Sort descending so j < i
+	return f.Franchises[j].AllPlayPercentage < f.Franchises[i].AllPlayPercentage
 }
 
 func sortFranchises(teams Franchises) Franchises {
-	fmt.Println(teams)
-	// sort.Sort(ByAllPlayPercentage(teams))
-	// sort.Sort(ByPointsFor1(teams))
-	sort.Sort(ByTotalScore1(teams))
+	// fmt.Println(teams)
+	sort.Sort(ByAllPlayPercentage{teams})
+	sort.Sort(ByPointsFor{teams})
+	sort.Sort(ByTotalScore{teams})
+
 	for _, team := range teams {
 		fmt.Printf("totalScore: %g, recordScore: %g, allPlayPct: %g \n",
 			team.TotalScore, team.RecordScore, team.AllPlayPercentage)
 		fmt.Println("")
 	}
+
 	return teams
 }
 
@@ -524,7 +505,7 @@ func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse,
 	return franchiseStore
 }
 
-func populateRecords(franchises []Franchise) []Franchise {
+func populateHeadToHeadRecords(franchises []Franchise) []Franchise {
 	for index := range franchises {
 		franchises[index].Record =
 			strconv.Itoa(franchises[index].RecordWins) + "-" +

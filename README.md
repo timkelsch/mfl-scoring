@@ -29,12 +29,17 @@ I am not responsible for creation of this rule set - I merely automated the calc
 
 
 ## To Do:
-- [ ] Build minimal front end
-- [ ] Finish implementing sorting for tie breakers
+- [ ] Change front end API from stage to prod 
+- [ ] Docker container move from alpine to scratch
+- [ ] Make GET requests to MFL in parallel to improve performance
+- [ ] Put team names in front of staging stage
+- [ ] Wait until API responds to render front end
 - [ ] Write unit test(s) for tie breaker sorting
-- [ ] Figure out how to get alerts when prod goes down
 - [ ] Use json files for unit tests
 - [ ] Get test coverage above 80%
+- [x] Build minimal front end
+- [x] Finish implementing sorting for tie breakers
+- [x] Figure out how to get alerts when prod goes down
 - [x] Use for range where possible
 - [x] Consolidate standard and AllPlay w/l/t into single fields
 - [x] Enable JSON output based on queryStringParameters
