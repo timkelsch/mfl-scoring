@@ -11,7 +11,7 @@ Parameters:
   DomainName:
     Description: Domain name for API Gateway API
     Type: String
-    Default: 'spankme.timismydaddy.com'
+    Default: spankme.timismydaddy.com
   ApiPath:
     Description: API path IE https://abc.example.com/stage/<ApiPath>
     Type: String

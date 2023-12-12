@@ -15,6 +15,8 @@ FUNCTION_VERSION_PROD=46
 STACK_NAME=mfl-scoring
 TEMPLATE_FILE=file://mfl-scoring.yaml
 
+MFL_UNCOUTH_DOMAIN=spankme.timismydaddy.com
+
 export FUNCTION_NAME
 export AWS_REGION
 export AWS_ACCOUNT
