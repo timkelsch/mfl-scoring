@@ -144,21 +144,15 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	// Assign points to teams based on fantasy points scored, sharing points as necessary when teams tie
 	calculatedPointScore := calculatePointsScore(populatedHeadToHeadRecords)
 
-	// Assign points to teams based on their record (1 point per win, 0.5 point per tie)
-	// and sort by most record points so we can get the tied teams next to each other
+	// Put teams in order of best head to head record
 	calculatedRecordMagic := calculateRecordMagic(calculatedPointScore)
 	sort.Sort(ByRecordMagic{calculatedRecordMagic})
 
-	// Assign points to teams based on their record. Teams with identical records share the points they
-	// collectively earned. EG: If there are two teams tied for the best record, both teams would receive
-	// 9.5 points (10 points for first place + 9 points for second place, divided by 2 teams)
+	// Assign points to teams based on head to head record, sharing points as necessary when teams tie
 	calculatedRecordScore := calculateRecordScore(calculatedRecordMagic)
 
-	// Add up points assigned for fantasy points and points assigned for record
+	// totalScore = points assigned for fantasy points + points assigned for record
 	calculatedTotalScore := calculateTotalScore(calculatedRecordScore)
-
-	// Sort by TotalScore, then by all-play percentage (whatever that ends up being per support case from MFL)
-	// sort.Sort(ByTotalScore{franchisesWithStandings})
 
 	allPlayTeamData := scrape()
 	franchisesWithStandingsAndAllplay := appendAllPlay(calculatedTotalScore, allPlayTeamData)
