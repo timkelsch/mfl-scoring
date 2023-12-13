@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -128,8 +129,23 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		log.Fatal(err)
 	}
 
-	franchiseDetails := getFranchiseDetails(apiKey)
-	leagueStandings := getLeagueStandings(apiKey)
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	var franchiseDetails LeagueResponse
+	var leagueStandings LeagueStandingsResponse
+
+	go func() {
+		franchiseDetails = getFranchiseDetails(apiKey)
+		wg.Done()
+	}()
+
+	go func() {
+		leagueStandings = getLeagueStandings(apiKey)
+		wg.Done()
+	}()
+
+	wg.Wait()
 
 	checkResponseParity(franchiseDetails, leagueStandings)
 
