@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -128,8 +129,23 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		log.Fatal(err)
 	}
 
-	franchiseDetails := getFranchiseDetails(apiKey)
-	leagueStandings := getLeagueStandings(apiKey)
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	var franchiseDetails LeagueResponse
+	var leagueStandings LeagueStandingsResponse
+
+	go func() {
+		franchiseDetails = getFranchiseDetails(apiKey)
+		wg.Done()
+	}()
+
+	go func() {
+		leagueStandings = getLeagueStandings(apiKey)
+		wg.Done()
+	}()
+
+	wg.Wait()
 
 	checkResponseParity(franchiseDetails, leagueStandings)
 
@@ -157,7 +173,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	allPlayTeamData := scrape()
 	franchisesWithStandingsAndAllplay := appendAllPlay(calculatedTotalScore, allPlayTeamData)
 	populatedAllPlayRecords := populateAllPlayRecords(franchisesWithStandingsAndAllplay)
-	fmt.Println("populatedAllPlayRecords: ", populatedAllPlayRecords)
+	// fmt.Println("populatedAllPlayRecords: ", populatedAllPlayRecords)
 
 	sortedFranchises := sortFranchises(populatedAllPlayRecords)
 
@@ -232,11 +248,11 @@ func sortFranchises(teams Franchises) Franchises {
 	sort.Sort(ByPointsFor{teams})
 	sort.Sort(ByTotalScore{teams})
 
-	for _, team := range teams {
-		fmt.Printf("totalScore: %g, recordScore: %g, allPlayPct: %g \n",
-			team.TotalScore, team.RecordScore, team.AllPlayPercentage)
-		fmt.Println("")
-	}
+	// for _, team := range teams {
+	// 	fmt.Printf("totalScore: %g, recordScore: %g, allPlayPct: %g \n",
+	// 		team.TotalScore, team.RecordScore, team.AllPlayPercentage)
+	// 	fmt.Println("")
+	// }
 
 	return teams
 }
@@ -594,7 +610,7 @@ func scrape() []AllPlayTeamStats {
 }
 
 func appendAllPlay(franchises []Franchise, allPlayTeamData []AllPlayTeamStats) []Franchise {
-	fmt.Println("allPlayTeamData: ", allPlayTeamData)
+	// fmt.Println("allPlayTeamData: ", allPlayTeamData)
 	for indexA := range franchises {
 		for indexB := range allPlayTeamData {
 			if franchises[indexA].TeamName == allPlayTeamData[indexB].FranchiseName {

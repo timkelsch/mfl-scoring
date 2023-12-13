@@ -29,13 +29,13 @@ I am not responsible for creation of this rule set - I merely automated the calc
 
 
 ## To Do:
-- [ ] Change front end API from stage to prod and make mflstage into stage
-- [ ] Docker container move from alpine to scratch
-- [ ] Make GET requests to MFL in parallel to improve performance
+- [ ] Change front end API from stage to prod and make mflstage.<domain> into stage
 - [ ] Put team names in front of staging stage
 - [ ] Write unit test(s) for tie breaker sorting
 - [ ] Use json files for unit tests
 - [ ] Get test coverage above 80%
+- [-] Docker container move from alpine to scratch (tried and didn't reduce image size)
+- [x] Make GET requests to MFL in parallel to improve performance
 - [x] Wait until API responds to render front end
 - [x] Build minimal front end
 - [x] Finish implementing sorting for tie breakers
