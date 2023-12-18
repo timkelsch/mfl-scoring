@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"math"
 	"net"
 	"net/http"
@@ -27,56 +26,54 @@ import (
 )
 
 type LeagueResponse struct {
-	Version string `json:"version"`
-	League  struct {
-		Franchises struct {
-			Count     string `json:"count"`
-			Franchise []struct {
-				Name      string `json:"name"`
-				ID        string `json:"id"`
-				OwnerName string `json:"owner_name"`
-				Username  string `json:"username,omitempty"`
-			} `json:"franchise"`
-		} `json:"franchises"`
-		ID      string `json:"id"`
-		History struct {
-			League []struct {
-				URL  string `json:"url"`
-				Year string `json:"year"`
-			} `json:"league"`
-		} `json:"history"`
-		Name    string `json:"name"`
-		H2H     string `json:"h2h"`
-		BaseURL string `json:"baseURL"`
-	} `json:"league"`
+	Version  string `json:"version"`
+	League   League `json:"league"`
 	Encoding string `json:"encoding"`
+}
+
+type League struct {
+	Franchises Franchises `json:"franchises"`
+	ID         string     `json:"id"`
+	History    History    `json:"history"`
+	Name       string     `json:"name"`
+	H2H        string     `json:"h2h"`
+	BaseURL    string     `json:"baseURL"`
+}
+
+type Franchises struct {
+	Franchise []Franchise `json:"franchise"`
+}
+
+type History struct {
+	League []struct {
+		URL  string `json:"url"`
+		Year string `json:"year"`
+	} `json:"league"`
 }
 
 type LeagueStandingsResponse struct {
-	Version         string `json:"version"`
-	LeagueStandings struct {
-		Franchise []struct {
-			ID            string `json:"id"`
-			RecordWins    string `json:"h2hw"`
-			RecordLosses  string `json:"h2hl"`
-			RecordTies    string `json:"h2ht"`
-			PointsFor     string `json:"pf"`
-			PointsAgainst string `json:"pa"`
-		} `json:"franchise"`
-	} `json:"leagueStandings"`
-	Encoding string `json:"encoding"`
+	Version         string          `json:"version"`
+	LeagueStandings LeagueStandings `json:"leagueStandings"`
+	Encoding        string          `json:"encoding"`
+}
+
+type LeagueStandings struct {
+	Franchise []Franchise `json:"franchise"`
 }
 
 type Franchise struct {
-	TeamID                  string
-	TeamName                string
-	OwnerName               string
+	TeamID                  string `json:"id"`
+	TeamName                string `json:"name"`
+	OwnerName               string `json:"owner_name"`
 	RecordWins              int
+	RecordWinsString        string `json:"h2hw"`
 	RecordLosses            int
+	RecordLossesString      string `json:"h2hl"`
 	RecordTies              int
+	RecordTiesString        string `json:"h2ht"`
 	Record                  string
 	PointsFor               float64
-	PointsForString         string
+	PointsForString         string `json:"pf"`
 	PointScore              float64
 	PointScoreString        string
 	RecordMagic             float64
@@ -120,13 +117,13 @@ func main() {
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	secretCache, err := secretcache.New()
 	if err != nil {
-		log.Fatal(err)
+		return events.APIGatewayProxyResponse{}, err
 	}
 
 	var APIKeySecretID = os.Getenv("API_KEY_SECRET_ID")
 	apiKey, err := secretCache.GetSecretString(APIKeySecretID)
 	if err != nil {
-		log.Fatal(err)
+		return events.APIGatewayProxyResponse{}, err
 	}
 
 	var wg sync.WaitGroup
@@ -147,10 +144,11 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	wg.Wait()
 
-	checkResponseParity(franchiseDetails, leagueStandings)
-
 	// Populate the slice of Franchise objects with league standing data
-	franchisesWithStandings := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
+	franchisesWithStandings, err := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
+	if err != nil {
+		return events.APIGatewayProxyResponse{}, err
+	}
 	populatedHeadToHeadRecords := populateHeadToHeadRecords(franchisesWithStandings)
 
 	// Put teams in order of most fantasy points scored
@@ -171,7 +169,11 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	calculatedTotalScore := calculateTotalScore(calculatedRecordScore)
 
 	allPlayTeamData := scrape()
-	franchisesWithStandingsAndAllplay := appendAllPlay(calculatedTotalScore, allPlayTeamData)
+	franchisesWithStandingsAndAllplay, err := appendAllPlay(calculatedTotalScore, allPlayTeamData)
+	if err != nil {
+		return events.APIGatewayProxyResponse{}, err
+	}
+
 	populatedAllPlayRecords := populateAllPlayRecords(franchisesWithStandingsAndAllplay)
 	// fmt.Println("populatedAllPlayRecords: ", populatedAllPlayRecords)
 
@@ -212,34 +214,34 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	}, nil
 }
 
-type Franchises []Franchise
+// type Franchises struct { []Franchise }
 
 type ByPointsFor struct{ Franchises }
 type ByRecordMagic struct{ Franchises }
 type ByTotalScore struct{ Franchises }
 type ByAllPlayPercentage struct{ Franchises }
 
-func (f Franchises) Len() int      { return len(f) }
-func (f Franchises) Swap(i, j int) { f[i], f[j] = f[j], f[i] }
+func (f Franchises) Len() int      { return len(f.Franchise) }
+func (f Franchises) Swap(i, j int) { f.Franchise[i], f.Franchise[j] = f.Franchise[j], f.Franchise[i] }
 
 func (f ByPointsFor) Less(i, j int) bool {
 	// Sort descending so j < i
-	return f.Franchises[j].PointsFor < f.Franchises[i].PointsFor
+	return f.Franchise[j].PointsFor < f.Franchise[i].PointsFor
 }
 
 func (f ByRecordMagic) Less(i, j int) bool {
 	// Sort descending so j < i
-	return f.Franchises[j].RecordMagic < f.Franchises[i].RecordMagic
+	return f.Franchise[j].RecordMagic < f.Franchise[i].RecordMagic
 }
 
 func (f ByTotalScore) Less(i, j int) bool {
 	// Sort descending so j < i
-	return f.Franchises[j].TotalScore < f.Franchises[i].TotalScore
+	return f.Franchise[j].TotalScore < f.Franchise[i].TotalScore
 }
 
 func (f ByAllPlayPercentage) Less(i, j int) bool {
 	// Sort descending so j < i
-	return f.Franchises[j].AllPlayPercentage < f.Franchises[i].AllPlayPercentage
+	return f.Franchise[j].AllPlayPercentage < f.Franchise[i].AllPlayPercentage
 }
 
 func sortFranchises(teams Franchises) Franchises {
@@ -272,7 +274,7 @@ func printScoringTableUncouthly(teams Franchises) string {
 	t.SetOutputMirror(&bytes.Buffer{})
 	t.AppendHeader(table.Row{"Team Name", "Owner", Record, FantasyPts, PtsScore, RecScore, TotalPts,
 		AllPlayRecord, AllPlayPct})
-	for _, o := range teams {
+	for _, o := range teams.Franchise {
 		t.AppendRow([]interface{}{o.TeamName, o.OwnerName, o.Record, o.PointsForString, o.PointScore,
 			o.RecordScoreString, o.TotalScoreString, o.AllPlayRecord, o.AllPlayPercentageString})
 	}
@@ -304,7 +306,7 @@ func printScoringTableCouthly(teams Franchises) string {
 	t.SetOutputMirror(&bytes.Buffer{})
 	t.AppendHeader(table.Row{"Team ID", Record, FantasyPts, PtsScore, RecScore, TotalPts,
 		AllPlayRecord, AllPlayPct})
-	for _, o := range teams {
+	for _, o := range teams.Franchise {
 		t.AppendRow([]interface{}{o.TeamID, o.Record, o.PointsForString, o.PointScore,
 			o.RecordScoreString, o.TotalScoreString, o.AllPlayRecord, o.AllPlayPercentageString})
 	}
@@ -332,11 +334,11 @@ func printScoringTableCouthly(teams Franchises) string {
 }
 
 func calculateTotalScore(franchises Franchises) Franchises {
-	for i := range franchises {
+	for i := range franchises.Franchise {
 		// for i := 0; i < len(franchises); i++ {
-		franchises[i].TotalScore = franchises[i].PointScore + franchises[i].RecordScore
-		franchises[i].TotalScoreString =
-			strconv.FormatFloat(franchises[i].PointScore+franchises[i].RecordScore, 'f', 1, 64)
+		franchises.Franchise[i].TotalScore = franchises.Franchise[i].PointScore + franchises.Franchise[i].RecordScore
+		franchises.Franchise[i].TotalScoreString =
+			strconv.FormatFloat(franchises.Franchise[i].PointScore+franchises.Franchise[i].RecordScore, 'f', 1, 64)
 	}
 
 	return franchises
@@ -348,13 +350,13 @@ func calculatePointsScore(franchises Franchises) Franchises {
 		fmt.Print(err.Error())
 	}
 	fmt.Println(string(j)) */
-	for i := 0; i < len(franchises); {
-		currentFantasyPoints := franchises[i].PointsFor
-		var currentPointsForGrabs = float64(len(franchises) - i)
+	for i := 0; i < len(franchises.Franchise); {
+		currentFantasyPoints := franchises.Franchise[i].PointsFor
+		var currentPointsForGrabs = float64(len(franchises.Franchise) - i)
 		var teamsTied float64 = 1
-		for j := i + 1; j < len(franchises); j++ {
-			if franchises[j].PointsFor == currentFantasyPoints {
-				currentPointsForGrabs = currentPointsForGrabs + float64(len(franchises)) -
+		for j := i + 1; j < len(franchises.Franchise); j++ {
+			if franchises.Franchise[j].PointsFor == currentFantasyPoints {
+				currentPointsForGrabs = currentPointsForGrabs + float64(len(franchises.Franchise)) -
 					float64(i) - teamsTied
 				teamsTied++
 			} else {
@@ -363,8 +365,8 @@ func calculatePointsScore(franchises Franchises) Franchises {
 		}
 		var pointsPerTeam = currentPointsForGrabs / teamsTied
 		for k := 0; k < int(teamsTied); k++ {
-			franchises[i+k].PointScore = pointsPerTeam
-			franchises[i+k].PointScoreString = strconv.FormatFloat(pointsPerTeam, 'f', 1, 64)
+			franchises.Franchise[i+k].PointScore = pointsPerTeam
+			franchises.Franchise[i+k].PointScoreString = strconv.FormatFloat(pointsPerTeam, 'f', 1, 64)
 		}
 		i += int(teamsTied)
 	}
@@ -373,22 +375,22 @@ func calculatePointsScore(franchises Franchises) Franchises {
 }
 
 func calculateRecordMagic(franchises Franchises) Franchises {
-	for i := range franchises {
-		franchises[i].RecordMagic = float64(franchises[i].RecordWins*1) +
-			(float64(franchises[i].RecordTies) * 0.5)
+	for i := range franchises.Franchise {
+		franchises.Franchise[i].RecordMagic = float64(franchises.Franchise[i].RecordWins*1) +
+			(float64(franchises.Franchise[i].RecordTies) * 0.5)
 	}
 
 	return franchises
 }
 
 func calculateRecordScore(franchises Franchises) Franchises {
-	for i := 0; i < len(franchises); {
-		currentMagicPoints := franchises[i].RecordMagic
-		var currentPointsForGrabs = float64(len(franchises) - i)
+	for i := 0; i < len(franchises.Franchise); {
+		currentMagicPoints := franchises.Franchise[i].RecordMagic
+		var currentPointsForGrabs = float64(len(franchises.Franchise) - i)
 		var teamsTied float64 = 1
-		for j := i + 1; j < len(franchises); j++ {
-			if franchises[j].RecordMagic == currentMagicPoints {
-				currentPointsForGrabs = currentPointsForGrabs + float64(len(franchises)) -
+		for j := i + 1; j < len(franchises.Franchise); j++ {
+			if franchises.Franchise[j].RecordMagic == currentMagicPoints {
+				currentPointsForGrabs = currentPointsForGrabs + float64(len(franchises.Franchise)) -
 					float64(i) - teamsTied
 				teamsTied++
 			} else {
@@ -397,8 +399,8 @@ func calculateRecordScore(franchises Franchises) Franchises {
 		}
 		var pointsPerTeam = currentPointsForGrabs / teamsTied
 		for k := 0; k < int(teamsTied); k++ {
-			franchises[i+k].RecordScore = pointsPerTeam
-			franchises[i+k].RecordScoreString = strconv.FormatFloat(pointsPerTeam, 'f', 1, 64)
+			franchises.Franchise[i+k].RecordScore = pointsPerTeam
+			franchises.Franchise[i+k].RecordScoreString = strconv.FormatFloat(pointsPerTeam, 'f', 1, 64)
 		}
 		i += int(teamsTied)
 	}
@@ -475,71 +477,86 @@ func getLeagueStandings(apiKey string) LeagueStandingsResponse {
 }
 
 func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse LeagueStandingsResponse) {
-	var numFranchises = convertStringToInteger(leagueResponse.League.Franchises.Count)
 	numLeagueFranchises := len(leagueResponse.League.Franchises.Franchise)
 	numLeagueStandingsFranchises := len(leagueStandingsResponse.LeagueStandings.Franchise)
 
-	if numFranchises != numLeagueFranchises || numFranchises != numLeagueStandingsFranchises {
+	if numLeagueFranchises != numLeagueStandingsFranchises {
 		fmt.Printf(
-			"Responses don't have the same number of franchises:\n League API Franchises.Count: %d\n League API: %d\n LeagueStandings API: %d\n",
-			numFranchises, numLeagueFranchises, numLeagueStandingsFranchises)
+			"Responses don't have the same number of franchises:\n League API: %d\n LeagueStandings API: %d\n",
+			numLeagueFranchises, numLeagueStandingsFranchises)
 		os.Exit(3)
 	}
 }
 
 func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse,
-	leagueStandingsResponse LeagueStandingsResponse) []Franchise {
+	leagueStandingsResponse LeagueStandingsResponse) (Franchises, error) {
+	checkResponseParity(franchiseDetailsResponse, leagueStandingsResponse)
+
 	numLFranchises := len(franchiseDetailsResponse.League.Franchises.Franchise)
 	numLSFranchises := len(leagueStandingsResponse.LeagueStandings.Franchise)
 
-	franchiseStore := make([]Franchise, numLFranchises)
+	var err error
+	franchiseStore := Franchises{
+		Franchise: make([]Franchise, numLFranchises),
+	}
 	for i := 0; i < numLFranchises; i++ {
-		franchiseStore[i].TeamID = franchiseDetailsResponse.League.Franchises.Franchise[i].ID
-		franchiseStore[i].TeamName = franchiseDetailsResponse.League.Franchises.Franchise[i].Name
-		franchiseStore[i].OwnerName = franchiseDetailsResponse.League.Franchises.Franchise[i].OwnerName
+		franchiseStore.Franchise[i].TeamID = franchiseDetailsResponse.League.Franchises.Franchise[i].TeamID
+		franchiseStore.Franchise[i].TeamName = franchiseDetailsResponse.League.Franchises.Franchise[i].TeamName
+		franchiseStore.Franchise[i].OwnerName = franchiseDetailsResponse.League.Franchises.Franchise[i].OwnerName
 		for j := 0; j < numLSFranchises; j++ {
-			if franchiseStore[i].TeamID != leagueStandingsResponse.LeagueStandings.Franchise[j].ID {
+			if franchiseStore.Franchise[i].TeamID != leagueStandingsResponse.LeagueStandings.Franchise[j].TeamID {
 				continue
 			}
 
-			franchiseStore[i].RecordWins =
-				convertStringToInteger(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordWins)
-			franchiseStore[i].RecordLosses =
-				convertStringToInteger(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordLosses)
-			franchiseStore[i].RecordTies =
-				convertStringToInteger(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordTies)
-			var err error
-			franchiseStore[i].PointsFor, err =
-				strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor, 64)
+			franchiseStore.Franchise[i].RecordWins, err =
+				convertStringToInteger(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordWinsString)
 			if err != nil {
-				log.Fatal(err)
+				return Franchises{}, err
 			}
-			franchiseStore[i].PointsForString = leagueStandingsResponse.LeagueStandings.Franchise[j].PointsFor
+			franchiseStore.Franchise[i].RecordLosses, err =
+				convertStringToInteger(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordLossesString)
+			if err != nil {
+				return Franchises{}, err
+			}
+			franchiseStore.Franchise[i].RecordTies, err =
+				convertStringToInteger(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordTiesString)
+			if err != nil {
+				return Franchises{}, err
+			}
+			franchiseStore.Franchise[i].PointsFor, err =
+				strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsForString, 64)
+			if err != nil {
+				return Franchises{}, err
+			}
+
+			franchiseStore.Franchise[i].PointsForString = leagueStandingsResponse.LeagueStandings.Franchise[j].PointsForString
+			franchiseStore.Franchise[i].RecordWinsString = leagueStandingsResponse.LeagueStandings.Franchise[j].RecordWinsString
+			franchiseStore.Franchise[i].RecordLossesString = leagueStandingsResponse.LeagueStandings.Franchise[j].RecordLossesString
+			franchiseStore.Franchise[i].RecordTiesString = leagueStandingsResponse.LeagueStandings.Franchise[j].RecordTiesString
 		}
 	}
 
-	return franchiseStore
+	return franchiseStore, nil
 }
 
-func populateHeadToHeadRecords(franchises []Franchise) []Franchise {
-	for index := range franchises {
-		franchises[index].Record =
-			strconv.Itoa(franchises[index].RecordWins) + "-" +
-				strconv.Itoa(franchises[index].RecordLosses) + "-" +
-				strconv.Itoa(franchises[index].RecordTies)
+func populateHeadToHeadRecords(franchises Franchises) Franchises {
+	for i := 0; i < len(franchises.Franchise); i++ {
+		franchises.Franchise[i].Record =
+			strconv.Itoa(franchises.Franchise[i].RecordWins) + "-" +
+				strconv.Itoa(franchises.Franchise[i].RecordLosses) + "-" +
+				strconv.Itoa(franchises.Franchise[i].RecordTies)
 	}
 
 	return franchises
 }
 
-func convertStringToInteger(str string) int {
+func convertStringToInteger(str string) (int, error) {
 	integer, err := strconv.Atoi(str)
 	if err != nil {
-		log.Fatal(err)
+		return 0, err
 	}
-	// fmt.Printf("CSTI - str: %s - int: %d\n", str, integer)
 
-	return integer
+	return integer, nil
 }
 
 func roundFloat(val float64, precision uint) float64 {
@@ -609,39 +626,49 @@ func scrape() []AllPlayTeamStats {
 	return allPlayTeamsStatsReturn
 }
 
-func appendAllPlay(franchises []Franchise, allPlayTeamData []AllPlayTeamStats) []Franchise {
-	// fmt.Println("allPlayTeamData: ", allPlayTeamData)
-	for indexA := range franchises {
+func appendAllPlay(franchises Franchises, allPlayTeamData []AllPlayTeamStats) (Franchises, error) {
+	var err error
+
+	for indexA := range franchises.Franchise {
 		for indexB := range allPlayTeamData {
-			if franchises[indexA].TeamName == allPlayTeamData[indexB].FranchiseName {
-				franchises[indexA].AllPlayWins = convertStringToInteger(allPlayTeamData[indexB].AllPlayWins)
-				franchises[indexA].AllPlayLosses = convertStringToInteger(allPlayTeamData[indexB].AllPlayLosses)
-				franchises[indexA].AllPlayTies = convertStringToInteger(allPlayTeamData[indexB].AllPlayTies)
-				franchises[indexA].AllPlayPercentageString = allPlayTeamData[indexB].AllPlayPercentage
-				allPlayPct, err := strconv.ParseFloat(allPlayTeamData[indexB].AllPlayPercentage, 64)
-				if err != nil {
-					log.Fatal(err)
-				}
-				franchises[indexA].AllPlayPercentage = allPlayPct
-				// Here AllPlay W/L/T is correct
-				// fmt.Printf("Franchise: %s - Team: %s - FALP: %d - TALP: %d\n",
-				// franchiseObj.TeamName, teamObj.FranchiseName, franchises[indexA].AllPlayWins,
-				// convertStringToInteger(allPlayTeamData[indexB].AllPlayWins))
-				// Here AllPlay W/L/T is gone. WTF
-				// I had put populateAllPlayRecords() way too early in main
-				// fmt.Println("franchisest: ", franchises)
+			if franchises.Franchise[indexA].TeamName != allPlayTeamData[indexB].FranchiseName {
+				continue
 			}
+
+			franchises.Franchise[indexA].AllPlayWins, err = convertStringToInteger(allPlayTeamData[indexB].AllPlayWins)
+			if err != nil {
+				return Franchises{}, err
+			}
+			franchises.Franchise[indexA].AllPlayLosses, err = convertStringToInteger(allPlayTeamData[indexB].AllPlayLosses)
+			if err != nil {
+				return Franchises{}, err
+			}
+			franchises.Franchise[indexA].AllPlayTies, err = convertStringToInteger(allPlayTeamData[indexB].AllPlayTies)
+			if err != nil {
+				return Franchises{}, err
+			}
+			franchises.Franchise[indexA].AllPlayPercentageString = allPlayTeamData[indexB].AllPlayPercentage
+			if err != nil {
+				return Franchises{}, err
+			}
+			var allPlayPct float64
+			allPlayPct, err = strconv.ParseFloat(allPlayTeamData[indexB].AllPlayPercentage, 64)
+			if err != nil {
+				return Franchises{}, err
+			}
+			franchises.Franchise[indexA].AllPlayPercentage = allPlayPct
 		}
 	}
-	return franchises
+
+	return franchises, nil
 }
 
-func populateAllPlayRecords(franchises []Franchise) []Franchise {
-	for index := range franchises {
-		franchises[index].AllPlayRecord =
-			strconv.Itoa(franchises[index].AllPlayWins) + "-" +
-				strconv.Itoa(franchises[index].AllPlayLosses) + "-" +
-				strconv.Itoa(franchises[index].AllPlayTies)
+func populateAllPlayRecords(franchises Franchises) Franchises {
+	for index := range franchises.Franchise {
+		franchises.Franchise[index].AllPlayRecord =
+			strconv.Itoa(franchises.Franchise[index].AllPlayWins) + "-" +
+				strconv.Itoa(franchises.Franchise[index].AllPlayLosses) + "-" +
+				strconv.Itoa(franchises.Franchise[index].AllPlayTies)
 	}
 
 	return franchises
