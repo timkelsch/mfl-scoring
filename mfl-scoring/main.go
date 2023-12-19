@@ -245,14 +245,19 @@ func (f ByAllPlayPercentage) Less(i, j int) bool {
 }
 
 func sortFranchises(teams Franchises) Franchises {
-	// fmt.Println(teams)
+	// for _, team := range teams.Franchise {
+	// 	fmt.Printf("teamID: %s, totalScore: %g, recordScore: %g, allPlayPct: %g \n",
+	// 		team.TeamID, team.TotalScore, team.RecordScore, team.AllPlayPercentage)
+	// 	fmt.Println("")
+	// }
+
 	sort.Sort(ByAllPlayPercentage{teams})
 	sort.Sort(ByPointsFor{teams})
 	sort.Sort(ByTotalScore{teams})
 
-	// for _, team := range teams {
-	// 	fmt.Printf("totalScore: %g, recordScore: %g, allPlayPct: %g \n",
-	// 		team.TotalScore, team.RecordScore, team.AllPlayPercentage)
+	// for _, team := range teams.Franchise {
+	// 	fmt.Printf("teamID: %s, totalScore: %g, recordScore: %g, allPlayPct: %g \n",
+	// 		team.TeamID, team.TotalScore, team.RecordScore, team.AllPlayPercentage)
 	// 	fmt.Println("")
 	// }
 
@@ -330,7 +335,7 @@ func printScoringTableCouthly(teams Franchises) string {
 	t.SetColumnConfigs(columnConfigs)
 	// t.SortBy(sortBy)
 	return t.Render() +
-		"\n\nTeam names are hidden. There are some weirdos in this league.  "
+		"\n\nTeam names are hidden. There are some weirdos in this league. "
 }
 
 func calculateTotalScore(franchises Franchises) Franchises {

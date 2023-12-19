@@ -217,18 +217,18 @@ func TestSortFranchises(t *testing.T) {
 			name: "Test with same scores",
 			franchises: Franchises{
 				Franchise: []Franchise{
-					{TotalScore: 10, PointsFor: 20, AllPlayPercentage: 0.56},
-					{TotalScore: 10, PointsFor: 20, AllPlayPercentage: 0.59},
-					{TotalScore: 10, PointsFor: 20, AllPlayPercentage: 0.51},
-					{TotalScore: 10, PointsFor: 21, AllPlayPercentage: 0.51},
+					{TeamID: "3", TotalScore: 10, PointsFor: 20, AllPlayPercentage: 0.56},
+					{TeamID: "1", TotalScore: 10, PointsFor: 20, AllPlayPercentage: 0.59},
+					{TeamID: "0", TotalScore: 10, PointsFor: 20, AllPlayPercentage: 0.51},
+					{TeamID: "2", TotalScore: 10, PointsFor: 21, AllPlayPercentage: 0.51},
 				},
 			},
 			expected: Franchises{
 				Franchise: []Franchise{
-					{TotalScore: 10, PointsFor: 21, AllPlayPercentage: 0.51},
-					{TotalScore: 10, PointsFor: 20, AllPlayPercentage: 0.59},
-					{TotalScore: 10, PointsFor: 20, AllPlayPercentage: 0.56},
-					{TotalScore: 10, PointsFor: 20, AllPlayPercentage: 0.51},
+					{TeamID: "2", TotalScore: 10, PointsFor: 21, AllPlayPercentage: 0.51},
+					{TeamID: "1", TotalScore: 10, PointsFor: 20, AllPlayPercentage: 0.59},
+					{TeamID: "3", TotalScore: 10, PointsFor: 20, AllPlayPercentage: 0.56},
+					{TeamID: "0", TotalScore: 10, PointsFor: 20, AllPlayPercentage: 0.51},
 				},
 			},
 		},
@@ -236,25 +236,33 @@ func TestSortFranchises(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			errorString := "Mismatch in test case %s checking %s for franchise %d: Expected %f, got %f"
 			result := sortFranchises(tc.franchises)
 			for i := range result.Franchise {
 				if result.Franchise[i].TotalScore != tc.expected.Franchise[i].TotalScore {
-					t.Errorf("Mismatch in test case %s checking %s for franchise %d: Expected %f, got %f",
-						tc.name, "TotalScore", i, tc.expected.Franchise[i].TotalScore, result.Franchise[i].TotalScore)
+					t.Errorf(errorString, tc.name,
+						"TeamID", i, tc.expected.Franchise[i].TeamID, result.Franchise[i].TeamID)
+				}
+			}
+
+			for i := range result.Franchise {
+				if result.Franchise[i].TotalScore != tc.expected.Franchise[i].TotalScore {
+					t.Errorf(errorString, tc.name,
+						"TotalScore", i, tc.expected.Franchise[i].TotalScore, result.Franchise[i].TotalScore)
 				}
 			}
 
 			for i := range result.Franchise {
 				if result.Franchise[i].PointsFor != tc.expected.Franchise[i].PointsFor {
-					t.Errorf("Mismatch in test case %s checking %s for franchise %d: Expected %f, got %f",
-						tc.name, "PointsFor", i, tc.expected.Franchise[i].PointsFor, result.Franchise[i].PointsFor)
+					t.Errorf(errorString, tc.name,
+						"PointsFor", i, tc.expected.Franchise[i].PointsFor, result.Franchise[i].PointsFor)
 				}
 			}
 
 			for i := range result.Franchise {
 				if result.Franchise[i].AllPlayPercentage != tc.expected.Franchise[i].AllPlayPercentage {
-					t.Errorf("Mismatch in test case %s checking %s for franchise %d: Expected %f, got %f",
-						tc.name, "AllPlayPercentage", i, tc.expected.Franchise[i].AllPlayPercentage, result.Franchise[i].AllPlayPercentage)
+					t.Errorf(errorString, tc.name,
+						"AllPlayPercentage", i, tc.expected.Franchise[i].AllPlayPercentage, result.Franchise[i].AllPlayPercentage)
 				}
 			}
 		})
