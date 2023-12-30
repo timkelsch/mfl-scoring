@@ -1,6 +1,12 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
 	"reflect"
 	"testing"
 
@@ -722,57 +728,7 @@ func TestNewCollector(t *testing.T) {
 	}
 }
 
-// func TestParseRow(t *testing.T) {
-// 	// Create an HTML document
-// 	doc := `<table>
-//         <tr>
-//             <td>Team 1</td>
-//             <td></td>
-//             <td></td>
-//             <td></td>
-//             <td></td>
-//             <td></td>
-//             <td></td>
-//             <td></td>
-//             <td></td>
-//             <td></td>
-//             <td></td>
-//             <td></td>
-//             <td>10</td>
-//             <td>2</td>
-//             <td>0</td>
-//             <td>83.33%</td>
-//         </tr>
-//     </table>`
-
-// 	// Use colly to parse the HTML document
-// 	c := colly.NewCollector()
-// 	h *colly.HTMLElement = Name:tr Text:Grentest Of All Time6-12-01445.11756.082.3%697.5124.445.22226.244.047970.326 attributes:[{Namespace: Key:class Val:eventablerow}] Request:0xc000178900 Response:0xc0003ce0c0 DOM:0xc0001e6de0 Index:11
-// 	c.OnHTML("tr", func(e *colly.HTMLElement) {
-// 		h = e
-// 	})
-// 	err := c.Visit("data:text/html," + url.PathEscape(doc))
-// 	if err != nil {
-// 		t.Fatalf("Failed to parse HTML: %v", err)
-// 	}
-
-// 	// Call parseRow with the parsed *colly.HTMLElement
-// 	stats := parseRow(h)
-
-// 	// Check that the returned AllPlayTeamStats has the expected values
-// 	expected := AllPlayTeamStats{
-// 		FranchiseName:     "Team 1",
-// 		AllPlayWins:       "10",
-// 		AllPlayLosses:     "2",
-// 		AllPlayTies:       "0",
-// 		AllPlayPercentage: "83.33%",
-// 	}
-// 	if stats != expected {
-// 		t.Errorf("parseRow() = %v, want %v", stats, expected)
-// 	}
-// }
-
-// MockHTMLElement is a mock of colly.HTMLElement
+// MockHTMLElement is a mock of colly.HTMLElement.
 type MockHTMLElement struct {
 	mock.Mock
 }
@@ -833,7 +789,6 @@ func TestParseRow(t *testing.T) {
 
 	// Assert that the result is what you expect
 	if result.FranchiseName != "Test Franchise" {
-
 		t.Errorf("Expected FranchiseName to be 'Test Franchise', got '%s'", result.FranchiseName)
 	}
 
@@ -852,13 +807,12 @@ func TestParseRow(t *testing.T) {
 	if result.AllPlayPercentage != "0.66" {
 		t.Errorf("Expected AllPlayPercentage to be '0.66', got '%s'", result.AllPlayPercentage)
 	}
-
 }
 
 func TestFilterTeams(t *testing.T) {
 	// Create a slice of AllPlayTeamStats
 	allPlayTeamsStats := []AllPlayTeamStats{
-		{FranchiseName: "Team 1"},
+		{FranchiseName: Team1Name},
 		{FranchiseName: "2nd Team"},
 		{FranchiseName: "Third Team"},
 		{FranchiseName: "_Fourth Team"},
@@ -869,7 +823,7 @@ func TestFilterTeams(t *testing.T) {
 
 	// Check that the result only includes the AllPlayTeamStats whose FranchiseName starts with a letter
 	expected := []AllPlayTeamStats{
-		{FranchiseName: "Team 1"},
+		{FranchiseName: Team1Name},
 		{FranchiseName: "Third Team"},
 	}
 	if len(result) != len(expected) {
@@ -880,4 +834,108 @@ func TestFilterTeams(t *testing.T) {
 			t.Errorf("Expected FranchiseName at index %d to be '%s', got '%s'", i, expected[i].FranchiseName, v.FranchiseName)
 		}
 	}
+}
+
+type MockHTTPClient struct {
+	mock.Mock
+}
+
+func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
+	args := m.Called(req)
+	return args.Get(0).(*http.Response), args.Error(1)
+}
+
+func TestGetFranchiseDetails(t *testing.T) {
+	mockHTTPClient := new(MockHTTPClient)
+	leagueAPIURL := "http://example.com"
+
+	testLeagueResponse, _ := json.Marshal(LeagueResponse{
+		League: League{
+			Name: "fantasmo",
+		},
+	})
+	t.Run("successful request", func(t *testing.T) {
+		mockResponse := &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewBufferString(string(testLeagueResponse))),
+		}
+		mockHTTPClient.On("Do", mock.Anything).Return(mockResponse, nil)
+
+		result, err := getFranchiseDetails(mockHTTPClient, leagueAPIURL)
+		fmt.Printf("%+v\n", result)
+		mockHTTPClient.AssertExpectations(t)
+
+		if err != nil {
+			t.Errorf("Expected no error, got '%s'", err)
+		}
+
+		if result.League.Name != "fantasmo" {
+			t.Errorf("Expected result to be '%s', got '%s'", "fantasmo", result.League.Name)
+		}
+	})
+
+	t.Run("failed request", func(t *testing.T) {
+		// Setup expectations
+		mockHTTPClient.On("Do", mock.Anything).Return(nil, errors.New("network error"))
+
+		// Call the function with the mock
+		_, err := getFranchiseDetails(mockHTTPClient, leagueAPIURL)
+
+		// Assert that the expectations were met
+		mockHTTPClient.AssertExpectations(t)
+
+		// Assert that an error was returned
+		if err == nil {
+			t.Error("Expected an error, got nil")
+		}
+	})
+}
+
+func TestGetLeagueStandings(t *testing.T) {
+	mockHTTPClient := new(MockHTTPClient)
+	leagueAPIURL := "http://example.com"
+
+	testLeagueStandings, _ := json.Marshal(LeagueStandingsResponse{
+		LeagueStandings: LeagueStandings{
+			Franchise: []Franchise{
+				{TeamID: "1", TeamName: Team1Name, OwnerName: Team1Owner, RecordWinsString: "10", RecordLossesString: "5", RecordTiesString: "2", PointsForString: "0.66"},
+			},
+		},
+	})
+
+	t.Run("successful request", func(t *testing.T) {
+		mockResponse := &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewBufferString(string(testLeagueStandings))),
+		}
+		mockHTTPClient.On("Do", mock.Anything).Return(mockResponse, nil)
+
+		result, err := getLeagueStandings(mockHTTPClient, leagueAPIURL)
+		fmt.Printf("%+v", result)
+		mockHTTPClient.AssertExpectations(t)
+
+		if err != nil {
+			t.Errorf("Expected no error, got '%s'", err)
+		}
+
+		if result.LeagueStandings.Franchise[0].TeamID != "1" {
+			t.Errorf("Expected result to be '%s', got '%s'", "1", result.LeagueStandings.Franchise[0].TeamID)
+		}
+	})
+
+	t.Run("failed request", func(t *testing.T) {
+		// Setup expectations
+		mockHTTPClient.On("Do", mock.Anything).Return(nil, errors.New("network error"))
+
+		// Call the function with the mock
+		_, err := getFranchiseDetails(mockHTTPClient, leagueAPIURL)
+
+		// Assert that the expectations were met
+		mockHTTPClient.AssertExpectations(t)
+
+		// Assert that an error was returned
+		if err == nil {
+			t.Error("Expected an error, got nil")
+		}
+	})
 }

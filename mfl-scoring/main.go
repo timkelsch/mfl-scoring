@@ -132,21 +132,40 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	var franchiseDetails LeagueResponse
 	var leagueStandings LeagueStandingsResponse
 
+	errChan := make(chan error, 2)
+
 	go func() {
 		LeagueAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueAPIQuery + "&" +
 			LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
-		franchiseDetails = getFranchiseDetails(LeagueAPIURL)
+		client := &http.Client{}
+		franchiseDetails, err = getFranchiseDetails(client, LeagueAPIURL)
+		if err != nil {
+			errChan <- err
+			return
+		}
 		wg.Done()
 	}()
 
 	go func() {
 		LeagueStandingsAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueStandingsAPIQuery + "&" +
 			LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
-		leagueStandings = getLeagueStandings(LeagueStandingsAPIURL)
+		client := &http.Client{}
+		leagueStandings, err = getLeagueStandings(client, LeagueStandingsAPIURL)
+		if err != nil {
+			errChan <- err
+			return
+		}
 		wg.Done()
 	}()
 
 	wg.Wait()
+	close(errChan)
+
+	for err := range errChan {
+		if err != nil {
+			return events.APIGatewayProxyResponse{}, err
+		}
+	}
 
 	// Populate the slice of Franchise objects with league standing data
 	franchisesWithStandings, err := associateStandingsWithFranchises(franchiseDetails, leagueStandings)
@@ -417,64 +436,68 @@ func calculateRecordScore(franchises Franchises) Franchises {
 	return franchises
 }
 
-func getFranchiseDetails(leagueAPIURL string) LeagueResponse {
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+func getFranchiseDetails(client HTTPClient, leagueAPIURL string) (LeagueResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, leagueAPIURL, http.NoBody)
 	if err != nil {
-		fmt.Println(err)
+		return LeagueResponse{}, err
 	}
 
-	client := &http.Client{}
+	// client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		fmt.Println(err)
+		return LeagueResponse{}, err
 	}
 	defer response.Body.Close()
 
 	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
-		fmt.Println(err)
+		return LeagueResponse{}, err
 	}
 
 	var leagueResponse LeagueResponse
 	err = json.Unmarshal(responseData, &leagueResponse)
 	if err != nil {
-		fmt.Println(err)
+		return LeagueResponse{}, err
 	}
 
-	return leagueResponse
+	return leagueResponse, nil
 }
 
-func getLeagueStandings(leagueStandingsAPIURL string) LeagueStandingsResponse {
+func getLeagueStandings(client HTTPClient, leagueStandingsAPIURL string) (LeagueStandingsResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, leagueStandingsAPIURL, http.NoBody)
 	if err != nil {
-		fmt.Println(err)
+		return LeagueStandingsResponse{}, err
 	}
 
-	client := &http.Client{}
+	// client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		fmt.Println(err)
+		return LeagueStandingsResponse{}, err
 	}
 	defer response.Body.Close()
 
 	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
-		fmt.Println(err)
+		return LeagueStandingsResponse{}, err
 	}
 
 	var leagueStandingsResponse LeagueStandingsResponse
 	err = json.Unmarshal(responseData, &leagueStandingsResponse)
 	if err != nil {
-		fmt.Println(err)
+		return LeagueStandingsResponse{}, err
 	}
 
-	return leagueStandingsResponse
+	return leagueStandingsResponse, nil
 }
 
 func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse LeagueStandingsResponse) error {
