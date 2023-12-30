@@ -13,6 +13,12 @@ pipeline {
     }
 
     stages {
+        stage('Preparation') {
+            steps {
+                cleanWs()
+            }
+        }
+
         stage('Lint/Test') {
             steps {
                 withEnv(["PATH+GO=${GOPATH}/bin"]) {
