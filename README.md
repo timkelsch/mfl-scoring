@@ -1,3 +1,5 @@
+![Unit Tests](https://github.com/timkelsch/mfl-scoring/actions/workflows/flow.yml/badge.svg)
+
 ## Scoring Links
 Stage: https://3xi97uokw5.execute-api.us-east-1.amazonaws.com/stage/mfl-scoring </br>
 Prod: https://3xi97uokw5.execute-api.us-east-1.amazonaws.com/prod/mfl-scoring
@@ -31,6 +33,9 @@ I am not responsible for creation of this rule set - I merely automated the calc
 ## To Do:
 - [ ] Change front end API from stage to prod and make mflstage.<domain> into stage
 - [ ] Put team names in front of staging stage
+- [x] Add workflow / tests passing badge to README
+- [x] Set up GitHub Actions to automate testing
+- [x] Finish unit tests
 - [x] Write unit tests for all relevant funcs
 - [x] Write unit test(s) for tie breaker sorting
 - [-] Docker container move from alpine to scratch (tried and didn't reduce image size)
