@@ -11,6 +11,7 @@ const (
 	Team1Name  = "Team 1"
 	Team2Name  = "Team 2"
 	Team1Owner = "Owner 1"
+	Team2Owner = "Owner 2"
 )
 
 func TestRoundFloat(t *testing.T) {
@@ -275,6 +276,67 @@ func TestSortFranchises(t *testing.T) {
 	}
 }
 
+func TestPrintScoringTableUncouthly(t *testing.T) {
+	teams := Franchises{
+		Franchise: []Franchise{
+			{
+				TeamName:                Team1Name,
+				OwnerName:               Team1Owner,
+				Record:                  "12-6-0",
+				PointsForString:         "2068.4",
+				PointScore:              10.0,
+				RecordScoreString:       "9.0",
+				TotalScoreString:        "19.0",
+				AllPlayRecord:           "111-33-0",
+				AllPlayPercentageString: ".771",
+			},
+			// Add more teams as needed...
+		},
+	}
+
+	expected := `+-----------+---------+--------+-------------+-----------+------------+-----------+---------------+-----------+
+| TEAM NAME | OWNER   | W-L-T  | FANTASY PTS | PTS SCORE | RCRD SCORE | TOTAL PTS | ALLPLAY W-L-T | ALLPLAY % |
++-----------+---------+--------+-------------+-----------+------------+-----------+---------------+-----------+
+| Team 1    | Owner 1 | 12-6-0 |    2068.4   |     10    |     9.0    |    19.0   |    111-33-0   |    .771   |
++-----------+---------+--------+-------------+-----------+------------+-----------+---------------+-----------+`
+
+	result := printScoringTableUncouthly(teams)
+	if result != expected {
+		t.Errorf("Expected:\n%s\nGot:\n%s", expected, result)
+	}
+}
+
+func TestPrintScoringTableCouthly(t *testing.T) {
+	teams := Franchises{
+		Franchise: []Franchise{
+			{
+				TeamID:                  "0003",
+				Record:                  "9-9-0",
+				PointsForString:         "1603.5",
+				PointScore:              3,
+				RecordScoreString:       "5.5",
+				TotalScoreString:        "8.5",
+				AllPlayRecord:           "69-74-1",
+				AllPlayPercentageString: ".483",
+			},
+			// Add more teams as needed...
+		},
+	}
+
+	expected := `+---------+-------+-------------+-----------+------------+-----------+---------------+-----------+
+| TEAM ID | W-L-T | FANTASY PTS | PTS SCORE | RCRD SCORE | TOTAL PTS | ALLPLAY W-L-T | ALLPLAY % |
++---------+-------+-------------+-----------+------------+-----------+---------------+-----------+
+| 0003    | 9-9-0 |    1603.5   |     3     |     5.5    |    8.5    |    69-74-1    |    .483   |
++---------+-------+-------------+-----------+------------+-----------+---------------+-----------+
+
+Team names are hidden. There are some weirdos in this league. `
+
+	result := printScoringTableCouthly(teams)
+	if result != expected {
+		t.Errorf("Expected:\n%s\nGot:\n%s", expected, result)
+	}
+}
+
 func TestAssociateStandingsWithFranchises(t *testing.T) {
 	testCases := []struct {
 		name                     string
@@ -290,7 +352,7 @@ func TestAssociateStandingsWithFranchises(t *testing.T) {
 					Franchises: Franchises{
 						Franchise: []Franchise{
 							{TeamID: "1", TeamName: Team1Name, OwnerName: Team1Owner}, // define a constant for these values and use them to replace all instances of these strings
-							{TeamID: "2", TeamName: Team2Name, OwnerName: "Owner 2"},
+							{TeamID: "2", TeamName: Team2Name, OwnerName: Team2Owner},
 						},
 					},
 				},
@@ -309,7 +371,7 @@ func TestAssociateStandingsWithFranchises(t *testing.T) {
 						PointsForString: "100.0", RecordWinsString: "5", RecordLossesString: "3", RecordTiesString: "2",
 						PointsFor: 100.0, RecordWins: 5, RecordLosses: 3, RecordTies: 2,
 					},
-					{TeamID: "2", TeamName: Team2Name, OwnerName: "Owner 2",
+					{TeamID: "2", TeamName: Team2Name, OwnerName: Team2Owner,
 						PointsForString: "200.0", RecordWinsString: "6", RecordLossesString: "4", RecordTiesString: "0",
 						PointsFor: 200.0, RecordWins: 6, RecordLosses: 4, RecordTies: 0,
 					},
@@ -328,6 +390,74 @@ func TestAssociateStandingsWithFranchises(t *testing.T) {
 			}
 			if !reflect.DeepEqual(result, tc.expected) {
 				t.Errorf("Mismatch in test case %s:\n\n Expected %+v,\n\n Got      %+v \n\n", tc.name, tc.expected, result)
+			}
+		})
+	}
+}
+
+func TestAppendAllPlay(t *testing.T) {
+	testCases := []struct {
+		name            string
+		franchises      Franchises
+		allPlayTeamData []AllPlayTeamStats
+		expected        Franchises
+		expectError     bool
+	}{
+		{
+			name: "Test case 1: Valid data",
+			franchises: Franchises{
+				Franchise: []Franchise{
+					{TeamName: Team1Name, OwnerName: Team1Owner, TeamID: "1", PointsForString: "100.0",
+						RecordWinsString: "5", RecordLossesString: "3", RecordTiesString: "2"},
+					{TeamName: Team2Name, OwnerName: Team2Owner, TeamID: "2", PointsForString: "200.0",
+						RecordWinsString: "6", RecordLossesString: "4", RecordTiesString: "0"},
+				},
+			},
+			allPlayTeamData: []AllPlayTeamStats{
+				{FranchiseName: Team1Name, AllPlayWins: "5", AllPlayLosses: "3", AllPlayTies: "0",
+					AllPlayPercentage: "62.5"},
+				{FranchiseName: Team2Name, AllPlayWins: "7", AllPlayLosses: "1", AllPlayTies: "0",
+					AllPlayPercentage: "87.5"},
+			},
+			expected: Franchises{
+				Franchise: []Franchise{
+					{TeamName: Team1Name, OwnerName: Team1Owner, TeamID: "1", PointsForString: "100.0",
+						RecordWinsString: "5", RecordLossesString: "3", RecordTiesString: "2",
+						AllPlayWins: 5, AllPlayLosses: 3, AllPlayTies: 0, AllPlayPercentageString: "62.5",
+						AllPlayPercentage: 62.5},
+					{TeamName: Team2Name, OwnerName: Team2Owner, TeamID: "2", PointsForString: "200.0",
+						RecordWinsString: "6", RecordLossesString: "4", RecordTiesString: "0",
+						AllPlayWins: 7, AllPlayLosses: 1, AllPlayTies: 0, AllPlayPercentageString: "87.5",
+						AllPlayPercentage: 87.5},
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "Test case 2: Invalid data",
+			franchises: Franchises{
+				Franchise: []Franchise{
+					{TeamName: Team1Name},
+					{TeamName: Team2Name},
+				},
+			},
+			allPlayTeamData: []AllPlayTeamStats{
+				{FranchiseName: Team1Name, AllPlayWins: "5", AllPlayLosses: "3", AllPlayTies: "0", AllPlayPercentage: "invalid"},
+				{FranchiseName: Team2Name, AllPlayWins: "7", AllPlayLosses: "1", AllPlayTies: "0", AllPlayPercentage: "87.5"},
+			},
+			expected:    Franchises{},
+			expectError: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := appendAllPlay(tc.franchises, tc.allPlayTeamData)
+			if (err != nil) != tc.expectError {
+				t.Errorf("Expected error: %v, got: %v", tc.expectError, err)
+			}
+			if !reflect.DeepEqual(result, tc.expected) {
+				t.Errorf("Expected:\n%v\nGot:\n%v", tc.expected, result)
 			}
 		})
 	}
@@ -510,6 +640,69 @@ func TestPopulateAllPlayRecords(t *testing.T) {
 			result := populateAllPlayRecords(tc.input)
 			if !reflect.DeepEqual(result, tc.expected) {
 				t.Errorf("populateAllPlayRecords() = %v, want %v", result, tc.expected)
+			}
+		})
+	}
+}
+
+func TestCheckResponseParity(t *testing.T) {
+	testCases := []struct {
+		name                    string
+		leagueResponse          LeagueResponse
+		leagueStandingsResponse LeagueStandingsResponse
+		expectError             bool
+	}{
+		{
+			name: "Test case 1: Equal number of franchises",
+			leagueResponse: LeagueResponse{
+				League: League{
+					Franchises: Franchises{
+						Franchise: []Franchise{
+							{TeamName: Team1Name},
+							{TeamName: Team2Name},
+						},
+					},
+				},
+			},
+			leagueStandingsResponse: LeagueStandingsResponse{
+				LeagueStandings: LeagueStandings{
+					Franchise: []Franchise{
+						{TeamName: Team1Name},
+						{TeamName: Team2Name},
+					},
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "Test case 2: Unequal number of franchises",
+			leagueResponse: LeagueResponse{
+				League: League{
+					Franchises: Franchises{
+						Franchise: []Franchise{
+							{TeamName: Team1Name},
+						},
+					},
+				},
+			},
+			leagueStandingsResponse: LeagueStandingsResponse{
+				LeagueStandings: LeagueStandings{
+					Franchise: []Franchise{
+						{TeamName: Team1Name},
+						{TeamName: Team2Name},
+					},
+				},
+			},
+			expectError: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := checkResponseParity(tc.leagueResponse, tc.leagueStandingsResponse)
+			if (err != nil) != tc.expectError {
+				t.Errorf("checkResponseParity() error = %v, expectError %v", err, tc.expectError)
+				return
 			}
 		})
 	}

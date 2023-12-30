@@ -133,12 +133,16 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	var leagueStandings LeagueStandingsResponse
 
 	go func() {
-		franchiseDetails = getFranchiseDetails(apiKey)
+		LeagueAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueAPIQuery + "&" +
+			LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
+		franchiseDetails = getFranchiseDetails(LeagueAPIURL)
 		wg.Done()
 	}()
 
 	go func() {
-		leagueStandings = getLeagueStandings(apiKey)
+		LeagueStandingsAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueStandingsAPIQuery + "&" +
+			LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
+		leagueStandings = getLeagueStandings(LeagueStandingsAPIURL)
 		wg.Done()
 	}()
 
@@ -413,15 +417,11 @@ func calculateRecordScore(franchises Franchises) Franchises {
 	return franchises
 }
 
-func getFranchiseDetails(apiKey string) LeagueResponse {
-	LeagueAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueAPIQuery + "&" +
-		LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
-	// fmt.Println("LeagueApiURL: " + LeagueAPIURL) asdf
-
+func getFranchiseDetails(leagueAPIURL string) LeagueResponse {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, LeagueAPIURL, http.NoBody)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, leagueAPIURL, http.NoBody)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -447,15 +447,11 @@ func getFranchiseDetails(apiKey string) LeagueResponse {
 	return leagueResponse
 }
 
-func getLeagueStandings(apiKey string) LeagueStandingsResponse {
-	LeagueStandingsAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueStandingsAPIQuery + "&" +
-		LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
-	// fmt.Println("LeagueStandingsApiURL: " + LeagueStandingsAPIURL)
-
+func getLeagueStandings(leagueStandingsAPIURL string) LeagueStandingsResponse {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, LeagueStandingsAPIURL, http.NoBody)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, leagueStandingsAPIURL, http.NoBody)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -481,22 +477,26 @@ func getLeagueStandings(apiKey string) LeagueStandingsResponse {
 	return leagueStandingsResponse
 }
 
-func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse LeagueStandingsResponse) {
+func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse LeagueStandingsResponse) error {
 	numLeagueFranchises := len(leagueResponse.League.Franchises.Franchise)
 	numLeagueStandingsFranchises := len(leagueStandingsResponse.LeagueStandings.Franchise)
 
 	if numLeagueFranchises != numLeagueStandingsFranchises {
-		fmt.Printf(
-			"Responses don't have the same number of franchises:\n League API: %d\n LeagueStandings API: %d\n",
+		return fmt.Errorf(
+			"responses don't have the same number of franchises:\n League API: %d\n LeagueStandings API: %d",
 			numLeagueFranchises, numLeagueStandingsFranchises)
-		os.Exit(3)
 	}
+
+	return nil
 }
 
 func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse,
 	leagueStandingsResponse LeagueStandingsResponse) (Franchises, error) {
 
-	checkResponseParity(franchiseDetailsResponse, leagueStandingsResponse)
+	err := checkResponseParity(franchiseDetailsResponse, leagueStandingsResponse)
+	if err != nil {
+		return Franchises{}, err
+	}
 
 	franchiseStore := Franchises{
 		Franchise: make([]Franchise, len(franchiseDetailsResponse.League.Franchises.Franchise)),
@@ -508,7 +508,6 @@ func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse,
 		standingsMap[franchise.TeamID] = franchise
 	}
 
-	var err error
 	for i, franchise := range franchiseDetailsResponse.League.Franchises.Franchise {
 		franchiseStore.Franchise[i].TeamID = franchise.TeamID
 		franchiseStore.Franchise[i].TeamName = franchise.TeamName
@@ -580,21 +579,36 @@ func roundFloat(val float64, precision uint) float64 {
 	return math.Round(val*ratio) / ratio
 }
 
-func scrape() []AllPlayTeamStats {
-	// c := colly.NewCollector(colly.Debugger(&debug.LogDebugger{}))
+const (
+	dialerTimeout         = 90 * time.Second
+	dialerKeepAlive       = 60 * time.Second
+	maxIdleConns          = 100
+	idleConnTimeout       = 90 * time.Second
+	tlsHandshakeTimeout   = 10 * time.Second
+	expectContinueTimeout = 1 * time.Second
+)
+
+func newCollector() *colly.Collector {
 	c := colly.NewCollector()
 
 	c.WithTransport(&http.Transport{
 		DialContext: (&net.Dialer{
-			Timeout:   90 * time.Second,
-			KeepAlive: 60 * time.Second,
+			Timeout:   dialerTimeout,
+			KeepAlive: dialerKeepAlive,
 			DualStack: true,
 		}).DialContext,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
+		MaxIdleConns:          maxIdleConns,
+		IdleConnTimeout:       idleConnTimeout,
+		TLSHandshakeTimeout:   tlsHandshakeTimeout,
+		ExpectContinueTimeout: expectContinueTimeout,
 	})
+
+	return c
+}
+
+func scrape() []AllPlayTeamStats {
+	// c := colly.NewCollector(colly.Debugger(&debug.LogDebugger{}))
+	c := newCollector()
 
 	var allPlayTeamsStats []AllPlayTeamStats
 
@@ -619,12 +633,15 @@ func scrape() []AllPlayTeamStats {
 		})
 	})
 
-	_ = c.Visit(MflURL + LeagueYear + "/" + LeagueWebPath + LeagueIDQuery + //nolint:errcheck // err checked next line
-		"&" + PowerRankingsTableQuery + "&" + LeagueOutputSortQuery) //nolint:errcheck // err checked next line
-
 	c.OnError(func(r *colly.Response, err error) {
 		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
 	})
+
+	err := c.Visit(MflURL + LeagueYear + "/" + LeagueWebPath + LeagueIDQuery +
+		"&" + PowerRankingsTableQuery + "&" + LeagueOutputSortQuery)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	var allPlayTeamsStatsReturn []AllPlayTeamStats
 
@@ -638,45 +655,83 @@ func scrape() []AllPlayTeamStats {
 		}
 	}
 
-	// fmt.Println("allPlayTeamsStatsReturn: ", allPlayTeamsStatsReturn)
+	fmt.Println("allPlayTeamsStatsReturn: ", allPlayTeamsStatsReturn)
 	return allPlayTeamsStatsReturn
 }
 
+// func parseRow(h *colly.HTMLElement) AllPlayTeamStats {
+// 	return AllPlayTeamStats{
+// 		FranchiseName:     h.ChildText("td:nth-child(1)"),
+// 		AllPlayWins:       h.ChildText("td:nth-child(13)"),
+// 		AllPlayLosses:     h.ChildText("td:nth-child(14)"),
+// 		AllPlayTies:       h.ChildText("td:nth-child(15)"),
+// 		AllPlayPercentage: h.ChildText("td:nth-child(16)"),
+// 	}
+// }
+
+// func filterTeams(allPlayTeamsStats []AllPlayTeamStats) []AllPlayTeamStats {
+// 	var allPlayTeamsStatsReturn []AllPlayTeamStats
+
+// 	re := regexp.MustCompile(`^[a-zA-Z]`)
+
+// 	for _, teamStats := range allPlayTeamsStats {
+// 		if re.MatchString(teamStats.FranchiseName) {
+// 			allPlayTeamsStatsReturn = append(allPlayTeamsStatsReturn, teamStats)
+// 		}
+// 	}
+
+// 	return allPlayTeamsStatsReturn
+// }
+
 func appendAllPlay(franchises Franchises, allPlayTeamData []AllPlayTeamStats) (Franchises, error) {
-	var err error
+	// Create a map for quick lookup
+	allPlayDataMap := make(map[string]AllPlayTeamStats)
+	for _, data := range allPlayTeamData {
+		allPlayDataMap[data.FranchiseName] = data
+	}
 
-	for indexA := range franchises.Franchise {
-		for indexB := range allPlayTeamData {
-			if franchises.Franchise[indexA].TeamName != allPlayTeamData[indexB].FranchiseName {
-				continue
-			}
+	for i, franchise := range franchises.Franchise {
+		data, ok := allPlayDataMap[franchise.TeamName]
+		if !ok {
+			continue
+		}
 
-			franchises.Franchise[indexA].AllPlayWins, err = convertStringToInteger(allPlayTeamData[indexB].AllPlayWins)
-			if err != nil {
-				return Franchises{}, err
-			}
-			franchises.Franchise[indexA].AllPlayLosses, err = convertStringToInteger(allPlayTeamData[indexB].AllPlayLosses)
-			if err != nil {
-				return Franchises{}, err
-			}
-			franchises.Franchise[indexA].AllPlayTies, err = convertStringToInteger(allPlayTeamData[indexB].AllPlayTies)
-			if err != nil {
-				return Franchises{}, err
-			}
-			franchises.Franchise[indexA].AllPlayPercentageString = allPlayTeamData[indexB].AllPlayPercentage
-			if err != nil {
-				return Franchises{}, err
-			}
-			var allPlayPct float64
-			allPlayPct, err = strconv.ParseFloat(allPlayTeamData[indexB].AllPlayPercentage, 64)
-			if err != nil {
-				return Franchises{}, err
-			}
-			franchises.Franchise[indexA].AllPlayPercentage = allPlayPct
+		if err := updateFranchiseWithAllPlayData(&franchises.Franchise[i], data); err != nil {
+			return Franchises{}, err
 		}
 	}
 
 	return franchises, nil
+}
+
+func updateFranchiseWithAllPlayData(franchise *Franchise, data AllPlayTeamStats) error {
+	var err error
+
+	franchise.AllPlayWins, err = convertStringToInteger(data.AllPlayWins)
+	if err != nil {
+		return err
+	}
+
+	franchise.AllPlayLosses, err = convertStringToInteger(data.AllPlayLosses)
+	if err != nil {
+		return err
+	}
+
+	franchise.AllPlayTies, err = convertStringToInteger(data.AllPlayTies)
+	if err != nil {
+		return err
+	}
+
+	franchise.AllPlayPercentageString = data.AllPlayPercentage
+
+	allPlayPct, err := strconv.ParseFloat(data.AllPlayPercentage, 64)
+	if err != nil {
+		return err
+	}
+
+	franchise.AllPlayPercentage = allPlayPct
+
+	return nil
 }
 
 func populateAllPlayRecords(franchises Franchises) Franchises {
