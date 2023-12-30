@@ -623,13 +623,6 @@ func scrape() []AllPlayTeamStats {
 	c.OnHTML("table.report > tbody", func(h *colly.HTMLElement) {
 		h.ForEach("tr", func(_ int, el *colly.HTMLElement) {
 			allPlayTeamStats := parseRow(el)
-			// allPlayTeamStats := AllPlayTeamStats{
-			// 	FranchiseName:     el.ChildText("td:nth-child(1)"),
-			// 	AllPlayWins:       el.ChildText("td:nth-child(13)"),
-			// 	AllPlayLosses:     el.ChildText("td:nth-child(14)"),
-			// 	AllPlayTies:       el.ChildText("td:nth-child(15)"),
-			// 	AllPlayPercentage: el.ChildText("td:nth-child(16)"),
-			// }
 			allPlayTeamsStats = append(allPlayTeamsStats, allPlayTeamStats)
 		})
 	})
@@ -644,20 +637,21 @@ func scrape() []AllPlayTeamStats {
 		fmt.Println(err)
 	}
 
-	var allPlayTeamsStatsReturn []AllPlayTeamStats
+	// var allPlayTeamsStatsReturn []AllPlayTeamStats
 
-	re := regexp.MustCompile(`^[a-zA-Z]`)
+	// re := regexp.MustCompile(`^[a-zA-Z]`)
 
-	for i := range allPlayTeamsStats {
-		checker := re.FindString(allPlayTeamsStats[i].FranchiseName)
+	// for i := range allPlayTeamsStats {
+	// 	checker := re.FindString(allPlayTeamsStats[i].FranchiseName)
 
-		if checker != "" {
-			allPlayTeamsStatsReturn = append(allPlayTeamsStatsReturn, allPlayTeamsStats[i])
-		}
-	}
+	// 	if checker != "" {
+	// 		allPlayTeamsStatsReturn = append(allPlayTeamsStatsReturn, allPlayTeamsStats[i])
+	// 	}
+	// }
 
-	fmt.Println("allPlayTeamsStatsReturn: ", allPlayTeamsStatsReturn)
-	return allPlayTeamsStatsReturn
+	// fmt.Println("allPlayTeamsStatsReturn: ", allPlayTeamsStatsReturn)
+	// return allPlayTeamsStatsReturn
+	return filterTeams(allPlayTeamsStats)
 }
 
 func parseRow(h *colly.HTMLElement) AllPlayTeamStats {
@@ -670,19 +664,19 @@ func parseRow(h *colly.HTMLElement) AllPlayTeamStats {
 	}
 }
 
-// func filterTeams(allPlayTeamsStats []AllPlayTeamStats) []AllPlayTeamStats {
-// 	var allPlayTeamsStatsReturn []AllPlayTeamStats
+func filterTeams(allPlayTeamsStats []AllPlayTeamStats) []AllPlayTeamStats {
+	var allPlayTeamsStatsReturn []AllPlayTeamStats
 
-// 	re := regexp.MustCompile(`^[a-zA-Z]`)
+	re := regexp.MustCompile(`^[a-zA-Z]`)
 
-// 	for _, teamStats := range allPlayTeamsStats {
-// 		if re.MatchString(teamStats.FranchiseName) {
-// 			allPlayTeamsStatsReturn = append(allPlayTeamsStatsReturn, teamStats)
-// 		}
-// 	}
+	for _, teamStats := range allPlayTeamsStats {
+		if re.MatchString(teamStats.FranchiseName) {
+			allPlayTeamsStatsReturn = append(allPlayTeamsStatsReturn, teamStats)
+		}
+	}
 
-// 	return allPlayTeamsStatsReturn
-// }
+	return allPlayTeamsStatsReturn
+}
 
 func appendAllPlay(franchises Franchises, allPlayTeamData []AllPlayTeamStats) (Franchises, error) {
 	// Create a map for quick lookup
