@@ -268,21 +268,21 @@ func (f ByAllPlayPercentage) Less(i, j int) bool {
 }
 
 func sortFranchises(teams Franchises) Franchises {
-	// for _, team := range teams.Franchise {
-	// 	fmt.Printf("teamID: %s, totalScore: %g, recordScore: %g, allPlayPct: %g \n",
-	// 		team.TeamID, team.TotalScore, team.RecordScore, team.AllPlayPercentage)
-	// 	fmt.Println("")
-	// }
+	for _, team := range teams.Franchise {
+		fmt.Printf("teamID: %s, totalScore: %g, recordScore: %g, allPlayPct: %g \n\n",
+			team.TeamID, team.TotalScore, team.RecordScore, team.AllPlayPercentage)
+		fmt.Println("")
+	}
 
 	sort.Sort(ByAllPlayPercentage{teams})
 	sort.Sort(ByPointsFor{teams})
 	sort.Sort(ByTotalScore{teams})
 
-	// for _, team := range teams.Franchise {
-	// 	fmt.Printf("teamID: %s, totalScore: %g, recordScore: %g, allPlayPct: %g \n",
-	// 		team.TeamID, team.TotalScore, team.RecordScore, team.AllPlayPercentage)
-	// 	fmt.Println("")
-	// }
+	for _, team := range teams.Franchise {
+		fmt.Printf("teamID: %s, totalScore: %g, recordScore: %g, allPlayPct: %g \n",
+			team.TeamID, team.TotalScore, team.RecordScore, team.AllPlayPercentage)
+		fmt.Println("")
+	}
 
 	return teams
 }
