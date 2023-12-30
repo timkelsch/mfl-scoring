@@ -495,53 +495,64 @@ func checkResponseParity(leagueResponse LeagueResponse, leagueStandingsResponse 
 
 func associateStandingsWithFranchises(franchiseDetailsResponse LeagueResponse,
 	leagueStandingsResponse LeagueStandingsResponse) (Franchises, error) {
+
 	checkResponseParity(franchiseDetailsResponse, leagueStandingsResponse)
 
-	numLFranchises := len(franchiseDetailsResponse.League.Franchises.Franchise)
-	numLSFranchises := len(leagueStandingsResponse.LeagueStandings.Franchise)
+	franchiseStore := Franchises{
+		Franchise: make([]Franchise, len(franchiseDetailsResponse.League.Franchises.Franchise)),
+	}
+
+	// Create a map for quick lookup
+	standingsMap := make(map[string]Franchise)
+	for _, franchise := range leagueStandingsResponse.LeagueStandings.Franchise {
+		standingsMap[franchise.TeamID] = franchise
+	}
 
 	var err error
-	franchiseStore := Franchises{
-		Franchise: make([]Franchise, numLFranchises),
-	}
-	for i := 0; i < numLFranchises; i++ {
-		franchiseStore.Franchise[i].TeamID = franchiseDetailsResponse.League.Franchises.Franchise[i].TeamID
-		franchiseStore.Franchise[i].TeamName = franchiseDetailsResponse.League.Franchises.Franchise[i].TeamName
-		franchiseStore.Franchise[i].OwnerName = franchiseDetailsResponse.League.Franchises.Franchise[i].OwnerName
-		for j := 0; j < numLSFranchises; j++ {
-			if franchiseStore.Franchise[i].TeamID != leagueStandingsResponse.LeagueStandings.Franchise[j].TeamID {
-				continue
-			}
+	for i, franchise := range franchiseDetailsResponse.League.Franchises.Franchise {
+		franchiseStore.Franchise[i].TeamID = franchise.TeamID
+		franchiseStore.Franchise[i].TeamName = franchise.TeamName
+		franchiseStore.Franchise[i].OwnerName = franchise.OwnerName
 
-			franchiseStore.Franchise[i].RecordWins, err =
-				convertStringToInteger(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordWinsString)
-			if err != nil {
-				return Franchises{}, err
-			}
-			franchiseStore.Franchise[i].RecordLosses, err =
-				convertStringToInteger(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordLossesString)
-			if err != nil {
-				return Franchises{}, err
-			}
-			franchiseStore.Franchise[i].RecordTies, err =
-				convertStringToInteger(leagueStandingsResponse.LeagueStandings.Franchise[j].RecordTiesString)
-			if err != nil {
-				return Franchises{}, err
-			}
-			franchiseStore.Franchise[i].PointsFor, err =
-				strconv.ParseFloat(leagueStandingsResponse.LeagueStandings.Franchise[j].PointsForString, 64)
-			if err != nil {
-				return Franchises{}, err
-			}
+		standing, ok := standingsMap[franchise.TeamID]
+		if !ok {
+			continue
+		}
 
-			franchiseStore.Franchise[i].PointsForString = leagueStandingsResponse.LeagueStandings.Franchise[j].PointsForString
-			franchiseStore.Franchise[i].RecordWinsString = leagueStandingsResponse.LeagueStandings.Franchise[j].RecordWinsString
-			franchiseStore.Franchise[i].RecordLossesString = leagueStandingsResponse.LeagueStandings.Franchise[j].RecordLossesString
-			franchiseStore.Franchise[i].RecordTiesString = leagueStandingsResponse.LeagueStandings.Franchise[j].RecordTiesString
+		franchiseStore.Franchise[i], err = copyStandingsDetails(franchiseStore.Franchise[i], standing)
+		if err != nil {
+			return franchiseStore, fmt.Errorf("error converting standings details for team %s: %w", franchise.TeamID, err)
 		}
 	}
 
 	return franchiseStore, nil
+}
+
+func copyStandingsDetails(franchise, standing Franchise) (Franchise, error) {
+	var err error
+	franchise.RecordWinsString = standing.RecordWinsString
+	franchise.RecordLossesString = standing.RecordLossesString
+	franchise.RecordTiesString = standing.RecordTiesString
+	franchise.PointsForString = standing.PointsForString
+
+	franchise.RecordWins, err = convertStringToInteger(standing.RecordWinsString)
+	if err != nil {
+		return Franchise{}, err
+	}
+	franchise.RecordLosses, err = convertStringToInteger(standing.RecordLossesString)
+	if err != nil {
+		return Franchise{}, err
+	}
+	franchise.RecordTies, err = convertStringToInteger(standing.RecordTiesString)
+	if err != nil {
+		return Franchise{}, err
+	}
+	franchise.PointsFor, err = strconv.ParseFloat(standing.PointsForString, 64)
+	if err != nil {
+		return Franchise{}, err
+	}
+
+	return franchise, nil
 }
 
 func populateHeadToHeadRecords(franchises Franchises) Franchises {

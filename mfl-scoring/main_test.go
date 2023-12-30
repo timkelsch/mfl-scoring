@@ -7,6 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	Team1Name  = "Team 1"
+	Team2Name  = "Team 2"
+	Team1Owner = "Owner 1"
+)
+
 func TestRoundFloat(t *testing.T) {
 	type args struct {
 		value     float64
@@ -283,8 +289,8 @@ func TestAssociateStandingsWithFranchises(t *testing.T) {
 				League: League{
 					Franchises: Franchises{
 						Franchise: []Franchise{
-							{TeamID: "1", TeamName: "Team 1", OwnerName: "Owner 1"},
-							{TeamID: "2", TeamName: "Team 2", OwnerName: "Owner 2"},
+							{TeamID: "1", TeamName: Team1Name, OwnerName: Team1Owner}, // define a constant for these values and use them to replace all instances of these strings
+							{TeamID: "2", TeamName: Team2Name, OwnerName: "Owner 2"},
 						},
 					},
 				},
@@ -299,11 +305,11 @@ func TestAssociateStandingsWithFranchises(t *testing.T) {
 			},
 			expected: Franchises{
 				Franchise: []Franchise{
-					{TeamID: "1", TeamName: "Team 1", OwnerName: "Owner 1",
+					{TeamID: "1", TeamName: Team1Name, OwnerName: Team1Owner,
 						PointsForString: "100.0", RecordWinsString: "5", RecordLossesString: "3", RecordTiesString: "2",
 						PointsFor: 100.0, RecordWins: 5, RecordLosses: 3, RecordTies: 2,
 					},
-					{TeamID: "2", TeamName: "Team 2", OwnerName: "Owner 2",
+					{TeamID: "2", TeamName: Team2Name, OwnerName: "Owner 2",
 						PointsForString: "200.0", RecordWinsString: "6", RecordLossesString: "4", RecordTiesString: "0",
 						PointsFor: 200.0, RecordWins: 6, RecordLosses: 4, RecordTies: 0,
 					},
@@ -321,7 +327,74 @@ func TestAssociateStandingsWithFranchises(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(result, tc.expected) {
-				t.Errorf("Mismatch in test case %s: Expected %+v, got %+v", tc.name, tc.expected, result)
+				t.Errorf("Mismatch in test case %s:\n\n Expected %+v,\n\n Got      %+v \n\n", tc.name, tc.expected, result)
+			}
+		})
+	}
+}
+
+func TestCopyStandingsDetails(t *testing.T) {
+	testCases := []struct {
+		name      string
+		franchise Franchise
+		standing  Franchise
+		expected  Franchise
+		expectErr bool
+	}{
+		{
+			name: "Valid standings details",
+			franchise: Franchise{
+				TeamID:    "1",
+				TeamName:  Team1Name,
+				OwnerName: Team1Owner,
+			},
+			standing: Franchise{
+				RecordWinsString:   "10",
+				RecordLossesString: "5",
+				RecordTiesString:   "0",
+				PointsForString:    "500.5",
+			},
+			expected: Franchise{
+				TeamID:             "1",
+				TeamName:           Team1Name,
+				OwnerName:          Team1Owner,
+				RecordWinsString:   "10",
+				RecordLossesString: "5",
+				RecordTiesString:   "0",
+				PointsForString:    "500.5",
+				RecordWins:         10,
+				RecordLosses:       5,
+				RecordTies:         0,
+				PointsFor:          500.5,
+			},
+			expectErr: false,
+		},
+		{
+			name: "Invalid standings details",
+			franchise: Franchise{
+				TeamID:    "1",
+				TeamName:  Team1Name,
+				OwnerName: Team1Owner,
+			},
+			standing: Franchise{
+				RecordWinsString:   "ten",
+				RecordLossesString: "five",
+				RecordTiesString:   "zero",
+				PointsForString:    "five hundred point five",
+			},
+			expected:  Franchise{},
+			expectErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := copyStandingsDetails(tc.franchise, tc.standing)
+			if (err != nil) != tc.expectErr {
+				t.Fatalf("Expected error status %v, got %v", tc.expectErr, err != nil)
+			}
+			if !tc.expectErr && result != tc.expected {
+				t.Errorf("Expected %v, got %v", tc.expected, result)
 			}
 		})
 	}
