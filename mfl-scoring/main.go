@@ -637,24 +637,11 @@ func scrape() []AllPlayTeamStats {
 		fmt.Println(err)
 	}
 
-	// var allPlayTeamsStatsReturn []AllPlayTeamStats
-
-	// re := regexp.MustCompile(`^[a-zA-Z]`)
-
-	// for i := range allPlayTeamsStats {
-	// 	checker := re.FindString(allPlayTeamsStats[i].FranchiseName)
-
-	// 	if checker != "" {
-	// 		allPlayTeamsStatsReturn = append(allPlayTeamsStatsReturn, allPlayTeamsStats[i])
-	// 	}
-	// }
-
-	// fmt.Println("allPlayTeamsStatsReturn: ", allPlayTeamsStatsReturn)
-	// return allPlayTeamsStatsReturn
 	return filterTeams(allPlayTeamsStats)
 }
 
 func parseRow(h *colly.HTMLElement) AllPlayTeamStats {
+	fmt.Printf("%v", h)
 	return AllPlayTeamStats{
 		FranchiseName:     h.ChildText("td:nth-child(1)"),
 		AllPlayWins:       h.ChildText("td:nth-child(13)"),

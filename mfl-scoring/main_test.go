@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/gocolly/colly"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -707,3 +708,63 @@ func TestCheckResponseParity(t *testing.T) {
 		})
 	}
 }
+
+func TestNewCollector(t *testing.T) {
+	c := newCollector()
+	if c == nil {
+		t.Errorf("newCollector() = %v, want non-nil", c)
+	}
+	if reflect.TypeOf(c) != reflect.TypeOf(&colly.Collector{}) {
+		t.Errorf("newCollector() = %T, want *colly.Collector", c)
+	}
+}
+
+// func TestParseRow(t *testing.T) {
+// 	// Create an HTML document
+// 	doc := `<table>
+//         <tr>
+//             <td>Team 1</td>
+//             <td></td>
+//             <td></td>
+//             <td></td>
+//             <td></td>
+//             <td></td>
+//             <td></td>
+//             <td></td>
+//             <td></td>
+//             <td></td>
+//             <td></td>
+//             <td></td>
+//             <td>10</td>
+//             <td>2</td>
+//             <td>0</td>
+//             <td>83.33%</td>
+//         </tr>
+//     </table>`
+
+// 	// Use colly to parse the HTML document
+// 	c := colly.NewCollector()
+// 	var h *colly.HTMLElement
+// 	c.OnHTML("tr", func(e *colly.HTMLElement) {
+// 		h = e
+// 	})
+// 	err := c.Visit("data:text/html," + url.PathEscape(doc))
+// 	if err != nil {
+// 		t.Fatalf("Failed to parse HTML: %v", err)
+// 	}
+
+// 	// Call parseRow with the parsed *colly.HTMLElement
+// 	stats := parseRow(h)
+
+// 	// Check that the returned AllPlayTeamStats has the expected values
+// 	expected := AllPlayTeamStats{
+// 		FranchiseName:     "Team 1",
+// 		AllPlayWins:       "10",
+// 		AllPlayLosses:     "2",
+// 		AllPlayTies:       "0",
+// 		AllPlayPercentage: "83.33%",
+// 	}
+// 	if stats != expected {
+// 		t.Errorf("parseRow() = %v, want %v", stats, expected)
+// 	}
+// }
