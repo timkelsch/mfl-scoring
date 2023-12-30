@@ -622,13 +622,14 @@ func scrape() []AllPlayTeamStats {
 
 	c.OnHTML("table.report > tbody", func(h *colly.HTMLElement) {
 		h.ForEach("tr", func(_ int, el *colly.HTMLElement) {
-			allPlayTeamStats := AllPlayTeamStats{
-				FranchiseName:     el.ChildText("td:nth-child(1)"),
-				AllPlayWins:       el.ChildText("td:nth-child(13)"),
-				AllPlayLosses:     el.ChildText("td:nth-child(14)"),
-				AllPlayTies:       el.ChildText("td:nth-child(15)"),
-				AllPlayPercentage: el.ChildText("td:nth-child(16)"),
-			}
+			allPlayTeamStats := parseRow(el)
+			// allPlayTeamStats := AllPlayTeamStats{
+			// 	FranchiseName:     el.ChildText("td:nth-child(1)"),
+			// 	AllPlayWins:       el.ChildText("td:nth-child(13)"),
+			// 	AllPlayLosses:     el.ChildText("td:nth-child(14)"),
+			// 	AllPlayTies:       el.ChildText("td:nth-child(15)"),
+			// 	AllPlayPercentage: el.ChildText("td:nth-child(16)"),
+			// }
 			allPlayTeamsStats = append(allPlayTeamsStats, allPlayTeamStats)
 		})
 	})
@@ -659,15 +660,15 @@ func scrape() []AllPlayTeamStats {
 	return allPlayTeamsStatsReturn
 }
 
-// func parseRow(h *colly.HTMLElement) AllPlayTeamStats {
-// 	return AllPlayTeamStats{
-// 		FranchiseName:     h.ChildText("td:nth-child(1)"),
-// 		AllPlayWins:       h.ChildText("td:nth-child(13)"),
-// 		AllPlayLosses:     h.ChildText("td:nth-child(14)"),
-// 		AllPlayTies:       h.ChildText("td:nth-child(15)"),
-// 		AllPlayPercentage: h.ChildText("td:nth-child(16)"),
-// 	}
-// }
+func parseRow(h *colly.HTMLElement) AllPlayTeamStats {
+	return AllPlayTeamStats{
+		FranchiseName:     h.ChildText("td:nth-child(1)"),
+		AllPlayWins:       h.ChildText("td:nth-child(13)"),
+		AllPlayLosses:     h.ChildText("td:nth-child(14)"),
+		AllPlayTies:       h.ChildText("td:nth-child(15)"),
+		AllPlayPercentage: h.ChildText("td:nth-child(16)"),
+	}
+}
 
 // func filterTeams(allPlayTeamsStats []AllPlayTeamStats) []AllPlayTeamStats {
 // 	var allPlayTeamsStatsReturn []AllPlayTeamStats
