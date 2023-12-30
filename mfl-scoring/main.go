@@ -640,7 +640,17 @@ func scrape() []AllPlayTeamStats {
 	return filterTeams(allPlayTeamsStats)
 }
 
-func parseRow(h *colly.HTMLElement) AllPlayTeamStats {
+type HTMLElement interface {
+	Attr(k string) string
+	ChildAttr(goquerySelector, attrName string) string
+	ChildText(goquerySelector string) string
+	ChildAttrs(goquerySelector, attrName string) []string
+	ForEach(goquerySelector string, callback func(int, *colly.HTMLElement))
+	ForEachWithBreak(goquerySelector string, callback func(int, *colly.HTMLElement) bool)
+	Unmarshal(v interface{}) error
+}
+
+func parseRow(h HTMLElement) AllPlayTeamStats {
 	fmt.Printf("%v", h)
 	return AllPlayTeamStats{
 		FranchiseName:     h.ChildText("td:nth-child(1)"),

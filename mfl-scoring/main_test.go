@@ -4,8 +4,11 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"golang.org/x/net/html"
 )
 
 const (
@@ -744,7 +747,7 @@ func TestNewCollector(t *testing.T) {
 
 // 	// Use colly to parse the HTML document
 // 	c := colly.NewCollector()
-// 	var h *colly.HTMLElement
+// 	h *colly.HTMLElement = Name:tr Text:Grentest Of All Time6-12-01445.11756.082.3%697.5124.445.22226.244.047970.326 attributes:[{Namespace: Key:class Val:eventablerow}] Request:0xc000178900 Response:0xc0003ce0c0 DOM:0xc0001e6de0 Index:11
 // 	c.OnHTML("tr", func(e *colly.HTMLElement) {
 // 		h = e
 // 	})
@@ -768,3 +771,113 @@ func TestNewCollector(t *testing.T) {
 // 		t.Errorf("parseRow() = %v, want %v", stats, expected)
 // 	}
 // }
+
+// MockHTMLElement is a mock of colly.HTMLElement
+type MockHTMLElement struct {
+	mock.Mock
+}
+
+func (m *MockHTMLElement) NewHTMLElementFromSelectionNode(resp *colly.Response, s *goquery.Selection, n *html.Node, idx int) *colly.HTMLElement {
+	args := m.Called(resp, s, n, idx)
+	return args.Get(0).(*colly.HTMLElement)
+}
+
+func (m *MockHTMLElement) Attr(k string) string {
+	args := m.Called(k)
+	return args.String(0)
+}
+
+func (m *MockHTMLElement) ChildAttr(goquerySelector, attrName string) string {
+	args := m.Called(goquerySelector, attrName)
+	return args.String(0)
+}
+
+func (m *MockHTMLElement) ChildText(goquerySelector string) string {
+	args := m.Called(goquerySelector)
+	return args.String(0)
+}
+
+func (m *MockHTMLElement) ChildAttrs(goquerySelector, attrName string) []string {
+	args := m.Called(goquerySelector, attrName)
+	return args.Get(0).([]string)
+}
+
+func (m *MockHTMLElement) ForEach(goquerySelector string, callback func(int, *colly.HTMLElement)) {
+	m.Called(goquerySelector, callback)
+}
+
+func (m *MockHTMLElement) ForEachWithBreak(goquerySelector string, callback func(int, *colly.HTMLElement) bool) {
+	m.Called(goquerySelector, callback)
+}
+
+func (m *MockHTMLElement) Unmarshal(v interface{}) error {
+	args := m.Called(v)
+	return args.Error(0)
+}
+
+func TestParseRow(t *testing.T) {
+	mockHTMLElement := new(MockHTMLElement)
+
+	// Setup expectations
+	mockHTMLElement.On("ChildText", "td:nth-child(1)").Return("Test Franchise")
+	mockHTMLElement.On("ChildText", "td:nth-child(13)").Return("10")
+	mockHTMLElement.On("ChildText", "td:nth-child(14)").Return("5")
+	mockHTMLElement.On("ChildText", "td:nth-child(15)").Return("2")
+	mockHTMLElement.On("ChildText", "td:nth-child(16)").Return("0.66")
+
+	// Call the function with the mock
+	result := parseRow(mockHTMLElement)
+
+	// Assert that the expectations were met
+	mockHTMLElement.AssertExpectations(t)
+
+	// Assert that the result is what you expect
+	if result.FranchiseName != "Test Franchise" {
+
+		t.Errorf("Expected FranchiseName to be 'Test Franchise', got '%s'", result.FranchiseName)
+	}
+
+	if result.AllPlayWins != "10" {
+		t.Errorf("Expected AllPlayWins to be '10', got '%s'", result.AllPlayWins)
+	}
+
+	if result.AllPlayLosses != "5" {
+		t.Errorf("Expected AllPlayLosses to be '5', got '%s'", result.AllPlayLosses)
+	}
+
+	if result.AllPlayTies != "2" {
+		t.Errorf("Expected AllPlayTies to be '2', got '%s'", result.AllPlayTies)
+	}
+
+	if result.AllPlayPercentage != "0.66" {
+		t.Errorf("Expected AllPlayPercentage to be '0.66', got '%s'", result.AllPlayPercentage)
+	}
+
+}
+
+func TestFilterTeams(t *testing.T) {
+	// Create a slice of AllPlayTeamStats
+	allPlayTeamsStats := []AllPlayTeamStats{
+		{FranchiseName: "Team 1"},
+		{FranchiseName: "2nd Team"},
+		{FranchiseName: "Third Team"},
+		{FranchiseName: "_Fourth Team"},
+	}
+
+	// Call filterTeams
+	result := filterTeams(allPlayTeamsStats)
+
+	// Check that the result only includes the AllPlayTeamStats whose FranchiseName starts with a letter
+	expected := []AllPlayTeamStats{
+		{FranchiseName: "Team 1"},
+		{FranchiseName: "Third Team"},
+	}
+	if len(result) != len(expected) {
+		t.Fatalf("Expected result length to be %d, got %d", len(expected), len(result))
+	}
+	for i, v := range result {
+		if v.FranchiseName != expected[i].FranchiseName {
+			t.Errorf("Expected FranchiseName at index %d to be '%s', got '%s'", i, expected[i].FranchiseName, v.FranchiseName)
+		}
+	}
+}
