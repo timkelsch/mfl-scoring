@@ -1,4 +1,4 @@
-![Unit Tests](https://github.com/timkelsch/mfl-scoring/actions/workflows/flow.yml/badge.svg)
+![Unit Tests](https://github.com/timkelsch/mfl-scoring/actions/workflows/UnitTests.yml/badge.svg)
 
 ## Scoring Links
 Stage: https://3xi97uokw5.execute-api.us-east-1.amazonaws.com/stage/mfl-scoring </br>
