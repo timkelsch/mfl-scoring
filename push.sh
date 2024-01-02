@@ -11,7 +11,7 @@ REPO="mfl-score"
 
 # Only works if there is one tag per image
 CURRENT_VERSION=$(aws ecr describe-images --region "${AWS_REGION}" --output json \
---query --repository-name mfl-score 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' \
+--repository-name mfl-score --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' \
 | jq . -r)
 CURRENT_IMAGE="${REGISTRY}/${REPO}:${CURRENT_VERSION}"
 
