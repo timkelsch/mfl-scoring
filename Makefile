@@ -19,7 +19,7 @@ MFL_UNCOUTH_DOMAIN=spankme.timismydaddy.com
 export FUNCTION_NAME
 export AWS_REGION
 export AWS_ACCOUNT
-
+ 
 createstack:
 	aws cloudformation create-stack --stack-name ${STACK_NAME} --template-body ${TEMPLATE_FILE} \
 		--capabilities CAPABILITY_IAM --parameters ParameterKey=DomainName,ParameterValue=${MFL_UNCOUTH_DOMAIN} \
