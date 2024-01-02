@@ -5,7 +5,7 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '1', artifactNumToKeepStr: '1'))
     }
 
-    tools { 
+    tools {
         go 'go1.21'
         git 'Default'
     }
