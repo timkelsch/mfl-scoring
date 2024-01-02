@@ -23,6 +23,15 @@ pipeline {
             }
         }
 
+        stage('Checkout') {
+            steps {
+                script {
+                    checkout scm
+                    sh 'ls -la'  // Print contents of the workspace
+                }
+            }
+        }
+        
         stage('Lint/Test') {
             steps {
                 withEnv(["PATH+GO=${GOPATH}/bin"]) {
