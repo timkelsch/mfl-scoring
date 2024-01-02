@@ -10,8 +10,9 @@ REPO="mfl-score"
 #   --password-stdin "${REGISTRY}"
 
 # Only works if there is one tag per image
-CURRENT_VERSION=$(aws ecr describe-images --region "${AWS_REGION}" --output json --repository-name mfl-score \
---query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' | jq . -r)
+CURRENT_VERSION=$(aws ecr describe-images --region "${AWS_REGION}" --output json \
+--query --repository-name mfl-score 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' \
+| jq . -r)
 CURRENT_IMAGE="${REGISTRY}/${REPO}:${CURRENT_VERSION}"
 
 IFS=. read -r v1 v2 <<< "${CURRENT_VERSION}"    # split into (integer) components
@@ -38,7 +39,8 @@ if [[ $(docker image ls --format json "${CURRENT_IMAGE}" | jq -r '.ID' | wc -l) 
 fi
 
 if [ "${CURRENT_IMAGE_ID}" = "${NEW_IMAGE_ID}" ]; then
-  echo "The image built for this commit is the same as the most recent image in the remote repository. Exiting."
+  echo "The image built for this commit is the same as the most recent image in the remote \
+  repository. Exiting."
   exit 3
 fi
 
@@ -48,6 +50,6 @@ docker push "${NEW_IMAGE_URI}"
 aws lambda update-function-code --function-name "${FUNCTION_NAME}" --architectures arm64 \
 		--image-uri "${NEW_IMAGE_URI}" --publish --region "${AWS_REGION}"
 
-# This gets complicated because if an image has been uploaded before, even if it has since been deleted,
-# ECR will use the imagePushedAt of the first time it was pushed. This breaks the sort by query in 
-# CURRENT_VERSION.
+# This gets complicated because if an image has been uploaded before, even if it has since been 
+# deleted, ECR will use the imagePushedAt of the first time it was pushed. This breaks the sort 
+# by query in CURRENT_VERSION.
