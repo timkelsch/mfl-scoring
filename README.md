@@ -18,7 +18,7 @@ Provides a custom scoring solution to calculate live league championship scoring
 
 What is AllPlay percentage? 
 
-First, we'll start by explaining what AllPlay record is: AllPlay record is calculated by comparing each team's fantasy points to every other team's fantasy points each week of the season. An AllPlay win is accumulated when your team has a greater number of fantasy points than another team on any given week of the season. The same goes for ties and losses. The AllPlay records for the year are calculated across all weeks of the season. 
+First, we'll start by explaining what AllPlay record is: AllPlay record is calculated by comparing each team's fantasy points to every other team's fantasy points each week of the season. An AllPlay win is accumulated when your team has a greater number of fantasy points than another team on any given week of the season. The same goes for ties and losses. The AllPlay records for the year are calculated across all weeks of the season.
 
 Example: if my team was tied for the 4th most points in week 1 of this season, my AllPlay record would be 5 wins (I had more points than teams with 6th to 10th most points), 3 losses (I had less points than teams with 1st to 3rd most points), and 1 tie (I had the same number of points as one team).
 
