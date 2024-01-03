@@ -20,10 +20,6 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: env.BUILDS, artifactNumToKeepStr: env.BUILDS))
     }
 
-    def isWorkspaceEmpty() {
-        return fileExists("${env.WORKSPACE}/") == false
-    }
-
     stages {
         stage('Clean Workspace') {
             steps {
@@ -34,9 +30,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    def workspaceIsEmpty = isWorkspaceEmpty()
-
-                    if (workspaceIsEmpty) {
+                    if (fileExists("${env.WORKSPACE}mfl-scoring/")) {
                         echo 'Workspace is empty. Checking out from Git.'
                         checkout scm
                     } else {
