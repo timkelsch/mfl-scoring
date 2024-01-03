@@ -1,9 +1,6 @@
 /* groovylint-disable CompileStatic */
 pipeline {
     agent any
-    options {
-        buildDiscarder(logRotator(numToKeepStr: '1', artifactNumToKeepStr: '1'))
-    }
 
     tools {
         go 'go1.21'
@@ -14,24 +11,29 @@ pipeline {
         CGO_ENABLED = 0
         GOPATH = "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
         GOCACHE = "${WORKSPACE}"
+        BUILDS = '1'
+    }
+
+    options {
+        // prevent dual pushes at PR merge from blowing us up
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: env.BUILDS, artifactNumToKeepStr: env.BUILDS))
     }
 
     stages {
-        stage('Clean Workspace') {
-            steps {
-                cleanWs()
-            }
-        }
-
         stage('Checkout') {
             steps {
                 script {
-                    checkout scm
-                    sh 'ls -la'  // Print contents of the workspace
+                    if (fileExists("${env.WORKSPACE}/")) {
+                        echo 'Workspace is empty. Checking out from Git.'
+                        checkout scm
+                    } else {
+                        echo 'Workspace is not empty. Skipping Git checkout.'
+                    }
                 }
             }
         }
-        
+
         stage('Lint/Test') {
             steps {
                 withEnv(["PATH+GO=${GOPATH}/bin"]) {
@@ -72,6 +74,7 @@ pipeline {
 
     post {
         always {
+            cleanWs()
             script {
                 echo 'Running Docker prune'
                 RETURN_CODE = sh(
