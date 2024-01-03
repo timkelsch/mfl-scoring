@@ -16,7 +16,7 @@ pipeline {
 
     options {
         // prevent dual pushes at PR merge from blowing us up
-        maxParallel 1
+        disableConcurrentBuilds()
         buildDiscarder(logRotator(numToKeepStr: env.BUILDS, artifactNumToKeepStr: env.BUILDS))
     }
 
