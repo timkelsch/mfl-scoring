@@ -11,13 +11,12 @@ pipeline {
         CGO_ENABLED = 0
         GOPATH = "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
         GOCACHE = "${WORKSPACE}"
-        BUILDS = '1'
     }
 
     options {
         // prevent dual pushes at PR merge from blowing us up
         disableConcurrentBuilds()
-        buildDiscarder(logRotator(numToKeepStr: env.BUILDS, artifactNumToKeepStr: env.BUILDS))
+        buildDiscarder(logRotator(numToKeepStr: '1', artifactNumToKeepStr: '1'))
     }
 
     stages {
