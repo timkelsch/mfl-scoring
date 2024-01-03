@@ -20,6 +20,10 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: env.BUILDS, artifactNumToKeepStr: env.BUILDS))
     }
 
+    def isWorkspaceEmpty() {
+        return fileExists("${env.WORKSPACE}/") == false
+    }
+
     stages {
         stage('Clean Workspace') {
             steps {
@@ -91,9 +95,5 @@ pipeline {
                 echo "returnStatus: ${RETURN_CODE}"
             }
         }
-    }
-
-    def isWorkspaceEmpty() {
-        return fileExists("${env.WORKSPACE}/") == false
     }
 }
