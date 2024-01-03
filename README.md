@@ -33,6 +33,8 @@ I am not responsible for creation of this rule set - I merely automated the calc
 ## To Do:
 - [ ] Change front end API from stage to prod and make mflstage.<domain> into stage
 - [ ] Put team names in front of staging stage
+- [x] Make dual pushes from Github run sequentially
+- [x] Clean up workspace in JF post step
 - [x] Add workflow / tests passing badge to README
 - [x] Set up GitHub Actions to automate testing
 - [x] Finish unit tests
