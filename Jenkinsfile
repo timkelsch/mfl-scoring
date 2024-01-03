@@ -21,16 +21,10 @@ pipeline {
     }
 
     stages {
-        stage('Clean Workspace') {
-            steps {
-                cleanWs()
-            }
-        }
-
         stage('Checkout') {
             steps {
                 script {
-                    if (fileExists("${env.WORKSPACE}mfl-scoring/")) {
+                    if (fileExists("${env.WORKSPACE}/")) {
                         echo 'Workspace is empty. Checking out from Git.'
                         checkout scm
                     } else {
@@ -80,6 +74,7 @@ pipeline {
 
     post {
         always {
+            cleanWs()
             script {
                 echo 'Running Docker prune'
                 RETURN_CODE = sh(
