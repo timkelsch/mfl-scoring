@@ -11,7 +11,7 @@ IMAGE_URI=${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/mfl-score:${VERSION}
 WEB_BUCKET='mfl.timkelsch.com'
 
 FUNCTION_NAME=mfl-scoring-MflScoringFunction-1ZmFtx9UqLKk
-FUNCTION_VERSION_PROD=77
+FUNCTION_VERSION_PROD=136
 STACK_NAME=mfl-scoring
 TEMPLATE_FILE=file://mfl-scoring.yaml
 MFL_UNCOUTH_DOMAIN=spankme.timismydaddy.com
