@@ -8,12 +8,14 @@ VERSION=$(shell aws ecr get-login-password --region us-east-1 | docker login --u
   --region us-east-1 --output json --repository-name mfl-score \
   --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' | jq . -r)
 IMAGE_URI=${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/mfl-score:${VERSION}
-WEB_BUCKET='mfl.timkelsch.com'
+WEB_BUCKET=mfl.timkelsch.com
 
 FUNCTION_NAME=mfl-scoring-MflScoringFunction-1ZmFtx9UqLKk
 FUNCTION_VERSION_PROD=136
 STACK_NAME=mfl-scoring
 TEMPLATE_FILE=file://mfl-scoring.yaml
+STORAGE_STACK_NAME=storage
+STORAGE_TEMPLATE_FILE=file://storage.yaml
 MFL_UNCOUTH_DOMAIN=spankme.timismydaddy.com
   
 export FUNCTION_NAME
@@ -29,6 +31,10 @@ updatestack:
 	aws cloudformation update-stack --stack-name ${STACK_NAME} --template-body ${TEMPLATE_FILE} \
 		--capabilities CAPABILITY_IAM --parameters ParameterKey=DomainName,ParameterValue=${MFL_UNCOUTH_DOMAIN} \
 		--region ${AWS_REGION}
+
+createstoragestack:
+	aws cloudformation update-stack --stack-name ${STORAGE_STACK_NAME} --template-body ${STORAGE_TEMPLATE_FILE} \
+		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
 
 updatestoragestack:
 	aws cloudformation update-stack --stack-name storage --template-body file://storage.yaml \
@@ -59,9 +65,6 @@ pushtostage: test build package push updatelambda updatestagealias
 
 pushtoprod: test build package push updatelambda updateprodalias
 
-pushwebartifacts: 
-	aws s3 cp web s3://$(WEB_BUCKET) --recursive --include "*.*"
-
 build:
 	docker build --platform linux/amd64 -t mfl-scoring-image:mod .
 
@@ -78,3 +81,6 @@ createwebstack:
 updatewebstack:
 	aws cloudformation update-stack --stack-name mfl-website --template-body file://website.yaml \
 		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
+
+pushwebartifacts: 
+	aws s3 cp web s3://${WEB_BUCKET} --recursive --include "*.*"

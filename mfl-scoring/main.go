@@ -212,7 +212,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 				"Access-Control-Allow-Credentials": "true",
 			}
 			fmt.Println("headers: ", headers)
-			body, err := json.Marshal(sortedFranchises)
+			body, err := json.Marshal(printScoringTableCouthly(sortedFranchises))
 			if err != nil {
 				panic(err)
 			}

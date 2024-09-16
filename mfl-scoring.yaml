@@ -15,6 +15,11 @@ Parameters:
     Description: API path IE https://abc.example.com/stage/<ApiPath>
     Type: String
     Default: mfl-scoring
+  EcrImageUri:
+    Description: ECR Image URI
+    Type: String
+    Default: 287140326780.dkr.ecr.us-east-1.amazonaws.com/mfl-score:0.136
+
 
 Resources:
   MflScoringCertificate:
@@ -57,7 +62,7 @@ Resources:
     Properties:
       Role: !GetAtt MflScoringFunctionIamRole.Arn
       Code: 
-        ImageUri: 287140326780.dkr.ecr.us-east-1.amazonaws.com/mfl-score:0.9
+        ImageUri: !Ref EcrImageUri
       PackageType: Image
       Architectures:
            - arm64
@@ -322,4 +327,4 @@ Outputs:
   MflScoringFunctionArn:
     Value: !GetAtt MflScoringFunction.Arn
     Export:
-      Name: MflScoringFunctionCheckArn
+      Name: MflScoringFunctionArn

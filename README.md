@@ -30,6 +30,17 @@ AllPlay percentage for each team is calculated as follows:
 I am not responsible for creation of this rule set - I merely automated the calculation of it.
 
 
+## Setup Basic Output from Bare Account
+1. make createstoragestack
+1. make createstack
+1. In AWS Console: Secrets Service => MflScoringApiSecret-* => Set Plaintext secret to API key
+1. Visit the Prod link above to view the output
+
+
+## Setup "Pretty" Output (optional, continue after verifying basic output)
+1. make createwebstack
+2. make pushwebartifacts
+
 ## To Do:
 - [ ] Change front end API from stage to prod and make mflstage.<domain> into stage
 - [ ] Put team names in front of staging stage

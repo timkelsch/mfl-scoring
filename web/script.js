@@ -1,4 +1,4 @@
-const url = 'https://3xi97uokw5.execute-api.us-east-1.amazonaws.com/stage/mfl-scoring?output=json'
+const url = 'https://zf4qo62l5h.execute-api.us-east-1.amazonaws.com/stage/mfl-scoring?output=json'
 
 async function fetchScoring() {
     try {
@@ -18,14 +18,15 @@ async function logFetchScoring() {
 
 async function displayTeams() {
     const results = await fetchScoring();
-  
-    results.forEach((team) => {
+    const teams = results.franchise;
+
+    teams.forEach((team) => {
       const tr = document.createElement('tr');
       tr.classList.add('table-row');
       tr.innerHTML = `
       <tr>
-        <td scope="col" class="table-data">${team.TeamName}</td>
-        <td scope="col" class="table-data">${team.OwnerName.split(" ")[0]}</td>
+        <td scope="col" class="table-data">${team.name}</td>
+        <td scope="col" class="table-data">${team.owner_name.split(" ")[0]}</td>
         <td scope="col" class="table-data">${team.Record}</td>
         <td scope="col" class="table-data">${team.PointsFor}</td>
         <td scope="col" class="table-data">${parseFloat(team.PointScore)}</td>
