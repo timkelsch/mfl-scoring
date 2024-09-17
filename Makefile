@@ -10,7 +10,8 @@ VERSION=$(shell aws ecr get-login-password --region us-east-1 | docker login --u
 IMAGE_URI=${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/mfl-score:${VERSION}
 WEB_BUCKET=mfl.timkelsch.com
 
-FUNCTION_NAME=mfl-scoring-MflScoringFunction-1ZmFtx9UqLKk
+FUNCTION_NAME=$(shell aws lambda list-functions --output json | jq -r '.Functions[] | \
+  select(.FunctionName | startswith("mfl-scoring")) | .FunctionName')
 FUNCTION_VERSION_PROD=136
 STACK_NAME=mfl-scoring
 TEMPLATE_FILE=file://mfl-scoring.yaml

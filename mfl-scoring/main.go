@@ -91,7 +91,7 @@ type Franchise struct {
 
 const (
 	MflURL                  string = "https://www46.myfantasyleague.com/"
-	LeagueYear              string = "2023"
+	LeagueYear              string = "2024"
 	LeagueAPIQuery          string = "TYPE=league"
 	LeagueStandingsAPIQuery string = "TYPE=leagueStandings"
 	LeagueAPIPath           string = "export?"

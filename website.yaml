@@ -39,6 +39,10 @@ Parameters:
     Type: String
     Default: 'no'
     AllowedValues: ['yes', 'no']
+  S3BucketLogsName:
+    Description: Logging Bucket
+    Type: String
+    Default: !Sub "${SubDomain}.${DomainName}-logs"
   # S3BucketLogs:
   #   Description: Logging Bucket
   #   Type: String
@@ -46,9 +50,6 @@ Parameters:
   #   Description: Content Bucket
   #   Type: String
   #   Default: !Sub "${SubDomain}.${DomainName}"
-  # S3BucketLogsName:
-  #   Description: Logging Bucket
-  #   Type: String
   # S3BucketRootName:
   #   Description: Content Bucket
   #   Type: String
@@ -128,20 +129,20 @@ Resources:
         HttpVersion: 'http2'
         DefaultRootObject: 'index.html'
         IPV6Enabled: false
-        # Logging:
-        #   Bucket: !Ref 'S3BucketLogsName'
-        #   IncludeCookies: false
-        #   Prefix: 'cdn/'
+        Logging:
+          Bucket: !Ref 'S3BucketLogsName'
+          IncludeCookies: false
+          Prefix: 'cdn/'
         Origins:
           #- DomainName: !Sub '${SubDomain}.${DomainName}.s3-website-us-east-1.amazonaws.com'
           - DomainName: !GetAtt MflScoringWebsiteBucket.DomainName
             Id: !Sub 'S3-${SubDomain}.${DomainName}-root'
             OriginAccessControlId: !Ref OriginAccessControl
             S3OriginConfig: {}
-        PriceClass: 'PriceClass_All'
+        PriceClass: 'PriceClass_100'
         ViewerCertificate:
           AcmCertificateArn: !Ref Certificate
-          MinimumProtocolVersion: 'TLSv1.1_2016'
+          MinimumProtocolVersion: 'TLSv1.2_2021'
           SslSupportMethod: 'sni-only'
       Tags:
         - Key: Solution
@@ -221,9 +222,9 @@ Outputs:
   S3BucketRoot:
     Description: Website bucket
     Value: !GetAtt MflScoringWebsiteBucket.Arn
-  # S3BucketLogsName:
-  #   Description: Logging bucket name
-  #   Value: !GetAtt CustomResourceStack.Outputs.S3BucketLogsName
+  S3BucketLogsName:
+    Description: Logging bucket name
+    Value: !GetAtt CustomResourceStack.Outputs.S3BucketLogsName
   S3BucketRootName:
     Description: Website bucket name
     Value: !Ref MflScoringWebsiteBucket

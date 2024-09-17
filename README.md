@@ -82,9 +82,9 @@ I am not responsible for creation of this rule set - I merely automated the calc
 ## Requirements
 
 * AWS CLI already configured with Administrator permission
-* [Docker installed](https://www.docker.com/community-edition)
+* [Docker](https://www.docker.com/community-edition)
 * [Golang](https://golang.org)
-
+* [AWS Credential Helper](https://github.com/awslabs/amazon-ecr-credential-helper?tab=readme-ov-file#configuration)
 
 ### Testing
 
