@@ -91,7 +91,7 @@ type Franchise struct {
 
 const (
 	MflURL                  string = "https://www46.myfantasyleague.com/"
-	LeagueYear              string = "2023"
+	LeagueYear              string = "2024"
 	LeagueAPIQuery          string = "TYPE=league"
 	LeagueStandingsAPIQuery string = "TYPE=leagueStandings"
 	LeagueAPIPath           string = "export?"
@@ -137,6 +137,10 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	go func() {
 		LeagueAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueAPIQuery + "&" +
 			LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
+		// parts := strings.Split(LeagueAPIURL, "&APIKEY=")
+		lengthWithoutAPIKey := len(LeagueAPIURL) - len(apiKey)
+		cleanedURL := LeagueAPIURL[0:lengthWithoutAPIKey]
+		fmt.Println(cleanedURL)
 		client := &http.Client{}
 		franchiseDetails, err = getFranchiseDetails(client, LeagueAPIURL)
 		if err != nil {
@@ -149,6 +153,10 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	go func() {
 		LeagueStandingsAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueStandingsAPIQuery + "&" +
 			LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
+		lengthWithoutAPIKey := len(LeagueStandingsAPIURL) - len(apiKey)
+		cleanedURL := LeagueStandingsAPIURL[0:lengthWithoutAPIKey]
+		fmt.Println(cleanedURL)
+
 		client := &http.Client{}
 		leagueStandings, err = getLeagueStandings(client, LeagueStandingsAPIURL)
 		if err != nil {
@@ -268,21 +276,21 @@ func (f ByAllPlayPercentage) Less(i, j int) bool {
 }
 
 func sortFranchises(teams Franchises) Franchises {
-	for _, team := range teams.Franchise {
-		fmt.Printf("teamID: %s, totalScore: %g, recordScore: %g, allPlayPct: %g \n\n",
-			team.TeamID, team.TotalScore, team.RecordScore, team.AllPlayPercentage)
-		fmt.Println("")
-	}
+	// for _, team := range teams.Franchise {
+	// 	fmt.Printf("teamID: %s, totalScore: %g, recordScore: %g, allPlayPct: %g \n\n",
+	// 		team.TeamID, team.TotalScore, team.RecordScore, team.AllPlayPercentage)
+	// 	fmt.Println("")
+	// }
 
 	sort.Sort(ByAllPlayPercentage{teams})
 	sort.Sort(ByPointsFor{teams})
 	sort.Sort(ByTotalScore{teams})
 
-	for _, team := range teams.Franchise {
-		fmt.Printf("teamID: %s, totalScore: %g, recordScore: %g, allPlayPct: %g \n",
-			team.TeamID, team.TotalScore, team.RecordScore, team.AllPlayPercentage)
-		fmt.Println("")
-	}
+	// for _, team := range teams.Franchise {
+	// 	fmt.Printf("teamID: %s, totalScore: %g, recordScore: %g, allPlayPct: %g \n",
+	// 		team.TeamID, team.TotalScore, team.RecordScore, team.AllPlayPercentage)
+	// 	fmt.Println("")
+	// }
 
 	return teams
 }
@@ -317,12 +325,6 @@ func printScoringTableUncouthly(teams Franchises) string {
 		{Name: AllPlayPct, Align: text.AlignCenter},
 	}
 
-	// sortBy := []table.SortBy{
-	// 	{Name: TotalPts, Mode: table.DscNumeric},
-	// 	{Name: RecScore, Mode: table.DscNumeric},
-	// 	{Name: AllPlayPct, Mode: table.DscNumeric},
-	// }
-
 	t.SetColumnConfigs(columnConfigs)
 	// t.SortBy(sortBy)
 	return t.Render()
@@ -348,12 +350,6 @@ func printScoringTableCouthly(teams Franchises) string {
 		{Name: AllPlayRecord, Align: text.AlignCenter},
 		{Name: AllPlayPct, Align: text.AlignCenter},
 	}
-
-	// sortBy := []table.SortBy{
-	// 	{Name: TotalPts, Mode: table.DscNumeric},
-	// 	{Name: RecScore, Mode: table.DscNumeric},
-	// 	{Name: AllPlayPct, Mode: table.DscNumeric},
-	// }
 
 	t.SetColumnConfigs(columnConfigs)
 	// t.SortBy(sortBy)
@@ -674,7 +670,7 @@ type HTMLElement interface {
 }
 
 func parseRow(h HTMLElement) AllPlayTeamStats {
-	fmt.Printf("%v", h)
+	// fmt.Printf("%v", h)
 	return AllPlayTeamStats{
 		FranchiseName:     h.ChildText("td:nth-child(1)"),
 		AllPlayWins:       h.ChildText("td:nth-child(13)"),

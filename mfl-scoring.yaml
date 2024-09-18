@@ -15,13 +15,18 @@ Parameters:
     Description: API path IE https://abc.example.com/stage/<ApiPath>
     Type: String
     Default: mfl-scoring
+  EcrImageUri:
+    Description: ECR Image URI
+    Type: String
+    Default: 287140326780.dkr.ecr.us-east-1.amazonaws.com/mfl-score:0.136
+
 
 Resources:
   MflScoringCertificate:
     Type: 'AWS::CertificateManager::Certificate'
     Properties:
       DomainName: !Ref DomainName
-      CertificateTransparencyLoggingPreference: DISABLED
+      CertificateTransparencyLoggingPreference: ENABLED
       ValidationMethod: DNS
 
   MflScoringCustomDomain:
@@ -57,7 +62,7 @@ Resources:
     Properties:
       Role: !GetAtt MflScoringFunctionIamRole.Arn
       Code: 
-        ImageUri: 287140326780.dkr.ecr.us-east-1.amazonaws.com/mfl-score:0.9
+        ImageUri: !Ref EcrImageUri
       PackageType: Image
       Architectures:
            - arm64
@@ -181,6 +186,11 @@ Resources:
     Type: AWS::ApiGatewayV2::Api
     Properties:
       Name: MFL Scoring API
+      CorsConfiguration:
+        AllowHeaders: ['*']
+        AllowMethods: ['GET']
+        AllowOrigins: ['https://mfl.timkelsch.com']
+        MaxAge: 0
       ProtocolType: HTTP
 
   MflScoringIntegration:
@@ -322,4 +332,4 @@ Outputs:
   MflScoringFunctionArn:
     Value: !GetAtt MflScoringFunction.Arn
     Export:
-      Name: MflScoringFunctionCheckArn
+      Name: MflScoringFunctionArn

@@ -6,9 +6,11 @@ REGISTRY="${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com"
 REPO="mfl-score"
 
 # Login - not necessary with credential helper
+# https://github.com/awslabs/amazon-ecr-credential-helper?tab=readme-ov-file#configuration
 # aws ecr get-login-password --region us-east-1 | docker login --username AWS \
 #   --password-stdin "${REGISTRY}"
 
+echo "${FUNCTION_NAME}"
 # Only works if there is one tag per image
 CURRENT_VERSION=$(aws ecr describe-images --region "${AWS_REGION}" --output json \
 --repository-name mfl-score --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' \
