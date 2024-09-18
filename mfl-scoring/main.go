@@ -137,6 +137,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	go func() {
 		LeagueAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueAPIQuery + "&" +
 			LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
+		fmt.Println("LeagueAPIURL: ", LeagueAPIURL)
 		client := &http.Client{}
 		franchiseDetails, err = getFranchiseDetails(client, LeagueAPIURL)
 		if err != nil {
@@ -149,6 +150,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	go func() {
 		LeagueStandingsAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueStandingsAPIQuery + "&" +
 			LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
+		fmt.Println("LeagueStandingsAPIURL: ", LeagueStandingsAPIURL)
 		client := &http.Client{}
 		leagueStandings, err = getLeagueStandings(client, LeagueStandingsAPIURL)
 		if err != nil {
@@ -212,7 +214,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 				"Access-Control-Allow-Credentials": "true",
 			}
 			fmt.Println("headers: ", headers)
-			body, err := json.Marshal(printScoringTableCouthly(sortedFranchises))
+			body, err := json.Marshal(sortedFranchises)
 			if err != nil {
 				panic(err)
 			}
@@ -317,12 +319,6 @@ func printScoringTableUncouthly(teams Franchises) string {
 		{Name: AllPlayPct, Align: text.AlignCenter},
 	}
 
-	// sortBy := []table.SortBy{
-	// 	{Name: TotalPts, Mode: table.DscNumeric},
-	// 	{Name: RecScore, Mode: table.DscNumeric},
-	// 	{Name: AllPlayPct, Mode: table.DscNumeric},
-	// }
-
 	t.SetColumnConfigs(columnConfigs)
 	// t.SortBy(sortBy)
 	return t.Render()
@@ -348,12 +344,6 @@ func printScoringTableCouthly(teams Franchises) string {
 		{Name: AllPlayRecord, Align: text.AlignCenter},
 		{Name: AllPlayPct, Align: text.AlignCenter},
 	}
-
-	// sortBy := []table.SortBy{
-	// 	{Name: TotalPts, Mode: table.DscNumeric},
-	// 	{Name: RecScore, Mode: table.DscNumeric},
-	// 	{Name: AllPlayPct, Mode: table.DscNumeric},
-	// }
 
 	t.SetColumnConfigs(columnConfigs)
 	// t.SortBy(sortBy)

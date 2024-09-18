@@ -39,10 +39,10 @@ Parameters:
     Type: String
     Default: 'no'
     AllowedValues: ['yes', 'no']
-  S3BucketLogsName:
-    Description: Logging Bucket
-    Type: String
-    Default: !Sub "${SubDomain}.${DomainName}-logs"
+  # S3BucketLogsName:
+  #   Description: Logging Bucket
+  #   Type: String
+  #   Default: !Sub '${SubDomain}.${DomainName}-logs'
   # S3BucketLogs:
   #   Description: Logging Bucket
   #   Type: String
@@ -70,6 +70,53 @@ Resources:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Sub '${SubDomain}.${DomainName}'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action: 
+            - s3:GetObject
+            Principal:
+              Service: 'cloudfront.amazonaws.com'
+            Effect: Allow
+            Resource: !Join [ '', [ 'arn:aws:s3:::', !Ref MflScoringWebsiteBucket, '/*' ] ]
+            Condition:
+              StringEquals:
+                'AWS:SourceArn': !Sub 'arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+
+  MflScoringWebsiteLogBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerPreferred
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+
+  S3LogBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MflScoringWebsiteLogBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action: 
+            - s3:PutObject
+            Principal:
+              Service: 'delivery.logs.amazonaws.com'
+            Effect: Allow
+            Resource: !Join [ '', [ 'arn:aws:s3:::', !Ref MflScoringWebsiteLogBucket, '/*' ] ]
+          - Action: 
+            - s3:GetBucketAcl
+            - s3:PutBucketAcl
+            Principal:
+              Service: 'delivery.logs.amazonaws.com'
+            Effect: Allow
+            Resource: !Join [ '', [ 'arn:aws:s3:::', !Ref MflScoringWebsiteLogBucket ] ]
+
   Certificate:
     Type: AWS::CertificateManager::Certificate
     Properties:
@@ -88,22 +135,7 @@ Resources:
               HostedZoneId: !Ref HostedZoneId
             - Ref: AWS::NoValue
       ValidationMethod: DNS
-
-  S3BucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Sub '${SubDomain}.${DomainName}'
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Action: s3:GetObject
-            Principal:
-              Service: 'cloudfront.amazonaws.com'
-            Effect: Allow
-            Resource: !Join [ '', [ 'arn:aws:s3:::', !Ref MflScoringWebsiteBucket, '/*' ] ]
-            Condition:
-              StringEquals:
-                'AWS:SourceArn': !Sub 'arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+      CertificateTransparencyLoggingPreference: ENABLED
 
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
@@ -116,6 +148,7 @@ Resources:
             CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
             TargetOriginId: !Sub 'S3-${SubDomain}.${DomainName}-root'
             ViewerProtocolPolicy: 'redirect-to-https'
+            ResponseHeadersPolicyId: !Ref ResponseHeadersPolicy
         CustomErrorResponses:
           - ErrorCachingMinTTL: 60
             ErrorCode: 404
@@ -130,7 +163,7 @@ Resources:
         DefaultRootObject: 'index.html'
         IPV6Enabled: false
         Logging:
-          Bucket: !Ref 'S3BucketLogsName'
+          Bucket: !GetAtt MflScoringWebsiteLogBucket.DomainName
           IncludeCookies: false
           Prefix: 'cdn/'
         Origins:
@@ -193,23 +226,32 @@ Resources:
     Properties:
       ResponseHeadersPolicyConfig:
         Name: 'static-site-security-headers'
+        CorsConfig:
+          AccessControlAllowCredentials: false
+          AccessControlAllowHeaders: 
+            Items: ['*']
+          AccessControlAllowMethods: 
+            Items: [ 'GET' ]
+          AccessControlAllowOrigins: 
+            Items: [ 'https://spankme.timismydaddy.com', 'https://mfl.timkelsch.com' ]
+          OriginOverride: false
         SecurityHeadersConfig:
-          StrictTransportSecurity:
-            AccessControlMaxAgeSec: 63072000
-            IncludeSubdomains: true
-            Override: true
-            Preload: true
-          ContentSecurityPolicy:
-            ContentSecurityPolicy: connect-src https://3xi97uokw5.execute-api.us-east-1.amazonaws.com; style-src https://fonts.googleapis.com https://fonts.gstatic.com 'self'; font-src https://fonts.googleapis.com https://fonts.gstatic.com 'self'; default-src 'none'; img-src 'self'; script-src 'self';
-            Override: true
-          ContentTypeOptions:
-            Override: true
-          FrameOptions:
-            FrameOption: DENY
-            Override: true
-          ReferrerPolicy:
-            ReferrerPolicy: 'same-origin'
-            Override: true
+          # StrictTransportSecurity:
+          #   AccessControlMaxAgeSec: 63072000
+          #   IncludeSubdomains: true
+          #   Override: true
+          #   Preload: true
+          # ContentSecurityPolicy:
+          #   ContentSecurityPolicy: connect-src https://3xi97uokw5.execute-api.us-east-1.amazonaws.com; style-src https://fonts.googleapis.com https://fonts.gstatic.com 'self'; font-src https://fonts.googleapis.com https://fonts.gstatic.com 'self'; default-src 'none'; img-src 'self'; script-src 'self';
+          #   Override: true
+          # ContentTypeOptions:
+          #   Override: true
+          # FrameOptions:
+          #   FrameOption: DENY
+          #   Override: true
+          # ReferrerPolicy:
+          #   ReferrerPolicy: 'same-origin'
+          #   Override: true
           XSSProtection:
             ModeBlock: true
             Override: true
@@ -224,7 +266,7 @@ Outputs:
     Value: !GetAtt MflScoringWebsiteBucket.Arn
   S3BucketLogsName:
     Description: Logging bucket name
-    Value: !GetAtt CustomResourceStack.Outputs.S3BucketLogsName
+    Value: !Ref MflScoringWebsiteLogBucket
   S3BucketRootName:
     Description: Website bucket name
     Value: !Ref MflScoringWebsiteBucket

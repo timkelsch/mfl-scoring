@@ -1,4 +1,4 @@
-const url = 'https://zf4qo62l5h.execute-api.us-east-1.amazonaws.com/stage/mfl-scoring?output=json'
+const url = 'https://spankme.timismydaddy.com/mfl-scoring?output=json'
 
 async function fetchScoring() {
     try {
@@ -6,6 +6,7 @@ async function fetchScoring() {
         if (!response.ok) { throw new Error('Request Failed') }
 
         const data = await response.json()
+        console.log("JSON Response: ", data);
         return data
     } catch (error) {
         console.log(error);
@@ -18,7 +19,9 @@ async function logFetchScoring() {
 
 async function displayTeams() {
     const results = await fetchScoring();
+    console.log(results);
     const teams = results.franchise;
+    console.log(teams);
 
     teams.forEach((team) => {
       const tr = document.createElement('tr');

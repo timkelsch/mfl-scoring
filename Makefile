@@ -33,6 +33,9 @@ updatestack:
 		--capabilities CAPABILITY_IAM --parameters ParameterKey=DomainName,ParameterValue=${MFL_UNCOUTH_DOMAIN} \
 		--region ${AWS_REGION}
 
+deletestack:
+	aws cloudformation delete-stack --stack-name ${STACK_NAME} --region ${AWS_REGION}
+
 createstoragestack:
 	aws cloudformation update-stack --stack-name ${STORAGE_STACK_NAME} --template-body ${STORAGE_TEMPLATE_FILE} \
 		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
@@ -40,9 +43,6 @@ createstoragestack:
 updatestoragestack:
 	aws cloudformation update-stack --stack-name storage --template-body file://storage.yaml \
 		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
-
-deletestack:
-	aws cloudformation delete-stack --stack-name ${STACK_NAME} --region ${AWS_REGION}
 
 test:
 	cd ${CODE_DIR} && go test -cover
@@ -82,6 +82,9 @@ createwebstack:
 updatewebstack:
 	aws cloudformation update-stack --stack-name mfl-website --template-body file://website.yaml \
 		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
+
+deletewebstack:
+	aws cloudformation delete-stack --stack-name mfl-website --region ${AWS_REGION}		
 
 pushwebartifacts: 
 	aws s3 cp web s3://${WEB_BUCKET} --recursive --include "*.*"

@@ -26,7 +26,7 @@ Resources:
     Type: 'AWS::CertificateManager::Certificate'
     Properties:
       DomainName: !Ref DomainName
-      CertificateTransparencyLoggingPreference: DISABLED
+      CertificateTransparencyLoggingPreference: ENABLED
       ValidationMethod: DNS
 
   MflScoringCustomDomain:
@@ -186,6 +186,11 @@ Resources:
     Type: AWS::ApiGatewayV2::Api
     Properties:
       Name: MFL Scoring API
+      CorsConfiguration:
+        AllowHeaders: ['*']
+        AllowMethods: ['GET']
+        AllowOrigins: ['https://mfl.timkelsch.com']
+        MaxAge: 0
       ProtocolType: HTTP
 
   MflScoringIntegration:

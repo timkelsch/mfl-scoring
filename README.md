@@ -1,8 +1,8 @@
 ![Unit Tests](https://github.com/timkelsch/mfl-scoring/actions/workflows/UnitTests.yml/badge.svg)
 
 ## Scoring Links
-Stage: https://3xi97uokw5.execute-api.us-east-1.amazonaws.com/stage/mfl-scoring </br>
-Prod: https://3xi97uokw5.execute-api.us-east-1.amazonaws.com/prod/mfl-scoring
+Stage: https://3428g3vepl.execute-api.us-east-1.amazonaws.com/stage/mfl-scoring </br>
+Prod: https://3428g3vepl.execute-api.us-east-1.amazonaws.com/prod/mfl-scoring
 
 ## MyFantasyLeague.com Custom Football Scoring
 
@@ -31,10 +31,11 @@ I am not responsible for creation of this rule set - I merely automated the calc
 
 
 ## Setup Basic Output from Bare Account
-1. make createstoragestack
-1. make createstack
-1. In AWS Console: Secrets Service => MflScoringApiSecret-* => Set Plaintext secret to API key
-1. Visit the Prod link above to view the output
+1. $ make createstoragestack
+1. $ make createstack
+1. In AWS Console: Secrets Service => MflScoringApiSecret-* => Set Plaintext secret to the current API key
+1. $ make createwebstack
+1. Visit the Stage and Prod links above to view the output
 
 
 ## Setup "Pretty" Output (optional, continue after verifying basic output)
