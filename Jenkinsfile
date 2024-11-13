@@ -2,8 +2,6 @@
 pipeline {
     agent any
 
-    properties([pipelineTriggers([githubPush()])])
-
     tools {
         go 'go1.23.3'
         git 'Default'
