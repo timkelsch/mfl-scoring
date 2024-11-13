@@ -10,7 +10,7 @@ VERSION=$(shell aws ecr get-login-password --region us-east-1 | docker login --u
 IMAGE_URI=${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/mfl-score:${VERSION}
 WEB_BUCKET=mfl.timkelsch.com
 
-FUNCTION_NAME=$(shell aws lambda list-functions --output json | jq -r '.Functions[] | \
+FUNCTION_NAME=$(shell aws lambda list-functions --output json --region us-east-1 | jq -r '.Functions[] | \
   select(.FunctionName | startswith("mfl-scoring")) | .FunctionName')
 FUNCTION_VERSION_PROD=136
 STACK_NAME=mfl-scoring
@@ -73,7 +73,7 @@ val:
 	aws cloudformation validate-template --template-body ${TEMPLATE_FILE}
 
 lint:
-	cd ${CODE_DIR} && golangci-lint run -v --no-config .
+	cd ${CODE_DIR} && golangci-lint run -v -c ../.golangci.yml .
 
 createwebstack:
 	aws cloudformation create-stack --stack-name mfl-website --template-body file://website.yaml \

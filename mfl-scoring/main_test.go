@@ -735,7 +735,7 @@ type MockHTMLElement struct {
 
 func (m *MockHTMLElement) NewHTMLElementFromSelectionNode(resp *colly.Response, s *goquery.Selection, n *html.Node, idx int) *colly.HTMLElement {
 	args := m.Called(resp, s, n, idx)
-	return args.Get(0).(*colly.HTMLElement)
+	return args.Get(0).(*colly.HTMLElement) //nolint
 }
 
 func (m *MockHTMLElement) Attr(k string) string {
@@ -755,7 +755,7 @@ func (m *MockHTMLElement) ChildText(goquerySelector string) string {
 
 func (m *MockHTMLElement) ChildAttrs(goquerySelector, attrName string) []string {
 	args := m.Called(goquerySelector, attrName)
-	return args.Get(0).([]string)
+	return args.Get(0).([]string) //nolint
 }
 
 func (m *MockHTMLElement) ForEach(goquerySelector string, callback func(int, *colly.HTMLElement)) {
@@ -842,7 +842,7 @@ type MockHTTPClient struct {
 
 func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	args := m.Called(req)
-	return args.Get(0).(*http.Response), args.Error(1)
+	return args.Get(0).(*http.Response), args.Error(1) //nolint
 }
 
 func TestGetFranchiseDetails(t *testing.T) {
