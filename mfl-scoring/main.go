@@ -633,7 +633,7 @@ func scrape() []AllPlayTeamStats {
 	var allPlayTeamsStats []AllPlayTeamStats
 
 	c.OnRequest(func(r *colly.Request) {
-		log.Println("Scraping: ", r.URL)
+		fmt.Println("Scraping: ", r.URL)
 	})
 
 	c.OnResponse(func(r *colly.Response) {
