@@ -2,8 +2,14 @@
 pipeline {
     agent any
 
+    properties([pipelineTriggers([githubPush()])])
+
+    node {
+        git url: 'https://github.com/timkelsch/mfl-scoring.git', branch: 'main'
+    }
+
     tools {
-        go 'go1.21'
+        go 'go1.23.3'
         git 'Default'
     }
 
