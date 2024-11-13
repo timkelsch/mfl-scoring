@@ -16,7 +16,7 @@ pipeline {
     options {
         // prevent dual pushes at PR merge from blowing us up
         disableConcurrentBuilds()
-        buildDiscarder(logRotator(numToKeepStr: '1', artifactNumToKeepStr: '1'))
+        buildDiscarder(logRotator(numToKeepStr: '2', artifactNumToKeepStr: '2'))
     }
 
     stages {
