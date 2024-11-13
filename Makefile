@@ -70,7 +70,7 @@ build:
 	docker build --platform linux/amd64 -t mfl-scoring-image:mod .
 
 val:
-	aws cloudformation validate-template --debug --template-body ${TEMPLATE_FILE}
+	aws cloudformation validate-template --template-body ${TEMPLATE_FILE}
 
 lint:
 	cd ${CODE_DIR} && golangci-lint run -v
