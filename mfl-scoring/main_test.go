@@ -849,11 +849,14 @@ func TestGetFranchiseDetails(t *testing.T) {
 	mockHTTPClient := new(MockHTTPClient)
 	leagueAPIURL := "http://example.com"
 
-	testLeagueResponse, _ := json.Marshal(LeagueResponse{
+	testLeagueResponse, err := json.Marshal(LeagueResponse{
 		League: League{
 			Name: "fantasmo",
 		},
 	})
+	if err != nil {
+		t.Fatalf("Failed to marshal testLeagueResponse: %v", err)
+	}
 	t.Run("successful request", func(t *testing.T) {
 		mockResponse := &http.Response{
 			StatusCode: http.StatusOK,
@@ -895,13 +898,16 @@ func TestGetLeagueStandings(t *testing.T) {
 	mockHTTPClient := new(MockHTTPClient)
 	leagueAPIURL := "http://example.com"
 
-	testLeagueStandings, _ := json.Marshal(LeagueStandingsResponse{
+	testLeagueStandings, err := json.Marshal(LeagueStandingsResponse{
 		LeagueStandings: LeagueStandings{
 			Franchise: []Franchise{
 				{TeamID: "1", TeamName: Team1Name, OwnerName: Team1Owner, RecordWinsString: "10", RecordLossesString: "5", RecordTiesString: "2", PointsForString: "0.66"},
 			},
 		},
 	})
+	if err != nil {
+		t.Fatalf("Failed to marshal testLeagueStandings: %v", err)
+	}
 
 	t.Run("successful request", func(t *testing.T) {
 		mockResponse := &http.Response{
