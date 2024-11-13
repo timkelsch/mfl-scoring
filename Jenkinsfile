@@ -43,6 +43,7 @@ pipeline {
                     sh 'make test'
                     echo 'Running lint'
                     sh 'make lint'
+                    echo 'linting complete'
                 }
             }
         }
@@ -50,6 +51,7 @@ pipeline {
         stage('Build, Push, Add Lambda Version') {
             steps {
                 script {
+                    echo 'KAPUSHHHH'
                     RETURN_CODE = sh(
                         script: 'make push',
                         returnStatus: true

@@ -251,7 +251,7 @@ linters:
     - godox
 
     # Check the error handling expressions. Too noisy.
-    - err113
+    # - err113
 
     # I don't use file headers.
     - goheader
