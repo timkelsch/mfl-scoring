@@ -73,7 +73,7 @@ val:
 	aws cloudformation validate-template --template-body ${TEMPLATE_FILE}
 
 lint:
-	cd ${CODE_DIR} && golangci-lint run -v
+	cd ${CODE_DIR} && golangci-lint run -v -c ../.golangci.yml main.go main_test.go
 
 createwebstack:
 	aws cloudformation create-stack --stack-name mfl-website --template-body file://website.yaml \
