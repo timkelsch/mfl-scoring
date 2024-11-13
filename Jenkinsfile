@@ -17,7 +17,6 @@ pipeline {
         // prevent dual pushes at PR merge from blowing us up
         disableConcurrentBuilds()
         buildDiscarder(logRotator(numToKeepStr: '1', artifactNumToKeepStr: '1'))
-        cache(key: 'go-modules', value: 'sum.go')
     }
 
     stages {
