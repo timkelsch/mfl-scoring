@@ -1,4 +1,4 @@
-const url = 'https://spankme.timismydaddy.com/mfl-scoring?output=json'
+const url = 'https://mfl-scoring.timkelsch.com/mfl-scoring?output=json'
 
 async function fetchScoring() {
     try {

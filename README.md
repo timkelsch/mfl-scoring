@@ -48,6 +48,7 @@ I am not responsible for creation of this rule set - I merely automated the calc
 
 - [ ] Change front end API from stage to prod and make mflstage.<domain> into stage
 - [ ] Put team names in front of staging stage
+- [x] Create couth custom URL for scoring API
 - [x] Make dual pushes from Github run sequentially (branch create/push and PR merge)
 - [x] Clean up workspace in JF post step
 - [x] Add workflow / tests passing badge to README

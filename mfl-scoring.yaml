@@ -11,6 +11,14 @@ Parameters:
   DomainName:
     Description: Domain name for API Gateway API
     Type: String
+  SafeHostedZoneId:
+    Description: Hosted zone id of the domain at which this API will be served
+    Type: String
+    Default: Z07419102HFRMCTH28NVX
+  SafeDomainName:
+    Description: Domain name for API Gateway API
+    Type: String
+    Default: mfl-scoring.timkelsch.com
   ApiPath:
     Description: API path IE https://abc.example.com/stage/<ApiPath>
     Type: String
@@ -56,6 +64,41 @@ Resources:
       AliasTarget:
         HostedZoneId: !GetAtt MflScoringCustomDomain.RegionalHostedZoneId
         DNSName: !GetAtt MflScoringCustomDomain.RegionalDomainName
+
+  MflScoringSafeCertificate:
+    Type: 'AWS::CertificateManager::Certificate'
+    Properties:
+      DomainName: !Ref SafeDomainName
+      CertificateTransparencyLoggingPreference: ENABLED
+      ValidationMethod: DNS
+
+  MflScoringSafeCustomDomain:
+    Type: AWS::ApiGatewayV2::DomainName
+    Properties: 
+      DomainName: !Ref SafeDomainName
+      DomainNameConfigurations:
+        - CertificateArn: !Ref MflScoringSafeCertificate
+          SecurityPolicy: TLS_1_2
+
+  MflScoringSafeApiMapping:
+    DependsOn:
+         - MflScoringSafeRecordSet
+    Type: "AWS::ApiGatewayV2::ApiMapping"
+    Properties:
+      DomainName: !Ref SafeDomainName
+      ApiId: !Ref MflScoringApi
+      Stage: !Ref MflScoringApiStageProd
+      ApiMappingKey: ''
+
+  MflScoringSafeRecordSet:
+    Type: "AWS::Route53::RecordSet"
+    Properties:
+      HostedZoneId: !Ref SafeHostedZoneId
+      Name: !Ref SafeDomainName
+      Type: A
+      AliasTarget:
+        HostedZoneId: !GetAtt MflScoringSafeCustomDomain.RegionalHostedZoneId
+        DNSName: !GetAtt MflScoringSafeCustomDomain.RegionalDomainName
 
   MflScoringFunction:
     Type: AWS::Lambda::Function
@@ -328,6 +371,10 @@ Outputs:
   CustomProdUrl:
     Description: Custom prod URL
     Value: !Join [ "", [ "https://", !Ref MflScoringCustomDomain, "/", !Ref ApiPath ] ]
+
+  CustomSafeProdUrl:
+    Description: Custom prod URL
+    Value: !Join [ "", [ "https://", !Ref MflScoringSafeCustomDomain, "/", !Ref ApiPath ] ]
 
   MflScoringFunctionArn:
     Value: !GetAtt MflScoringFunction.Arn

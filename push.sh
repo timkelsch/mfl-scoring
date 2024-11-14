@@ -30,14 +30,14 @@ NEW_IMAGE_ID=$(docker build -q -t "${REPO}:${NEXT_VERSION}" . | cut -d: -f2 | he
 if [[ $(docker image ls --format json "${CURRENT_IMAGE}" | jq -r '.ID' | wc -l) -eq 1 ]]; then
   # If so, set CURRENT_IMAGE_ID
   CURRENT_IMAGE_ID=$(docker image ls --format json "${CURRENT_IMAGE}" | jq -r '.ID');
-  else
-    # If not, pull the current image from the repo
-    docker pull "${CURRENT_IMAGE}"
-    # And set the CURRENT_IMAGE_ID using that
-    if ! CURRENT_IMAGE_ID=$(docker inspect --format '{{.Id}}' "${CURRENT_IMAGE}"); then
-      echo "Cannot determine current image ID. Exiting."
-      exit 2
-    fi
+else
+  # If not, pull the current image from the repo
+  docker pull "${CURRENT_IMAGE}"
+  # And set the CURRENT_IMAGE_ID using that
+  if ! CURRENT_IMAGE_ID=$(docker inspect --format '{{.Id}}' "${CURRENT_IMAGE}"); then
+    echo "Cannot determine current image ID. Exiting."
+    exit 2
+  fi
 fi
 
 if [ "${CURRENT_IMAGE_ID}" = "${NEW_IMAGE_ID}" ]; then
