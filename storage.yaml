@@ -14,8 +14,35 @@ Resources:
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
+
+  AccessLogs:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+
+  AccessLogsBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref AccessLogs
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::127311923021:root # us-east-1
+            Action: "s3:PutObject"
+            Resource:
+              - !Join [ "/", [ !GetAtt AccessLogs.Arn, "*" ] ]
 
   MflScoring:
     Type: 'AWS::S3::Bucket'
@@ -30,6 +57,8 @@ Resources:
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
 
@@ -57,14 +86,22 @@ Outputs:
     Value: !Ref CicdPipeline
     Export: 
       Name: CicdPipelineBucketName
-  MflScoringBucketName:
-    Value: !Ref MflScoring
-    Export: 
-      Name: MflScoringBucketName
   CicdPipelineBucketArn:
     Value: !GetAtt CicdPipeline.Arn
     Export: 
       Name: CicdPipelineBucketArn
+  AccessLogsBucketName:
+    Value: !Ref AccessLogs
+    Export: 
+      Name: AccessLogsBucketName
+  AccessLogsBucketArn:
+    Value: !GetAtt AccessLogs.Arn
+    Export: 
+      Name: AccessLogsBucketArn
+  MflScoringBucketName:
+    Value: !Ref MflScoring
+    Export: 
+      Name: MflScoringBucketName
   MflScoringBucketArn:
     Value: !GetAtt MflScoring.Arn
     Export: 
