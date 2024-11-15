@@ -2,10 +2,12 @@
 
 ## Scoring Links
 
-Stage: https://l2lz9m58l2.execute-api.us-east-1.amazonaws.com/stage/mfl-scoring </br>
-Prod: https://l2lz9m58l2.execute-api.us-east-1.amazonaws.com/prod/mfl-scoring
+https://mfl.timkelsch.com
 
-## MyFantasyLeague.com Custom Football Scoring
+<!-- Stage: https://l2lz9m58l2.execute-api.us-east-1.amazonaws.com/stage/mfl-scoring </br>
+Prod: https://mfl-scoring.timkelsch.com/mfl-scoring -->
+
+## MyFantasyLeague.com Custom Fantasy Football Scoring
 
 Provides a custom scoring solution to calculate live league championship scoring based on the following rules:
 
@@ -46,8 +48,6 @@ I am not responsible for creation of this rule set - I merely automated the calc
 
 ## To Do:
 
-- [ ] Change front end API from stage to prod and make mflstage.<domain> into stage
-- [ ] Put team names in front of staging stage
 - [x] Create couth custom URL for scoring API
 - [x] Make dual pushes from Github run sequentially (branch create/push and PR merge)
 - [x] Clean up workspace in JF post step
@@ -75,12 +75,11 @@ I am not responsible for creation of this rule set - I merely automated the calc
 - [x] Allow teams with tied fantasy points to share championship points
 - [x] Update API Key
 - [x] Migrate runtime from go1.x to provided.al2
-- [x] Move API key to secretsmanager protected by KMS
+- [x] Move API key to secretsmanager encrypted by KMS
 - [x] Implement tie break with all-play record percentage
 - [x] Scrape AllPlay data from front end instead of schedule API
 - [x] Standardize decimal format per column
 - [x] Horizontally center column values
-- [x] Add golangci-lint
 - [x] Fix manual formatting - use github.com/jedib0t/go-pretty/v6/table to automate
 
 ## Requirements
@@ -88,9 +87,9 @@ I am not responsible for creation of this rule set - I merely automated the calc
 - AWS CLI already configured with Administrator permission
 - [Docker](https://www.docker.com/community-edition)
 - [Golang](https://golang.org)
-- [AWS Credential Helper](https://github.com/awslabs/amazon-ecr-credential-helper?tab=readme-ov-file#configuration)
+- [AWS ECR Credential Helper](https://github.com/awslabs/amazon-ecr-credential-helper?tab=readme-ov-file#configuration)
 
-### Testing
+### Unit Testing
 
 ```shell
 make test
