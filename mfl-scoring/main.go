@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net"
 	"net/http"
@@ -140,7 +141,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		// parts := strings.Split(LeagueAPIURL, "&APIKEY=")
 		lengthWithoutAPIKey := len(LeagueAPIURL) - len(apiKey)
 		cleanedURL := LeagueAPIURL[0:lengthWithoutAPIKey]
-		fmt.Println(cleanedURL)
+		log.Println(cleanedURL)
 		client := &http.Client{}
 		franchiseDetails, err = getFranchiseDetails(client, LeagueAPIURL)
 		if err != nil {
@@ -155,7 +156,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 			LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
 		lengthWithoutAPIKey := len(LeagueStandingsAPIURL) - len(apiKey)
 		cleanedURL := LeagueStandingsAPIURL[0:lengthWithoutAPIKey]
-		fmt.Println(cleanedURL)
+		log.Println(cleanedURL)
 
 		client := &http.Client{}
 		leagueStandings, err = getLeagueStandings(client, LeagueStandingsAPIURL)
@@ -632,7 +633,7 @@ func scrape() []AllPlayTeamStats {
 	var allPlayTeamsStats []AllPlayTeamStats
 
 	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Scraping: ", r.URL)
+		log.Println("Scraping: ", r.URL)
 	})
 
 	c.OnResponse(func(r *colly.Response) {

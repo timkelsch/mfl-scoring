@@ -735,7 +735,7 @@ type MockHTMLElement struct {
 
 func (m *MockHTMLElement) NewHTMLElementFromSelectionNode(resp *colly.Response, s *goquery.Selection, n *html.Node, idx int) *colly.HTMLElement {
 	args := m.Called(resp, s, n, idx)
-	return args.Get(0).(*colly.HTMLElement)
+	return args.Get(0).(*colly.HTMLElement) //nolint
 }
 
 func (m *MockHTMLElement) Attr(k string) string {
@@ -755,7 +755,7 @@ func (m *MockHTMLElement) ChildText(goquerySelector string) string {
 
 func (m *MockHTMLElement) ChildAttrs(goquerySelector, attrName string) []string {
 	args := m.Called(goquerySelector, attrName)
-	return args.Get(0).([]string)
+	return args.Get(0).([]string) //nolint
 }
 
 func (m *MockHTMLElement) ForEach(goquerySelector string, callback func(int, *colly.HTMLElement)) {
@@ -842,18 +842,21 @@ type MockHTTPClient struct {
 
 func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	args := m.Called(req)
-	return args.Get(0).(*http.Response), args.Error(1)
+	return args.Get(0).(*http.Response), args.Error(1) //nolint
 }
 
 func TestGetFranchiseDetails(t *testing.T) {
 	mockHTTPClient := new(MockHTTPClient)
 	leagueAPIURL := "http://example.com"
 
-	testLeagueResponse, _ := json.Marshal(LeagueResponse{
+	testLeagueResponse, err := json.Marshal(LeagueResponse{
 		League: League{
 			Name: "fantasmo",
 		},
 	})
+	if err != nil {
+		t.Fatalf("Failed to marshal testLeagueResponse: %v", err)
+	}
 	t.Run("successful request", func(t *testing.T) {
 		mockResponse := &http.Response{
 			StatusCode: http.StatusOK,
@@ -895,13 +898,16 @@ func TestGetLeagueStandings(t *testing.T) {
 	mockHTTPClient := new(MockHTTPClient)
 	leagueAPIURL := "http://example.com"
 
-	testLeagueStandings, _ := json.Marshal(LeagueStandingsResponse{
+	testLeagueStandings, err := json.Marshal(LeagueStandingsResponse{
 		LeagueStandings: LeagueStandings{
 			Franchise: []Franchise{
 				{TeamID: "1", TeamName: Team1Name, OwnerName: Team1Owner, RecordWinsString: "10", RecordLossesString: "5", RecordTiesString: "2", PointsForString: "0.66"},
 			},
 		},
 	})
+	if err != nil {
+		t.Fatalf("Failed to marshal testLeagueStandings: %v", err)
+	}
 
 	t.Run("successful request", func(t *testing.T) {
 		mockResponse := &http.Response{

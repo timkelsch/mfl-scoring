@@ -3,7 +3,7 @@ pipeline {
     agent any
 
     tools {
-        go 'go1.21'
+        go 'go1.23.3'
         git 'Default'
     }
 
@@ -16,7 +16,7 @@ pipeline {
     options {
         // prevent dual pushes at PR merge from blowing us up
         disableConcurrentBuilds()
-        buildDiscarder(logRotator(numToKeepStr: '1', artifactNumToKeepStr: '1'))
+        buildDiscarder(logRotator(numToKeepStr: '2', artifactNumToKeepStr: '2'))
     }
 
     stages {
@@ -38,11 +38,12 @@ pipeline {
                 withEnv(["PATH+GO=${GOPATH}/bin"]) {
                     echo 'installing golangci-lint'
                     sh 'curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
-                        sh -s -- -b $(go env GOPATH)/bin v1.54.2'
+                        sh -s -- -b $(go env GOPATH)/bin v1.62.0'
                     echo 'Running test'
                     sh 'make test'
                     echo 'Running lint'
                     sh 'make lint'
+                    echo 'linting complete'
                 }
             }
         }
@@ -50,6 +51,7 @@ pipeline {
         stage('Build, Push, Add Lambda Version') {
             steps {
                 script {
+                    echo 'KAPUSHHHH'
                     RETURN_CODE = sh(
                         script: 'make push',
                         returnStatus: true
@@ -73,7 +75,7 @@ pipeline {
 
     post {
         always {
-            cleanWs()
+            // cleanWs()
             script {
                 echo 'Running Docker prune'
                 RETURN_CODE = sh(

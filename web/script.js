@@ -1,4 +1,4 @@
-const url = 'https://spankme.timismydaddy.com/mfl-scoring?output=json'
+const url = 'https://mfl-scoring.timkelsch.com/mfl-scoring?output=json'
 
 async function fetchScoring() {
     try {
@@ -28,7 +28,7 @@ async function displayTeams() {
       tr.classList.add('table-row');
       tr.innerHTML = `
       <tr>
-        <td scope="col" class="table-data">${team.name}</td>
+        <!-- <td scope="col" class="table-data">${team.name}</td> -->
         <td scope="col" class="table-data">${team.owner_name.split(" ")[0]}</td>
         <td scope="col" class="table-data">${team.Record}</td>
         <td scope="col" class="table-data">${team.PointsFor}</td>
