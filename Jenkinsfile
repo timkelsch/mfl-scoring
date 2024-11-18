@@ -11,7 +11,7 @@ pipeline {
         CGO_ENABLED = 0
         GOPATH = "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
         GOCACHE = "${WORKSPACE}"
-        MAIN_BRANCH = 'main'
+        MAIN_BRANCH = 'origin/main'
     }
 
     options {
