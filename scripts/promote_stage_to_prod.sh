@@ -7,7 +7,7 @@ echo "${FUNCTION_NAME}"
 # Get lambda version of STAGE alias
 STAGE_VERSION=$(aws lambda get-alias --function-name "${FUNCTION_NAME}" --name STAGE | jq -r '.FunctionVersion')
 
-# STAGE_VERSION == $LATEST, then check which lammbda version is the most recent
+# STAGE_VERSION == $LATEST, then check which lambda version is the most recent
 if [ "${STAGE_VERSION}" == '$LATEST' ]; then
     # Get lambda version of PROD alias  
     STAGE_VERSION=$(aws lambda list-versions-by-function --function-name mfl-"${FUNCTION_NAME}" \
