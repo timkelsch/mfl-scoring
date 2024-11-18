@@ -28,7 +28,7 @@ pipeline {
             steps {
                 script {
                     if (fileExists("${env.WORKSPACE}/")) {
-                        echo 'Workspace is empty. Checking out from Git.'
+                        echo 'Workspace is empty. Checking out from Git. '
                         checkout scm
                     } else {
                         echo 'Workspace is not empty. Skipping Git checkout.'
