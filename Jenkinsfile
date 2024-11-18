@@ -27,14 +27,14 @@ pipeline {
             }
             steps {
                 script {
-                    branchName = env.BRANCH_NAME
-                    echo "Current branch: ${branchName}"
                     if (fileExists("${env.WORKSPACE}/")) {
                         echo 'Workspace is empty. Checking out from Git.'
                         checkout scm
                     } else {
                         echo 'Workspace is not empty. Skipping Git checkout.'
                     }
+                    branchName = env.BRANCH_NAME
+                    echo "Current branch: ${branchName}"
                 }
             }
         }
