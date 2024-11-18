@@ -66,6 +66,9 @@ pushtostage: test build package push updatelambda updatestagealias
 
 pushtoprod: test build package push updatelambda updateprodalias
 
+promote:
+	./scripts/promote_stage_to_prod.sh
+
 build:
 	docker build --platform linux/amd64 -t mfl-scoring-image:mod .
 

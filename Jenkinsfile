@@ -11,6 +11,7 @@ pipeline {
         CGO_ENABLED = 0
         GOPATH = "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
         GOCACHE = "${WORKSPACE}"
+        MAIN_BRANCH = 'main'
     }
 
     options {
@@ -21,6 +22,9 @@ pipeline {
 
     stages {
         stage('Checkout') {
+            when {
+                not { branch "${ env.MAIN_BRANCH }" }
+            }
             steps {
                 script {
                     if (fileExists("${env.WORKSPACE}/")) {
@@ -34,6 +38,9 @@ pipeline {
         }
 
         stage('Lint/Test') {
+            when {
+                not { branch "${ env.MAIN_BRANCH }" }
+            }
             steps {
                 withEnv(["PATH+GO=${GOPATH}/bin"]) {
                     echo 'installing golangci-lint'
@@ -49,14 +56,17 @@ pipeline {
         }
 
         stage('Build, Push, Add Lambda Version') {
+            when {
+                not { branch "${ env.MAIN_BRANCH }" }
+            }
             steps {
                 script {
-                    echo 'KAPUSHHHH'
+                    echo 'Pushing to STAGE'
                     RETURN_CODE = sh(
                         script: 'make push',
                         returnStatus: true
                     )
-                    echo "returnStatus: ${RETURN_CODE}"
+                    echo "Push to STAGE Return Status: ${RETURN_CODE}"
                     if (RETURN_CODE != 0) {
                         currentBuild.result = 'ABORTED'
                         error('Stopping due to error. Check log messages.')
@@ -66,9 +76,24 @@ pipeline {
         }
 
         stage('Deploy to Stage') {
+            when {
+                not { branch "${ env.MAIN_BRANCH }" }
+            }
             steps {
                 echo 'Deploying to stage'
                 sh 'make updatestagealias'
+            }
+        }
+
+        stage('Deploy to Prod') {
+            when {
+                branch "${ env.MAIN_BRANCH }"
+            }
+            steps {
+                // This will have to more specific if we have more than one branch
+                // under development at once.
+                echo 'Promoting from STAGE to PROD alias'
+                sh 'make promote'
             }
         }
     }
