@@ -33,7 +33,7 @@ pipeline {
                     } else {
                         echo 'Workspace is not empty. Skipping Git checkout.'
                     }
-                    branchName = env.BRANCH_NAME
+                    branchName = scm.branches[0].name
                     echo "Current branch: ${branchName}"
                 }
             }
