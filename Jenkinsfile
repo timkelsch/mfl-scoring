@@ -90,16 +90,10 @@ pipeline {
                 branch "${ env.MAIN_BRANCH }"
             }
             steps {
-                echo 'Deploying to PROD alias'
-                // Get current stage alias
-                // if latest, get latest version from lambda
-                RETURN_CODE = sh(
-                    script:
-                )
-                // Set prod alias to it
-                RETURN_CODE = sh{
-                    script: make updateprodalias
-                }
+                // This will have to more specific if we have more than one branch
+                // under development at once.
+                echo 'Promoting from STAGE to PROD alias'
+                sh 'make promote'
             }
         }
     }
