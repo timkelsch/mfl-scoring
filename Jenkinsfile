@@ -11,7 +11,7 @@ pipeline {
         CGO_ENABLED = 0
         GOPATH = "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
         GOCACHE = "${WORKSPACE}"
-        MAIN_BRANCH = 'origin/main'
+        MAIN_BRANCH = 'main'
     }
 
     options {
@@ -28,7 +28,7 @@ pipeline {
             steps {
                 script {
                     if (fileExists("${env.WORKSPACE}/")) {
-                        echo 'Workspace is empty. Checking out from Git.'
+                        echo 'Workspace is empty. Checking out from Git. '
                         checkout scm
                     } else {
                         echo 'Workspace is not empty. Skipping Git checkout.'
