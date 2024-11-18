@@ -34,6 +34,7 @@ pipeline {
                         echo 'Workspace is not empty. Skipping Git checkout.'
                     }
                     echo 'Current branch ENV: ' + env.BRANCH_NAME
+                    echo 'Getting Closer'
                 }
             }
         }
