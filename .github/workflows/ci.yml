@@ -1,11 +1,11 @@
 name: CI
 
 on:
-  pull_request:
-    branches: ["*"]
   push:
     branches-ignore:
       - main
+  pull_request:
+    branches: ["*"]
 
 # Prevent concurrent CI runs for the same PR/branch
 concurrency:
