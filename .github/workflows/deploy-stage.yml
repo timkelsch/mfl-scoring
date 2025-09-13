@@ -77,7 +77,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64
+          platforms: linux/arm64
           push: false
           tags: ${{ env.ECR_REPOSITORY }}:${{ steps.version.outputs.NEXT_VERSION }}
           outputs: type=docker,dest=/tmp/new-image.tar
