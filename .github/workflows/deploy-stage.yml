@@ -41,6 +41,14 @@ jobs:
         run: |
           FUNCTION_NAME=$(aws lambda list-functions --output json --region ${{ env.AWS_REGION }} | \
             jq -r '.Functions[] | select(.FunctionName | startswith("mfl-scoring")) | .FunctionName')
+
+          if [ -z "$FUNCTION_NAME" ] || [ "$FUNCTION_NAME" == "null" ]; then
+            echo "❌ Error: No Lambda function found with name starting with 'mfl-scoring'"
+            echo "Available functions:"
+            aws lambda list-functions --output table --region ${{ env.AWS_REGION }} --query 'Functions[].FunctionName'
+            exit 1
+          fi
+
           echo "FUNCTION_NAME=${FUNCTION_NAME}" >> $GITHUB_OUTPUT
           echo "Function name: ${FUNCTION_NAME}"
 
