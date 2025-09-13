@@ -113,8 +113,12 @@ Resources:
                   - lambda:GetAlias
                   - lambda:ListVersionsByFunction
                   - lambda:GetFunction
-                  - lambda:ListFunctions
                 Resource: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:mfl-scoring*"
+              - Sid: LambdaListAccess
+                Effect: Allow
+                Action:
+                  - lambda:ListFunctions
+                Resource: "*"
               - Sid: STSAccess
                 Effect: Allow
                 Action:
