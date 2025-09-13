@@ -15,14 +15,14 @@ FUNCTION_NAME=$(shell aws lambda list-functions --output json --region us-east-1
 FUNCTION_VERSION_PROD=136
 STACK_NAME=mfl-scoring
 TEMPLATE_FILE=file://mfl-scoring.yaml
-STORAGE_STACK_NAME=storage
-STORAGE_TEMPLATE_FILE=file://storage.yaml
+BOOTSTRAP_STACK_NAME=storage
+BOOTSTRAP_TEMPLATE_FILE=file://bootstrap.yaml
 MFL_UNCOUTH_DOMAIN=spankme.timismydaddy.com
-  
+
 export FUNCTION_NAME
 export AWS_REGION
 export AWS_ACCOUNT
- 
+
 createstack:
 	aws cloudformation create-stack --stack-name ${STACK_NAME} --template-body ${TEMPLATE_FILE} \
 		--capabilities CAPABILITY_IAM --parameters ParameterKey=DomainName,ParameterValue=${MFL_UNCOUTH_DOMAIN} \
@@ -36,13 +36,13 @@ updatestack:
 deletestack:
 	aws cloudformation delete-stack --stack-name ${STACK_NAME} --region ${AWS_REGION}
 
-createstoragestack:
-	aws cloudformation update-stack --stack-name ${STORAGE_STACK_NAME} --template-body ${STORAGE_TEMPLATE_FILE} \
-		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
+createbootstrapstack:
+	aws cloudformation create-stack --stack-name ${BOOTSTRAP_STACK_NAME} --template-body ${BOOTSTRAP_TEMPLATE_FILE} \
+		--capabilities CAPABILITY_NAMED_IAM --region ${AWS_REGION}
 
-updatestoragestack:
-	aws cloudformation update-stack --stack-name storage --template-body file://storage.yaml \
-		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
+updatebootstrapstack:
+	aws cloudformation update-stack --stack-name ${BOOTSTRAP_STACK_NAME} --template-body ${BOOTSTRAP_TEMPLATE_FILE} \
+		--capabilities CAPABILITY_NAMED_IAM --region ${AWS_REGION}
 
 test:
 	cd ${CODE_DIR} && go test -cover
@@ -87,7 +87,7 @@ updatewebstack:
 		--capabilities CAPABILITY_IAM --region ${AWS_REGION}
 
 deletewebstack:
-	aws cloudformation delete-stack --stack-name mfl-website --region ${AWS_REGION}		
+	aws cloudformation delete-stack --stack-name mfl-website --region ${AWS_REGION}
 
-pushwebartifacts: 
+pushwebartifacts:
 	aws s3 cp web s3://${WEB_BUCKET} --recursive --include "*.*"

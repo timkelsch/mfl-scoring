@@ -1,4 +1,4 @@
-![Unit Tests](https://github.com/timkelsch/mfl-scoring/actions/workflows/UnitTests.yml/badge.svg)
+![CI](https://github.com/timkelsch/mfl-scoring/actions/workflows/ci.yml/badge.svg)
 
 ## Scoring Links
 
@@ -35,7 +35,7 @@ I am not responsible for creation of this rule set - I merely automated the calc
 
 ## Setup Basic Output from Bare Account
 
-1. $ make createstoragestack
+1. $ make createbootstrapstack
 1. $ make createstack
 1. In AWS Console: Secrets Service => MflScoringApiSecret-\* => Set Plaintext secret to the current API key
 1. $ make createwebstack
@@ -46,6 +46,16 @@ I am not responsible for creation of this rule set - I merely automated the calc
 1. make createwebstack
 2. make pushwebartifacts
 
+## Deployment
+
+This project uses GitHub Actions for CI/CD:
+
+- **Feature branches**: Automatically deploy to STAGE environment
+- **Main branch**: Automatically promote STAGE to PROD environment
+- **Infrastructure changes**: Manual deployment using Makefile commands
+
+See [GITHUB_ACTIONS_MIGRATION.md](GITHUB_ACTIONS_MIGRATION.md) for detailed setup instructions.
+
 ## To Do:
 
 - [x] Create couth custom URL for scoring API
@@ -53,6 +63,7 @@ I am not responsible for creation of this rule set - I merely automated the calc
 - [x] Clean up workspace in JF post step
 - [x] Add workflow / tests passing badge to README
 - [x] Set up GitHub Actions to automate testing
+- [x] Migrate from Jenkins to GitHub Actions
 - [x] Finish unit tests
 - [x] Write unit tests for all relevant funcs
 - [x] Write unit test(s) for tie breaker sorting
