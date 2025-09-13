@@ -1,0 +1,76 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+
+jobs:
+  promote-to-prod:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get Lambda function name
+        id: get-function-name
+        run: |
+          FUNCTION_NAME=$(aws lambda list-functions --output json --region ${{ env.AWS_REGION }} | \
+            jq -r '.Functions[] | select(.FunctionName | startswith("mfl-scoring")) | .FunctionName')
+          echo "FUNCTION_NAME=${FUNCTION_NAME}" >> $GITHUB_OUTPUT
+          echo "Function name: ${FUNCTION_NAME}"
+
+      - name: Get STAGE version and promote to PROD
+        run: |
+          FUNCTION_NAME="${{ steps.get-function-name.outputs.FUNCTION_NAME }}"
+          echo "Promoting STAGE to PROD for function: ${FUNCTION_NAME}"
+
+          # Get lambda version of STAGE alias
+          STAGE_VERSION=$(aws lambda get-alias --function-name "${FUNCTION_NAME}" --name STAGE | jq -r '.FunctionVersion')
+          echo "Current STAGE version: ${STAGE_VERSION}"
+
+          # If STAGE_VERSION == $LATEST, then get the actual latest version number
+          if [ "${STAGE_VERSION}" == '$LATEST' ]; then
+            echo "STAGE is pointing to \$LATEST, resolving to actual version number..."
+            STAGE_VERSION=$(aws lambda list-versions-by-function --function-name "${FUNCTION_NAME}" \
+              --query "max_by(Versions, &to_number(to_number(Version) || '0'))" | jq -r '.Version')
+            echo "Resolved STAGE version: ${STAGE_VERSION}"
+          fi
+
+          # Set PROD alias to STAGE version
+          echo "Updating PROD alias to version ${STAGE_VERSION}..."
+          aws lambda update-alias \
+            --function-name "${FUNCTION_NAME}" \
+            --name PROD \
+            --function-version "${STAGE_VERSION}" \
+            --region ${{ env.AWS_REGION }}
+
+          echo "✅ Successfully promoted version ${STAGE_VERSION} from STAGE to PROD"
+
+      - name: Verify PROD deployment
+        run: |
+          FUNCTION_NAME="${{ steps.get-function-name.outputs.FUNCTION_NAME }}"
+
+          # Get PROD alias details
+          PROD_VERSION=$(aws lambda get-alias --function-name "${FUNCTION_NAME}" --name PROD | jq -r '.FunctionVersion')
+          echo "PROD is now pointing to version: ${PROD_VERSION}"
+
+          # Get function details for the PROD version
+          FUNCTION_DETAILS=$(aws lambda get-function --function-name "${FUNCTION_NAME}:PROD" --region ${{ env.AWS_REGION }})
+          IMAGE_URI=$(echo "${FUNCTION_DETAILS}" | jq -r '.Code.ImageUri')
+
+          echo "🎉 Production deployment complete!"
+          echo "📦 Function: ${FUNCTION_NAME}"
+          echo "🏷️ Version: ${PROD_VERSION}"
+          echo "🖼️ Image: ${IMAGE_URI}"

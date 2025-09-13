@@ -1,0 +1,168 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+  CicdPipeline:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: "aws:kms"
+              KMSMasterKeyID: !Ref BucketKey
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+
+  AccessLogs:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+
+  AccessLogsBucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref AccessLogs
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::127311923021:root # us-east-1
+            Action: "s3:PutObject"
+            Resource:
+              - !Join ["/", [!GetAtt AccessLogs.Arn, "*"]]
+
+  MflScoring:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: "aws:kms"
+              KMSMasterKeyID: !Ref BucketKey
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+
+  BucketKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Enabled: True
+      EnableKeyRotation: True
+      MultiRegion: True
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: bucket-policy-1
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+
+  GitHubActionsCicdUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: github-actions-mfl-scoring
+      Policies:
+        - PolicyName: GitHubActionsCicdPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: ECRAccess
+                Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:PutImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                  - ecr:DescribeImages
+                  - ecr:DescribeRepositories
+                Resource: "*"
+              - Sid: LambdaAccess
+                Effect: Allow
+                Action:
+                  - lambda:UpdateFunctionCode
+                  - lambda:PublishVersion
+                  - lambda:UpdateAlias
+                  - lambda:GetAlias
+                  - lambda:ListVersionsByFunction
+                  - lambda:GetFunction
+                  - lambda:ListFunctions
+                Resource: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:mfl-scoring*"
+              - Sid: STSAccess
+                Effect: Allow
+                Action:
+                  - sts:GetCallerIdentity
+                Resource: "*"
+
+  GitHubActionsCicdUserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref GitHubActionsCicdUser
+
+Outputs:
+  CicdPipelineBucketName:
+    Value: !Ref CicdPipeline
+    Export:
+      Name: CicdPipelineBucketName
+  CicdPipelineBucketArn:
+    Value: !GetAtt CicdPipeline.Arn
+    Export:
+      Name: CicdPipelineBucketArn
+  AccessLogsBucketName:
+    Value: !Ref AccessLogs
+    Export:
+      Name: AccessLogsBucketName
+  AccessLogsBucketArn:
+    Value: !GetAtt AccessLogs.Arn
+    Export:
+      Name: AccessLogsBucketArn
+  MflScoringBucketName:
+    Value: !Ref MflScoring
+    Export:
+      Name: MflScoringBucketName
+  MflScoringBucketArn:
+    Value: !GetAtt MflScoring.Arn
+    Export:
+      Name: MflScoringBucketArn
+  StorageKeyArn:
+    Value: !GetAtt BucketKey.Arn
+    Export:
+      Name: StorageKeyArn
+  GitHubActionsCicdUserName:
+    Description: IAM User for GitHub Actions CI/CD
+    Value: !Ref GitHubActionsCicdUser
+    Export:
+      Name: GitHubActionsCicdUserName
+  GitHubActionsCicdAccessKeyId:
+    Description: Access Key ID for GitHub Actions CI/CD User
+    Value: !Ref GitHubActionsCicdUserAccessKey
+  GitHubActionsCicdSecretAccessKey:
+    Description: Secret Access Key for GitHub Actions CI/CD User
+    Value: !GetAtt GitHubActionsCicdUserAccessKey.SecretAccessKey

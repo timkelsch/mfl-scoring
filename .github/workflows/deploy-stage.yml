@@ -1,0 +1,133 @@
+name: Deploy to Stage
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+  ECR_REPOSITORY: mfl-score
+
+jobs:
+  deploy-stage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Get Lambda function name
+        id: get-function-name
+        run: |
+          FUNCTION_NAME=$(aws lambda list-functions --output json --region ${{ env.AWS_REGION }} | \
+            jq -r '.Functions[] | select(.FunctionName | startswith("mfl-scoring")) | .FunctionName')
+          echo "FUNCTION_NAME=${FUNCTION_NAME}" >> $GITHUB_OUTPUT
+          echo "Function name: ${FUNCTION_NAME}"
+
+      - name: Get current ECR version and calculate next version
+        id: version
+        run: |
+          REGISTRY="${{ env.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com"
+          REPO="${{ env.ECR_REPOSITORY }}"
+
+          # Get current version
+          CURRENT_VERSION=$(aws ecr describe-images --region ${{ env.AWS_REGION }} --output json \
+            --repository-name ${{ env.ECR_REPOSITORY }} \
+            --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' | jq . -r)
+
+          echo "Current version: ${CURRENT_VERSION}"
+
+          # Calculate next version
+          IFS=. read -r v1 v2 <<< "${CURRENT_VERSION}"
+          ((v2++))
+          NEXT_VERSION="${v1}.${v2}"
+
+          echo "Next version: ${NEXT_VERSION}"
+          echo "CURRENT_VERSION=${CURRENT_VERSION}" >> $GITHUB_OUTPUT
+          echo "NEXT_VERSION=${NEXT_VERSION}" >> $GITHUB_OUTPUT
+          echo "CURRENT_IMAGE=${REGISTRY}/${REPO}:${CURRENT_VERSION}" >> $GITHUB_OUTPUT
+          echo "NEW_IMAGE_URI=${REGISTRY}/${REPO}:${NEXT_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build new Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          tags: ${{ env.ECR_REPOSITORY }}:${{ steps.version.outputs.NEXT_VERSION }}
+          outputs: type=docker,dest=/tmp/new-image.tar
+
+      - name: Load and check if image changed
+        id: image-check
+        run: |
+          # Load the new image
+          docker load -i /tmp/new-image.tar
+          NEW_IMAGE_ID=$(docker images --format "table {{.ID}}" ${{ env.ECR_REPOSITORY }}:${{ steps.version.outputs.NEXT_VERSION }} | tail -n 1)
+          echo "New image ID: ${NEW_IMAGE_ID}"
+
+          # Try to pull current image, if it exists
+          if docker pull ${{ steps.version.outputs.CURRENT_IMAGE }} 2>/dev/null; then
+            CURRENT_IMAGE_ID=$(docker inspect --format '{{.Id}}' ${{ steps.version.outputs.CURRENT_IMAGE }})
+            echo "Current image ID: ${CURRENT_IMAGE_ID}"
+
+            if [ "${CURRENT_IMAGE_ID}" = "${NEW_IMAGE_ID}" ]; then
+              echo "Images are identical, skipping deployment"
+              echo "SKIP_DEPLOYMENT=true" >> $GITHUB_OUTPUT
+            else
+              echo "Images are different, proceeding with deployment"
+              echo "SKIP_DEPLOYMENT=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "Could not pull current image, proceeding with deployment"
+            echo "SKIP_DEPLOYMENT=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Push image to ECR
+        if: steps.image-check.outputs.SKIP_DEPLOYMENT == 'false'
+        run: |
+          docker tag ${{ env.ECR_REPOSITORY }}:${{ steps.version.outputs.NEXT_VERSION }} ${{ steps.version.outputs.NEW_IMAGE_URI }}
+          docker push ${{ steps.version.outputs.NEW_IMAGE_URI }}
+
+      - name: Update Lambda function
+        if: steps.image-check.outputs.SKIP_DEPLOYMENT == 'false'
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ steps.get-function-name.outputs.FUNCTION_NAME }} \
+            --architectures arm64 \
+            --image-uri ${{ steps.version.outputs.NEW_IMAGE_URI }} \
+            --publish \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Update STAGE alias
+        if: steps.image-check.outputs.SKIP_DEPLOYMENT == 'false'
+        run: |
+          aws lambda update-alias \
+            --function-name "arn:aws:lambda:${{ env.AWS_REGION }}:${{ env.AWS_ACCOUNT }}:function:${{ steps.get-function-name.outputs.FUNCTION_NAME }}" \
+            --function-version '$LATEST' \
+            --name STAGE \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Deployment summary
+        run: |
+          if [ "${{ steps.image-check.outputs.SKIP_DEPLOYMENT }}" = "true" ]; then
+            echo "✅ Deployment skipped - no changes detected"
+          else
+            echo "✅ Successfully deployed version ${{ steps.version.outputs.NEXT_VERSION }} to STAGE"
+            echo "🔗 Function: ${{ steps.get-function-name.outputs.FUNCTION_NAME }}"
+            echo "🏷️ Image: ${{ steps.version.outputs.NEW_IMAGE_URI }}"
+          fi
