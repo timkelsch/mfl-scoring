@@ -5,7 +5,7 @@ This guide walks you through migrating from Jenkins to GitHub Actions for the MF
 ## Overview
 
 The migration replaces Jenkins with three GitHub Actions workflows:
-- **CI Workflow**: Runs on all pushes/PRs for code quality checks
+- **CI Workflow**: Runs on all pushes and Pull Requests for code quality checks
 - **Stage Deployment**: Deploys feature branches to STAGE environment
 - **Production Deployment**: Promotes STAGE to PROD when merging to main
 
@@ -82,7 +82,7 @@ The migration replaces Jenkins with three GitHub Actions workflows:
 ## Workflow Details
 
 ### CI Workflow (`.github/workflows/ci.yml`)
-- **Triggers**: Push to any branch, Pull Requests
+- **Triggers**: All pushes and Pull Requests
 - **Jobs**:
   - Lint and test Go code
   - Validate Docker build
@@ -174,7 +174,7 @@ For issues with the migration:
 ### Feature Development Flow:
 1. Create feature branch: `git checkout -b feature/new-scoring`
 2. Make changes and push: `git push origin feature/new-scoring`
-3. GitHub Actions runs CI workflow (lint, test, build validation)
+3. Create PR: GitHub Actions runs CI workflow (lint, test, build validation)
 4. GitHub Actions runs Stage deployment workflow
 5. Test changes in STAGE environment
 6. Create PR and merge to main
