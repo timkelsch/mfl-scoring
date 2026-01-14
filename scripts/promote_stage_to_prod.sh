@@ -10,7 +10,7 @@ STAGE_VERSION=$(aws lambda get-alias --function-name "${FUNCTION_NAME}" --name S
 # STAGE_VERSION == $LATEST, then check which lambda version is the most recent
 if [ "${STAGE_VERSION}" == '$LATEST' ]; then
     # Get lambda version of PROD alias  
-    STAGE_VERSION=$(aws lambda list-versions-by-function --function-name mfl-"${FUNCTION_NAME}" \
+    STAGE_VERSION=$(aws lambda list-versions-by-function --function-name "${FUNCTION_NAME}" \
       --query "max_by(Versions, &to_number(to_number(Version) || '0'))" | jq -r '.Version')
 fi
 

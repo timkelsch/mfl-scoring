@@ -24,7 +24,7 @@ NEXT_VERSION="${v1}.${v2}"                      # paste back together
 
 NEW_IMAGE_URI="${REGISTRY}/${REPO}:${NEXT_VERSION}"
 
-NEW_IMAGE_ID=$(docker build -q -t "${REPO}:${NEXT_VERSION}" . | cut -d: -f2 | head -c 12)
+NEW_IMAGE_ID=$(docker build -D -q -t "${REPO}:${NEXT_VERSION}" . | cut -d: -f2 | head -c 12)
 
 # Check if CURRENT_IMAGE already exists locally
 if [[ $(docker image ls --format json "${CURRENT_IMAGE}" | jq -r '.ID' | wc -l) -eq 1 ]]; then
