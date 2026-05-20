@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -120,21 +122,25 @@ jobs:
           docker push ${{ steps.version.outputs.NEW_IMAGE_URI }}
 
       - name: Update Lambda function
+        id: update-lambda
         if: steps.image-check.outputs.SKIP_DEPLOYMENT == 'false'
         run: |
-          aws lambda update-function-code \
+          VERSION=$(aws lambda update-function-code \
             --function-name ${{ steps.get-function-name.outputs.FUNCTION_NAME }} \
             --architectures arm64 \
             --image-uri ${{ steps.version.outputs.NEW_IMAGE_URI }} \
             --publish \
-            --region ${{ env.AWS_REGION }}
+            --region ${{ env.AWS_REGION }} \
+            --query 'Version' --output text)
+          echo "Published version: ${VERSION}"
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Update STAGE alias
         if: steps.image-check.outputs.SKIP_DEPLOYMENT == 'false'
         run: |
           aws lambda update-alias \
-            --function-name "arn:aws:lambda:${{ env.AWS_REGION }}:${{ env.AWS_ACCOUNT }}:function:${{ steps.get-function-name.outputs.FUNCTION_NAME }}" \
-            --function-version '$LATEST' \
+            --function-name ${{ steps.get-function-name.outputs.FUNCTION_NAME }} \
+            --function-version ${{ steps.update-lambda.outputs.VERSION }} \
             --name STAGE \
             --region ${{ env.AWS_REGION }}
 

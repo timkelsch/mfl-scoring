@@ -53,14 +53,6 @@ jobs:
           STAGE_VERSION=$(aws lambda get-alias --function-name "${FUNCTION_NAME}" --name STAGE | jq -r '.FunctionVersion')
           echo "Current STAGE version: ${STAGE_VERSION}"
 
-          # If STAGE_VERSION == $LATEST, then get the actual latest version number
-          if [ "${STAGE_VERSION}" == '$LATEST' ]; then
-            echo "STAGE is pointing to \$LATEST, resolving to actual version number..."
-            STAGE_VERSION=$(aws lambda list-versions-by-function --function-name "${FUNCTION_NAME}" \
-              --query "max_by(Versions, &to_number(to_number(Version) || '0'))" | jq -r '.Version')
-            echo "Resolved STAGE version: ${STAGE_VERSION}"
-          fi
-
           # Set PROD alias to STAGE version
           echo "Updating PROD alias to version ${STAGE_VERSION}..."
           aws lambda update-alias \
