@@ -113,7 +113,7 @@ Resources:
       Timeout: 5
       Environment:
         Variables:
-          API_KEY_SECRET_ID: !GetAtt MflScoringApiKeySecret.Id
+          API_KEY_SECRET_ID: !GetAtt MflScoringApiKeySecretV2.Id
 
   MflScoringFunctionIamRole:
     Type: AWS::IAM::Role
@@ -143,17 +143,7 @@ Resources:
           Action:
             - secretsmanager:DescribeSecret
             - secretsmanager:GetSecretValue
-          Resource: !Ref MflScoringApiKeySecret
-        - Sid: kms 
-          Effect: Allow
-          Action:
-          - 'kms:DescribeKey'
-          - 'kms:Encrypt'
-          - 'kms:Decrypt'
-          - 'kms:ReEncrypt*'
-          - 'kms:GenerateDataKey'
-          - 'kms:GenerateDataKeyWithoutPlaintext'
-          Resource: !GetAtt MflScoringKey.Arn
+          Resource: !Ref MflScoringApiKeySecretV2
 
   LambdaPermission:
     Type: AWS::Lambda::Permission
@@ -165,18 +155,23 @@ Resources:
           - "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MflScoringApi}:*/*"
           - MflScoringApi: !Ref MflScoringApi
 
-  MflScoringApiKeySecret:
+  # V2 replaces the original secret, which was encrypted with a CMK that has since
+  # been deleted. Its stored value is unrecoverable, and changing KmsKeyId in place
+  # would make Secrets Manager try to re-encrypt AWSCURRENT under the dead key, so
+  # the secret has to be recreated rather than updated. No KmsKeyId here means the
+  # AWS-managed aws/secretsmanager key, which carries no monthly key charge.
+  MflScoringApiKeySecretV2:
     Type: AWS::SecretsManager::Secret
     UpdateReplacePolicy: Delete
     DeletionPolicy: Delete
     Properties:
-      KmsKeyId: !GetAtt MflScoringKey.Arn
+      Description: MFL API key, read by the scoring Lambda via API_KEY_SECRET_ID.
 
   MflScoringApiKeySecretResourcePolicy:
     Type: AWS::SecretsManager::ResourcePolicy
     Properties: 
       BlockPublicPolicy: True
-      SecretId: !Ref MflScoringApiKeySecret
+      SecretId: !Ref MflScoringApiKeySecretV2
       ResourcePolicy:
         Version: '2012-10-17'
         Statement:
@@ -193,37 +188,6 @@ Resources:
           Effect: Allow
           Principal:
             AWS: !GetAtt MflScoringFunctionIamRole.Arn
-
-  MflScoringKey:
-    Type: AWS::KMS::Key
-    UpdateReplacePolicy: Delete
-    DeletionPolicy: Delete
-    Properties:
-      Enabled: True
-      EnableKeyRotation: True
-      MultiRegion: True
-      KeyPolicy:
-        Version: "2012-10-17"
-        Id: key-default-1
-        Statement:
-          - Sid: Enable IAM User Permissions
-            Effect: Allow
-            Principal:
-              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
-            Action: 'kms:*'
-            Resource: '*'
-          - Sid: Allow use of the key
-            Effect: Allow
-            Principal:
-              AWS: !GetAtt MflScoringFunctionIamRole.Arn
-            Action:
-              - 'kms:DescribeKey'
-              - 'kms:Encrypt'
-              - 'kms:Decrypt'
-              - 'kms:ReEncrypt*'
-              - 'kms:GenerateDataKey'
-              - 'kms:GenerateDataKeyWithoutPlaintext'
-            Resource: '*'
 
   MflScoringApi:
     Type: AWS::ApiGatewayV2::Api
