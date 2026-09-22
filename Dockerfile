@@ -1,4 +1,4 @@
-FROM golang:1.23.1-alpine AS BUILD
+FROM golang:1.25.14-alpine AS BUILD
 WORKDIR /app
 COPY mfl-scoring/go.mod mfl-scoring/go.sum ./
 RUN go mod download
