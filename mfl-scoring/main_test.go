@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly"
@@ -944,4 +945,22 @@ func TestGetLeagueStandings(t *testing.T) {
 			t.Error("Expected an error, got nil")
 		}
 	})
+}
+
+func TestLeagueYear(t *testing.T) {
+	tests := []struct {
+		name string
+		now  time.Time
+		want string
+	}{
+		{"January shows prior season", time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC), "2025"},
+		{"August shows prior season", time.Date(2026, time.August, 31, 23, 59, 59, 0, time.UTC), "2025"},
+		{"September 1 rolls to current season", time.Date(2026, time.September, 1, 0, 0, 0, 0, time.UTC), "2026"},
+		{"December shows current season", time.Date(2026, time.December, 31, 0, 0, 0, 0, time.UTC), "2026"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, leagueYear(tt.now))
+		})
+	}
 }
