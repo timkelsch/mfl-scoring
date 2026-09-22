@@ -1,7 +1,26 @@
 @import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700");
 
+:root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #000000;
+    --border: #0f25e9;
+    --header-bg: rgba(39, 39, 39, 0.143);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #121212;
+        --fg: #e6e6e6;
+        --border: #7f8cff;
+        --header-bg: rgba(255, 255, 255, 0.12);
+    }
+}
+
 body {
     font-family: "Source Sans Pro", sans-serif;
+    background-color: var(--bg);
+    color: var(--fg);
 }
 
 .table {
@@ -9,14 +28,14 @@ body {
     border-collapse: collapse;
     width: auto;
     text-align: center;
-    border: 2px solid #0f25e9;
+    border: 2px solid var(--border);
 }
 
 th, td {
     padding: 2px;
     padding-left: 6px;
     padding-right: 6px;
-    border: 1px solid #0f25e9;
+    border: 1px solid var(--border);
     /* text-align: left; */
 }
 
@@ -37,8 +56,8 @@ td:nth-child(2) {
 }
 
 th {
-    background-color: rgba(39, 39, 39, 0.143);
-    border: 2px solid #0f25e9;
+    background-color: var(--header-bg);
+    border: 2px solid var(--border);
 }
 
 /* @media only screen and (max-width: 600px) {
