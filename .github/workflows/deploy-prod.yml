@@ -13,6 +13,7 @@ concurrency:
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+  WEB_BUCKET: mfl.timkelsch.com
 
 jobs:
   promote-to-prod:
@@ -79,3 +80,9 @@ jobs:
           echo "📦 Function: ${FUNCTION_NAME}"
           echo "🏷️ Version: ${PROD_VERSION}"
           echo "🖼️ Image: ${IMAGE_URI}"
+
+      - name: Publish web assets
+        run: |
+          echo "Syncing web/ to s3://${{ env.WEB_BUCKET }}"
+          aws s3 sync web/ "s3://${{ env.WEB_BUCKET }}" --region ${{ env.AWS_REGION }}
+          echo "✅ Web assets published"

@@ -124,6 +124,17 @@ Resources:
                 Action:
                   - sts:GetCallerIdentity
                 Resource: "*"
+              - Sid: WebBucketAccess
+                Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !Sub "arn:${AWS::Partition}:s3:::mfl.timkelsch.com"
+              - Sid: WebBucketObjectAccess
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: !Sub "arn:${AWS::Partition}:s3:::mfl.timkelsch.com/*"
 
   GitHubActionsCicdUserAccessKey:
     Type: AWS::IAM::AccessKey
