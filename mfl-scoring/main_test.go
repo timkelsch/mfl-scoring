@@ -964,3 +964,36 @@ func TestLeagueYear(t *testing.T) {
 		})
 	}
 }
+
+// MFL returns HTTP 200 with an "error" object instead of data when the API key
+// is rejected. Both fetchers must surface that instead of silently decoding to
+// zero franchises.
+func TestGetFranchiseDetailsSurfacesMflError(t *testing.T) {
+	mockHTTPClient := new(MockHTTPClient)
+	body := `{"version":"1.0","error":{"$t":"API Key Validation Failed"},"encoding":"utf-8"}`
+	mockHTTPClient.On("Do", mock.Anything).Return(&http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(bytes.NewBufferString(body)),
+	}, nil)
+
+	_, err := getFranchiseDetails(mockHTTPClient, "http://example.com/2026/export?TYPE=league")
+	mockHTTPClient.AssertExpectations(t)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "API Key Validation Failed")
+}
+
+func TestGetLeagueStandingsSurfacesMflError(t *testing.T) {
+	mockHTTPClient := new(MockHTTPClient)
+	body := `{"version":"1.0","error":{"$t":"API Key Validation Failed"},"encoding":"utf-8"}`
+	mockHTTPClient.On("Do", mock.Anything).Return(&http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(bytes.NewBufferString(body)),
+	}, nil)
+
+	_, err := getLeagueStandings(mockHTTPClient, "http://example.com/2026/export?TYPE=leagueStandings")
+	mockHTTPClient.AssertExpectations(t)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "API Key Validation Failed")
+}

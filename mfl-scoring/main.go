@@ -27,9 +27,21 @@ import (
 )
 
 type LeagueResponse struct {
-	Version  string `json:"version"`
-	League   League `json:"league"`
-	Encoding string `json:"encoding"`
+	Version  string    `json:"version"`
+	League   League    `json:"league"`
+	Encoding string    `json:"encoding"`
+	Error    *MflError `json:"error,omitempty"`
+}
+
+// MflError is the error object MFL returns (with HTTP 200) in place of data,
+// e.g. {"error":{"$t":"API Key Validation Failed"}} when the API key is not
+// valid for the requested season. API keys are minted per league-year.
+type MflError struct {
+	Text string `json:"$t"`
+}
+
+func (e *MflError) Error() string {
+	return e.Text
 }
 
 type League struct {
@@ -56,6 +68,7 @@ type LeagueStandingsResponse struct {
 	Version         string          `json:"version"`
 	LeagueStandings LeagueStandings `json:"leagueStandings"`
 	Encoding        string          `json:"encoding"`
+	Error           *MflError       `json:"error,omitempty"`
 }
 
 type LeagueStandings struct {
@@ -477,6 +490,9 @@ func getFranchiseDetails(client HTTPClient, leagueAPIURL string) (LeagueResponse
 	if err != nil {
 		return LeagueResponse{}, err
 	}
+	if leagueResponse.Error != nil {
+		return LeagueResponse{}, fmt.Errorf("MFL league API returned error for %s: %w", leagueAPIURL, leagueResponse.Error)
+	}
 
 	return leagueResponse, nil
 }
@@ -506,6 +522,10 @@ func getLeagueStandings(client HTTPClient, leagueStandingsAPIURL string) (League
 	err = json.Unmarshal(responseData, &leagueStandingsResponse)
 	if err != nil {
 		return LeagueStandingsResponse{}, err
+	}
+	if leagueStandingsResponse.Error != nil {
+		return LeagueStandingsResponse{}, fmt.Errorf("MFL standings API returned error for %s: %w",
+			leagueStandingsAPIURL, leagueStandingsResponse.Error)
 	}
 
 	return leagueStandingsResponse, nil
