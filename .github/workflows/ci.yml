@@ -20,19 +20,18 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23.3"
+          go-version-file: mfl-scoring/go.mod
           cache: false
-
-      - name: Install golangci-lint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
-            sh -s -- -b $(go env GOPATH)/bin v1.62.0
 
       - name: Run tests
         run: go test -cover ./...
 
       - name: Run linting
-        run: golangci-lint run -v -c ../.golangci.yml .
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.13.2
+          working-directory: mfl-scoring
+          args: -v -c ../.golangci.yml
 
   build-validation:
     runs-on: ubuntu-latest
