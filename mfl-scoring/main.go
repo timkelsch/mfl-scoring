@@ -92,7 +92,6 @@ type Franchise struct {
 
 const (
 	MflURL                  string = "https://www46.myfantasyleague.com/"
-	LeagueYear              string = "2025"
 	LeagueAPIQuery          string = "TYPE=league"
 	LeagueStandingsAPIQuery string = "TYPE=leagueStandings"
 	LeagueAPIPath           string = "export?"
@@ -102,6 +101,21 @@ const (
 	LeagueIDQuery           string = "L=15781"
 	APIOutputTypeQuery      string = "JSON=1"
 )
+
+// SeasonStartMonth is the month the MFL season year rolls over. Before this
+// month the app shows the prior season's final results.
+const SeasonStartMonth = time.September
+
+// leagueYear returns the MFL season year to query for the given time.
+// January through August return the previous calendar year (offseason);
+// September onward returns the current calendar year.
+func leagueYear(now time.Time) string {
+	year := now.Year()
+	if now.Month() < SeasonStartMonth {
+		year--
+	}
+	return strconv.Itoa(year)
+}
 
 type AllPlayTeamStats struct {
 	FranchiseName     string
@@ -136,7 +150,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	errChan := make(chan error, 2)
 
 	go func() {
-		LeagueAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueAPIQuery + "&" +
+		LeagueAPIURL := MflURL + leagueYear(time.Now()) + "/" + LeagueAPIPath + LeagueAPIQuery + "&" +
 			LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
 		// parts := strings.Split(LeagueAPIURL, "&APIKEY=")
 		lengthWithoutAPIKey := len(LeagueAPIURL) - len(apiKey)
@@ -152,7 +166,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	}()
 
 	go func() {
-		LeagueStandingsAPIURL := MflURL + LeagueYear + "/" + LeagueAPIPath + LeagueStandingsAPIQuery + "&" +
+		LeagueStandingsAPIURL := MflURL + leagueYear(time.Now()) + "/" + LeagueAPIPath + LeagueStandingsAPIQuery + "&" +
 			LeagueIDQuery + "&" + APIOutputTypeQuery + "&APIKEY=" + apiKey
 		lengthWithoutAPIKey := len(LeagueStandingsAPIURL) - len(apiKey)
 		cleanedURL := LeagueStandingsAPIURL[0:lengthWithoutAPIKey]
@@ -651,7 +665,7 @@ func scrape() []AllPlayTeamStats {
 		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
 	})
 
-	err := c.Visit(MflURL + LeagueYear + "/" + LeagueWebPath + LeagueIDQuery +
+	err := c.Visit(MflURL + leagueYear(time.Now()) + "/" + LeagueWebPath + LeagueIDQuery +
 		"&" + PowerRankingsTableQuery + "&" + LeagueOutputSortQuery)
 	if err != nil {
 		fmt.Println(err)
