@@ -158,6 +158,10 @@ The GitHub Actions user has the following permissions:
 - UpdateAlias, GetAlias, ListVersionsByFunction
 - GetFunction, ListFunctions
 
+### S3 Access (static site bucket `mfl.timkelsch.com`)
+- ListBucket on the bucket
+- GetObject, PutObject on objects in the bucket
+
 ### General Access
 - sts:GetCallerIdentity
 
@@ -178,7 +182,7 @@ For issues with the migration:
 4. GitHub Actions runs Stage deployment workflow
 5. Test changes in STAGE environment
 6. Create PR and merge to main
-7. GitHub Actions runs Production deployment workflow
+7. GitHub Actions runs Production deployment workflow (promotes Lambda STAGE → PROD, syncs `web/` to the S3 site bucket)
 8. Changes are live in PROD
 
 ### Infrastructure Changes Flow:
