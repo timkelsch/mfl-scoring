@@ -5,6 +5,9 @@ on:
     branches-ignore:
       - main
 
+permissions:
+  contents: read
+
 defaults:
   run:
     working-directory: ./mfl-scoring
@@ -49,3 +52,8 @@ jobs:
           platforms: linux/amd64
           push: false
           tags: mfl-scoring-image:validation
+
+  deploy-stage:
+    needs: [lint-and-test, build-validation]
+    uses: ./.github/workflows/deploy-stage.yml
+    secrets: inherit
